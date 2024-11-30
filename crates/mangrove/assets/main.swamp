@@ -1,0 +1,21 @@
+struct MyTest {
+    tick_count: Int,
+}
+
+impl MyTest {
+    fn tick(mut self) {
+        self.tick_count = self.tick_count + 1
+
+        if self.tick_count % 60 == 0 {
+            print('tick: {self.tick_count}')
+        }
+    }
+}
+
+fn main() -> MyTest {
+    print("you called me!")
+
+    MyTest {
+        tick_count: 0,
+    }
+}
