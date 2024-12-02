@@ -1,13 +1,16 @@
 use seq_map::SeqMapError;
+use std::any::Any;
 use std::cell::RefCell;
 use std::error::Error;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{fs, io};
+
 use swamp::prelude::*;
 use swamp_script::prelude::*;
 use swamp_script::ScriptResolveError;
+use swamp_script_eval::value::RustType;
 use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::AstParser;
 use swamp_script_semantic::ns::SemanticError;
@@ -109,6 +112,7 @@ fn resolve_swamp_file(path: &Path) -> Result<PathBuf, String> {
     }
 }
 
+
 pub struct ScriptIntegration {
     pub assets_material_png_id: ExternalFunctionId,
     assets_value_ref: Value,
@@ -121,10 +125,12 @@ impl ScriptIntegration {
             assets_value_ref: Value::Unit,
         }
     }
+
     fn compile(
         &mut self,
         path: &Path,
         interpreter: &mut Interpreter,
+        script_assets: ScriptAssets,
     ) -> Result<ResolvedProgram, MangroveError> {
         let parser = AstParser::new();
 
@@ -136,17 +142,16 @@ impl ScriptIntegration {
 
         trace!("ast_program:\n{:#?}", ast_module);
 
-        let mut parse_module = ParseModule { ast_module };
+        let parse_module = ParseModule { ast_module };
 
         let mut mangrove_module = ResolvedModule::new(ModulePath(vec!["mangrove".to_string()]));
 
         let mut resolved_program = ResolvedProgram::new();
 
-        let print_id = resolved_program.allocate_external_function_id();
+        let print_id = resolved_program.state.allocate_external_function_id();
 
         let global_module_path = ModulePath(vec!["main".to_string()]);
         let mut global_module = ResolvedModule::new(global_module_path);
-
 
         let any_parameter = ResolvedParameter {
             name: "data".to_string(),
@@ -167,24 +172,22 @@ impl ScriptIntegration {
             "print",
             print_id,
             &[any_parameter],
-            resolved_program.unit_type(),
+            resolved_program.types.unit_type(),
         )?;
 
         resolved_program
             .modules
             .modules
-            .insert(global_module.module_path.clone(), Rc::new(global_module))?;
+            .insert(global_module.module_path.clone(), global_module);
 
         {
             let namespace = &mut mangrove_module.namespace;
 
-            let assets_type = namespace.util_insert_struct_type("Assets", &[])?;
-            let assets_general_type = ResolvedType::Struct(assets_type.clone());
-
-            let assets_value =
-                Value::Struct(assets_type.clone(), Vec::new(), assets_general_type.clone());
-
+            let (assets_value, assets_type) =
+                Value::new_hidden_rust_type("Assets", script_assets, namespace)?;
             self.assets_value_ref = Value::Reference(Rc::new(RefCell::new(assets_value.clone())));
+
+            let assets_general_type = ResolvedType::Struct(assets_type.clone());
 
             let mut_self_parameter = ResolvedParameter {
                 name: "self".to_string(),
@@ -201,7 +204,7 @@ impl ScriptIntegration {
                 is_mutable: true,
             };
 
-            let string_type = resolved_program.string_type();
+            let string_type = resolved_program.types.string_type();
             let asset_name_parameter = ResolvedParameter {
                 name: "asset_name".to_string(),
                 resolved_type: string_type,
@@ -217,18 +220,16 @@ impl ScriptIntegration {
                 is_mutable: false,
             };
 
-            let unique_id: ExternalFunctionId = resolved_program.allocate_external_function_id();
+            let unique_id: ExternalFunctionId =
+                resolved_program.state.allocate_external_function_id();
 
             let _material_png_fn = namespace.util_add_member_external_function(
                 &assets_general_type,
                 "material_png",
                 unique_id,
                 &[mut_self_parameter, asset_name_parameter],
-                resolved_program.int_type(),
+                resolved_program.types.int_type(),
             )?;
-
-
-
 
             interpreter.register_external_function(
                 "material_png",
@@ -255,12 +256,11 @@ impl ScriptIntegration {
                 })
                 .expect("should work to register");
         }
-        let mangrove_ref = Rc::new(mangrove_module);
 
         resolved_program
             .modules
             .modules
-            .insert(mangrove_ref.module_path.clone(), mangrove_ref)?;
+            .insert(mangrove_module.module_path.clone(), mangrove_module);
 
         let root_module_path = ModulePath(vec!["main".to_string()]);
 
@@ -285,7 +285,7 @@ impl ScriptIntegration {
 
 pub struct MangroveApp {
     #[allow(unused)]
-    main_program: swamp_script::prelude::ResolvedProgram,
+    //main_program: swamp_script::prelude::ResolvedProgram,
     script_app: Value,
     tick_fn: ResolvedInternalFunctionDefinitionRef,
     interpreter: Interpreter,
@@ -293,15 +293,26 @@ pub struct MangroveApp {
     script_integration: ScriptIntegration,
 }
 
-impl Application for MangroveApp {
-    fn new(_assets: &mut impl Assets) -> Self {
+#[derive(Debug)]
+pub struct ScriptAssets {
+    pub x: i32,
+}
+
+impl InternalApplication for MangroveApp {
+    fn new(assets: &mut GameAssets) -> Self {
         let mut script_integration = ScriptIntegration::new();
 
         let mut interpreter = Interpreter::new();
 
+        let script_assets = ScriptAssets {
+            x: 32,
+        };
+
+
         let whole_program = script_integration
-            .compile(Path::new("main.swamp"), &mut interpreter)
+            .compile(Path::new("main.swamp"), &mut interpreter, script_assets)
             .expect("Failed to compile main.swamp");
+
         let main_module = whole_program
             .modules
             .get(&ModulePath(vec!["main".to_string()]))
@@ -334,7 +345,7 @@ impl Application for MangroveApp {
             .expect("must have tick");
 
         MangroveApp {
-            main_program: whole_program,
+            //main_program: whole_program,
             script_app: mutable_reference,
             interpreter,
             tick_fn: tick_fn.clone(),
@@ -342,6 +353,7 @@ impl Application for MangroveApp {
         }
     }
 
+    /*
     fn tick(&mut self, _assets: &mut impl Assets) {
         self.interpreter
             .util_execute_member(&self.tick_fn, &[self.script_app.clone()])
@@ -349,10 +361,12 @@ impl Application for MangroveApp {
     }
 
     fn render(&mut self, _gfx: &mut impl Gfx) {}
+
+     */
 }
 
 fn main() {
-    run::<MangroveApp>(
+    run_internal::<MangroveApp>(
         "mangrove",
         UVec2::new(640, 480),
         UVec2::new(640 * 2, 480 * 2),

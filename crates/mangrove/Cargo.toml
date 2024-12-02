@@ -12,6 +12,10 @@ swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.2-
 swamp-script-eval-loader = { path = "../../../script/crates/eval-loader", version = "0.0.2-a03" }
 swamp-script-parser = { path = "../../../script/crates/parser", version = "0.0.2-a03" }
 swamp-script-semantic = { path = "../../../script/crates/semantic", version = "0.0.2-a03" }
+swamp-script-eval = { path = "../../../script/crates/eval", version = "0.0.2-a03" }
+limnus-assets = { path = "../../../limnus/crates/assets", version = "0.0.11"}
+limnus-asset-id = { path = "../../../limnus/crates/asset-id", version = "0.0.11"}
+
 tracing = "0.1.41"
 seq-map = "0.0.11"
 
