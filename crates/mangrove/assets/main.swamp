@@ -12,8 +12,11 @@ impl MyTest {
     }
 }
 
-fn main() -> MyTest {
-    print("you called me!")
+
+fn main(mut assets: mangrove::Assets) -> MyTest {
+    print("script main()!")
+    a = assets.material_png('some_material')
+    print('script got {a} as a material handle')
 
     MyTest {
         tick_count: 0,

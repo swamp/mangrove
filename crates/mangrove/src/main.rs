@@ -1,3 +1,4 @@
+use seq_map::SeqMapError;
 use std::cell::RefCell;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
@@ -6,9 +7,10 @@ use std::rc::Rc;
 use std::{fs, io};
 use swamp::prelude::*;
 use swamp_script::prelude::*;
-use swamp_script::{compile_and_resolve, ScriptResolveError};
+use swamp_script::ScriptResolveError;
+use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::AstParser;
-use swamp_script_semantic::ResolvedImplMemberRef;
+use swamp_script_semantic::ns::SemanticError;
 
 #[derive(Debug)]
 pub enum MangroveError {
@@ -17,6 +19,10 @@ pub enum MangroveError {
     ExecuteError(ExecuteError),
     Other(String),
     ScriptResolveError(ScriptResolveError),
+    SemanticError(SemanticError),
+    ResolveError(ResolveError),
+    DepLoaderError(DepLoaderError),
+    SeqMapError(SeqMapError),
 }
 
 impl Display for MangroveError {
@@ -41,6 +47,30 @@ impl From<ScriptResolveError> for MangroveError {
 impl From<ExecuteError> for MangroveError {
     fn from(value: ExecuteError) -> Self {
         Self::ExecuteError(value)
+    }
+}
+
+impl From<SeqMapError> for MangroveError {
+    fn from(value: SeqMapError) -> Self {
+        Self::SeqMapError(value)
+    }
+}
+
+impl From<SemanticError> for MangroveError {
+    fn from(value: SemanticError) -> Self {
+        Self::SemanticError(value)
+    }
+}
+
+impl From<ResolveError> for MangroveError {
+    fn from(value: ResolveError) -> Self {
+        Self::ResolveError(value)
+    }
+}
+
+impl From<DepLoaderError> for MangroveError {
+    fn from(value: DepLoaderError) -> Self {
+        Self::DepLoaderError(value)
     }
 }
 
@@ -79,74 +109,203 @@ fn resolve_swamp_file(path: &Path) -> Result<PathBuf, String> {
     }
 }
 
-fn register_print(interpreter: &mut Interpreter) {
-    interpreter
-        .register_external_function(
-            "print".to_string(),
-            1, /* TODO: HARD CODED */
-            move |args: &[Value]| {
-                if let Some(value) = args.first() {
-                    let display_value = value.to_string();
-                    println!("{}", display_value);
-                    Ok(Value::Unit)
-                } else {
-                    Err("print requires at least one argument".to_string())?
-                }
-            },
-        )
-        .expect("should work to register");
+pub struct ScriptIntegration {
+    pub assets_material_png_id: ExternalFunctionId,
+    assets_value_ref: Value,
 }
 
-fn compile(path: &Path) -> Result<ResolvedProgram, MangroveError> {
-    let parser = AstParser::new();
+impl ScriptIntegration {
+    pub fn new() -> Self {
+        Self {
+            assets_material_png_id: 0,
+            assets_value_ref: Value::Unit,
+        }
+    }
+    fn compile(
+        &mut self,
+        path: &Path,
+        interpreter: &mut Interpreter,
+    ) -> Result<ResolvedProgram, MangroveError> {
+        let parser = AstParser::new();
 
-    let path_buf = resolve_swamp_file(Path::new(path))?;
+        let path_buf = resolve_swamp_file(Path::new(path))?;
 
-    let main_swamp = fs::read_to_string(&path_buf)?;
+        let main_swamp = fs::read_to_string(&path_buf)?;
 
-    let ast_module = parser.parse_script(&main_swamp)?;
+        let ast_module = parser.parse_script(&main_swamp)?;
 
-    trace!("ast_program:\n{:#?}", ast_module);
+        trace!("ast_program:\n{:#?}", ast_module);
 
-    let mut parse_module = ParseModule { ast_module };
+        let mut parse_module = ParseModule { ast_module };
 
-    parse_module.declare_external_function(
-        "print".to_string(),
-        vec![Parameter {
-            variable: Variable {
-                name: "data".to_string(),
+        let mut mangrove_module = ResolvedModule::new(ModulePath(vec!["mangrove".to_string()]));
+
+        let mut resolved_program = ResolvedProgram::new();
+
+        let print_id = resolved_program.allocate_external_function_id();
+
+        let global_module_path = ModulePath(vec!["main".to_string()]);
+        let mut global_module = ResolvedModule::new(global_module_path);
+
+
+        let any_parameter = ResolvedParameter {
+            name: "data".to_string(),
+            resolved_type: ResolvedType::Any,
+            ast_parameter: Parameter {
+                variable: Variable {
+                    name: "data".to_string(),
+                    is_mutable: false,
+                },
+                param_type: Type::Any,
                 is_mutable: false,
+                is_self: false,
             },
-            param_type: Type::Any,
             is_mutable: false,
-        }],
-        Type::Unit,
-    );
+        };
 
-    let root_module_path = ModulePath(vec!["main".to_string()]);
-    let resolved_program = compile_and_resolve(path, &root_module_path, parse_module)?;
-    Ok(resolved_program)
+        global_module.namespace.util_add_external_function(
+            "print",
+            print_id,
+            &[any_parameter],
+            resolved_program.unit_type(),
+        )?;
+
+        resolved_program
+            .modules
+            .modules
+            .insert(global_module.module_path.clone(), Rc::new(global_module))?;
+
+        {
+            let namespace = &mut mangrove_module.namespace;
+
+            let assets_type = namespace.util_insert_struct_type("Assets", &[])?;
+            let assets_general_type = ResolvedType::Struct(assets_type.clone());
+
+            let assets_value =
+                Value::Struct(assets_type.clone(), Vec::new(), assets_general_type.clone());
+
+            self.assets_value_ref = Value::Reference(Rc::new(RefCell::new(assets_value.clone())));
+
+            let mut_self_parameter = ResolvedParameter {
+                name: "self".to_string(),
+                resolved_type: assets_general_type.clone(),
+                ast_parameter: Parameter {
+                    variable: Variable {
+                        name: "self".to_string(),
+                        is_mutable: false,
+                    },
+                    param_type: Type::Int,
+                    is_mutable: true,
+                    is_self: true,
+                },
+                is_mutable: true,
+            };
+
+            let string_type = resolved_program.string_type();
+            let asset_name_parameter = ResolvedParameter {
+                name: "asset_name".to_string(),
+                resolved_type: string_type,
+                ast_parameter: Parameter {
+                    variable: Variable {
+                        name: "".to_string(),
+                        is_mutable: false,
+                    },
+                    param_type: Type::String,
+                    is_mutable: false,
+                    is_self: false,
+                },
+                is_mutable: false,
+            };
+
+            let unique_id: ExternalFunctionId = resolved_program.allocate_external_function_id();
+
+            let _material_png_fn = namespace.util_add_member_external_function(
+                &assets_general_type,
+                "material_png",
+                unique_id,
+                &[mut_self_parameter, asset_name_parameter],
+                resolved_program.int_type(),
+            )?;
+
+
+
+
+            interpreter.register_external_function(
+                "material_png",
+                unique_id,
+                move |params: &[Value]| {
+                    let self_value = &params[0];
+                    let asset_name = &params[1];
+                    println!(
+                        "material_png called with (self:{self_value} asset_name:'{asset_name}')"
+                    );
+                    Ok(Value::Int(42))
+                },
+            )?;
+
+            interpreter
+                .register_external_function("print", print_id, move |args: &[Value]| {
+                    if let Some(value) = args.first() {
+                        let display_value = value.to_string();
+                        println!("{}", display_value);
+                        Ok(Value::Unit)
+                    } else {
+                        Err("print requires at least one argument".to_string())?
+                    }
+                })
+                .expect("should work to register");
+        }
+        let mangrove_ref = Rc::new(mangrove_module);
+
+        resolved_program
+            .modules
+            .modules
+            .insert(mangrove_ref.module_path.clone(), mangrove_ref)?;
+
+        let root_module_path = ModulePath(vec!["main".to_string()]);
+
+        let mut dependency_parser = DependencyParser::new();
+        dependency_parser.add_ast_module(root_module_path.clone(), parse_module);
+
+        let module_paths_in_order = parse_dependant_modules_and_resolve(
+            path.to_owned(),
+            root_module_path.clone(),
+            &mut dependency_parser,
+        )?;
+
+        resolve_program(
+            &mut resolved_program,
+            &module_paths_in_order,
+            &dependency_parser,
+        )?;
+
+        Ok(resolved_program)
+    }
 }
 
 pub struct MangroveApp {
     #[allow(unused)]
     main_program: swamp_script::prelude::ResolvedProgram,
     script_app: Value,
-    tick_fn: ResolvedImplMemberRef,
+    tick_fn: ResolvedInternalFunctionDefinitionRef,
     interpreter: Interpreter,
+    #[allow(unused)]
+    script_integration: ScriptIntegration,
 }
 
 impl Application for MangroveApp {
     fn new(_assets: &mut impl Assets) -> Self {
-        let whole_program = compile(Path::new("main.swamp")).expect("Failed to compile main.swamp");
+        let mut script_integration = ScriptIntegration::new();
+
+        let mut interpreter = Interpreter::new();
+
+        let whole_program = script_integration
+            .compile(Path::new("main.swamp"), &mut interpreter)
+            .expect("Failed to compile main.swamp");
         let main_module = whole_program
             .modules
             .get(&ModulePath(vec!["main".to_string()]))
             .expect("Failed to find main module");
-
-        let mut interpreter = Interpreter::new();
-
-        register_print(&mut interpreter);
 
         let _script_value_with_signal = interpreter
             .eval_module(&main_module)
@@ -158,20 +317,20 @@ impl Application for MangroveApp {
             .expect("No main function");
 
         let script_app = interpreter
-            .util_execute_function(&main_fn, &[])
+            .util_execute_function(&main_fn, &[script_integration.assets_value_ref.clone()])
             .expect("should work");
 
         let struct_type_ref = match script_app {
-            Value::Struct(ref struct_type, _) => struct_type,
+            Value::Struct(ref struct_type, _, _) => struct_type,
             _ => panic!("only support struct for now"),
         };
 
         let mutable_reference = Value::Reference(Rc::new(RefCell::new(script_app.clone())));
 
-        let binding = struct_type_ref.borrow();
-        let tick_fn = binding
-            .impl_members
-            .get(&IdentifierName("tick".to_string()))
+        let identifier_name = IdentifierName("tick".to_string());
+        let tick_fn = &struct_type_ref
+            .borrow()
+            .get_internal_member(identifier_name)
             .expect("must have tick");
 
         MangroveApp {
@@ -179,6 +338,7 @@ impl Application for MangroveApp {
             script_app: mutable_reference,
             interpreter,
             tick_fn: tick_fn.clone(),
+            script_integration,
         }
     }
 
