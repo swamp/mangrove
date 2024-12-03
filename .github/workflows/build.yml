@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches:
-      - '**'  # All branches for now
+      - '*'  # All branches for now
 
 jobs:
   build:
@@ -22,7 +22,6 @@ jobs:
             platform: windows
             arch: x86_64
 
-           seems like apple on x86 is a bit deprecated?
           - os: macos-latest
             target: x86_64-apple-darwin
             platform: darwin
