@@ -16,7 +16,7 @@ Mangrove is a 2D game engine built in Rust that integrates several key component
 
 ## 🚀 Installation
 
-Download the executable from the [Releases])(https://github.com/swamp/mangrove/releases)
+Download the executable from the [Releases](https://github.com/swamp/mangrove/releases)
 
 ### MacOS
 
