@@ -23,7 +23,7 @@ Download the executable from the [Releases])(https://github.com/swamp/mangrove/r
 Due to Apple's security measures, you'll need to allow the executable:
 
 ```sh
-xattr -cr ./swamp
+xattr -cr ./mangrove
 ```
 
 ### Install using cargo
