@@ -6,22 +6,23 @@ use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{fs, io};
-use swamp::prelude::Assets;
 use swamp::prelude::GameAssets;
 use swamp::prelude::LocalResource;
 use swamp::prelude::ResourceStorage;
+use swamp::prelude::{Assets, MaterialRef};
 use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, IdentifierName,
-    ModulePath, Parameter, ParseModule, ResolveError, Type, Variable,
+    ModulePath, Parameter, ParseModule, ResolveError, StructType, Type, Variable,
 };
 use swamp_script::ScriptResolveError;
 use swamp_script_eval::prelude::Value;
-use swamp_script_eval::{ExecuteError, Interpreter};
+use swamp_script_eval::{util_execute_function, ExecuteError, ExternalFunctions, Interpreter};
 use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::{AstParser, Rule};
 use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
 use swamp_script_semantic::{
-    ExternalFunctionId, ResolvedModule, ResolvedParameter, ResolvedProgram, ResolvedType,
+    ExternalFunctionId, ResolvedModule, ResolvedParameter, ResolvedProgram, ResolvedStructType,
+    ResolvedStructTypeRef, ResolvedType,
 };
 use tracing::trace;
 
@@ -130,14 +131,25 @@ pub struct ScriptIntegration {
 // Let's do some pointer magic
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
+    material_struct_type: ResolvedStructTypeRef,
 }
 
 impl GameAssetsWrapper {
-    pub fn new(game_assets: &mut GameAssets) -> Self {
+    pub fn new(game_assets: &mut GameAssets, material_struct_type: ResolvedStructTypeRef) -> Self {
         let ptr = game_assets as *mut GameAssets;
         Self {
             game_assets: ptr as *mut GameAssets<'static>, // Coerce to 'static. is there a better way?
+            material_struct_type,
         }
+    }
+
+    fn material_handle(&self, material_ref: MaterialRef) -> Value {
+        let material_ref_value = Value::RustValue(Rc::new(RefCell::new(Box::new(material_ref))));
+        Value::Struct(
+            self.material_struct_type.clone(),
+            [material_ref_value].to_vec(),
+            ResolvedType::Struct(self.material_struct_type.clone()),
+        )
     }
 
     pub fn material_png(&self, name: &str) -> Value {
@@ -146,8 +158,9 @@ impl GameAssetsWrapper {
         unsafe {
             assets = &mut *self.game_assets;
         }
-        let something = assets.material_png(name);
-        Value::Int(0)
+        let material_ref = assets.material_png(name);
+
+        self.material_handle(material_ref)
     }
 }
 
@@ -159,7 +172,8 @@ pub struct ScriptContext {
 pub struct Script {
     clock: InstantMonotonicClock,
     resolved_program: ResolvedProgram,
-    interpreter: Interpreter<ScriptContext>,
+    externals: ExternalFunctions<ScriptContext>,
+    material_handle_struct_ref: Option<ResolvedStructTypeRef>,
 }
 
 impl Debug for Script {
@@ -173,7 +187,8 @@ impl Script {
         Self {
             clock: InstantMonotonicClock::new(),
             resolved_program: ResolvedProgram::new(),
-            interpreter: Interpreter::new(),
+            externals: ExternalFunctions::new(),
+            material_handle_struct_ref: None,
         }
     }
 
@@ -202,6 +217,12 @@ impl Script {
 
         let mut mangrove_module = ResolvedModule::new(ModulePath(vec!["mangrove".to_string()]));
         let asset_struct = self.register_asset_struct(&mut mangrove_module.namespace)?;
+
+        self.material_handle_struct_ref = Some(
+            mangrove_module
+                .namespace
+                .util_insert_struct_type("MaterialHandle", &[("hidden", ResolvedType::Any)])?,
+        );
 
         let print_id = self.resolved_program.state.allocate_external_function_id();
 
@@ -236,7 +257,7 @@ impl Script {
             .insert(global_module.module_path.clone(), global_module);
 
         {
-            self.interpreter
+            self.externals
                 .register_external_function("print", print_id, move |args: &[Value], _| {
                     if let Some(value) = args.first() {
                         let display_value = value.to_string();
@@ -279,7 +300,7 @@ impl Script {
         mut resource_storage: &mut ResourceStorage,
     ) -> Result<(), MangroveError> {
         let assets_value_ref = self
-            .compile(Path::new("main.swamp"))
+            .compile(Path::new("scripts/main.swamp"))
             .expect("Failed to compile main.swamp");
 
         let main_module = self
@@ -298,13 +319,19 @@ impl Script {
             let mut game_assets = GameAssets::new(&mut resource_storage, Millis::new(0));
 
             let mut script_context = ScriptContext {
-                game_assets: GameAssetsWrapper::new(&mut game_assets),
+                game_assets: GameAssetsWrapper::new(
+                    &mut game_assets,
+                    self.material_handle_struct_ref.as_ref().unwrap().clone(),
+                ),
             };
 
-            script_app = self
-                .interpreter
-                .util_execute_function(&main_fn, &[assets_value_ref.clone()], &mut script_context)
-                .expect("should work");
+            script_app = util_execute_function(
+                &self.externals,
+                &main_fn,
+                &[assets_value_ref.clone()],
+                &mut script_context,
+            )
+            .expect("should work");
         }
 
         let struct_type_ref = match script_app {
@@ -375,7 +402,7 @@ impl Script {
             self.resolved_program.types.int_type(),
         )?;
 
-        self.interpreter.register_external_function(
+        self.externals.register_external_function(
             "material_png",
             unique_id,
             move |params: &[Value], context| {
@@ -384,9 +411,7 @@ impl Script {
 
                 println!("material_png called with (self:{self_value} asset_name:'{asset_name}')");
 
-                context.game_assets.material_png(asset_name);
-
-                Ok(Value::Int(42))
+                Ok(context.game_assets.material_png(asset_name))
             },
         )?;
 

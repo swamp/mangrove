@@ -2,5 +2,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/mangrove", "crates/script",
+    "crates/mangrove",
+    "crates/examples",
+    "crates/script",
 ]

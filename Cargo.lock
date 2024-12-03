@@ -2083,6 +2083,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "mangrove-examples"
+version = "0.1.0"
+
+[[package]]
 name = "mangrove-script"
 version = "0.0.1"
 dependencies = [

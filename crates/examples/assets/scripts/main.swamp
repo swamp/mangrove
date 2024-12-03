@@ -1,5 +1,6 @@
 struct MyTest {
     tick_count: Int,
+    flying_material_ref: mangrove::MaterialHandle,
 }
 
 impl MyTest {
@@ -15,10 +16,11 @@ impl MyTest {
 
 fn main(mut assets: mangrove::Assets) -> MyTest {
     print("script main()!")
-    a = assets.material_png('some_material')
-    print('script got {a} as a material handle')
+    flying_material_ref = assets.material_png('flying_46x30')
+    print('script got {flying_material_ref} as a material handle')
 
     MyTest {
         tick_count: 0,
+        flying_material_ref: flying_material_ref,
     }
 }
