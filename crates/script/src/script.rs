@@ -3,20 +3,27 @@ use seq_map::SeqMapError;
 use std::cell::RefCell;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
-use std::io;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::{fs, io};
 use swamp::prelude::Assets;
 use swamp::prelude::GameAssets;
 use swamp::prelude::LocalResource;
 use swamp::prelude::ResourceStorage;
-use swamp_script::prelude::{DepLoaderError, ModulePath, Parameter, ResolveError, Type, Variable};
+use swamp_script::prelude::{
+    parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, IdentifierName,
+    ModulePath, Parameter, ParseModule, ResolveError, Type, Variable,
+};
 use swamp_script::ScriptResolveError;
 use swamp_script_eval::prelude::Value;
 use swamp_script_eval::{ExecuteError, Interpreter};
-use swamp_script_parser::Rule;
+use swamp_script_eval_loader::resolve_program;
+use swamp_script_parser::{AstParser, Rule};
 use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
-use swamp_script_semantic::{ExternalFunctionId, ResolvedParameter, ResolvedProgram, ResolvedType};
+use swamp_script_semantic::{
+    ExternalFunctionId, ResolvedModule, ResolvedParameter, ResolvedProgram, ResolvedType,
+};
+use tracing::trace;
 
 fn resolve_swamp_file(path: &Path) -> Result<PathBuf, String> {
     if !path.exists() {
@@ -118,111 +125,6 @@ pub struct ScriptIntegration {
     assets_value_ref: Value,
 }
 
-impl ScriptIntegration {
-    pub fn new() -> Self {
-        Self {
-            assets_material_png_id: 0,
-            assets_value_ref: Value::Unit,
-        }
-    }
-    /*
-
-    fn compile(
-        &mut self,
-        path: &Path,
-        interpreter: &mut Interpreter,
-        script_assets: ScriptAssets,
-    ) -> Result<ResolvedProgram, MangroveError> {
-        let parser = AstParser::new();
-
-        let path_buf = resolve_swamp_file(Path::new(path))?;
-
-        let main_swamp = fs::read_to_string(&path_buf)?;
-
-        let ast_module = parser.parse_script(&main_swamp)?;
-
-        trace!("ast_program:\n{:#?}", ast_module);
-
-        let parse_module = ParseModule { ast_module };
-
-        let mut mangrove_module = ResolvedModule::new(ModulePath(vec!["mangrove".to_string()]));
-
-        let print_id = resolved_program.state.allocate_external_function_id();
-
-        let global_module_path = ModulePath(vec!["main".to_string()]);
-        let mut global_module = ResolvedModule::new(global_module_path);
-
-        let any_parameter = ResolvedParameter {
-            name: "data".to_string(),
-            resolved_type: ResolvedType::Any,
-            ast_parameter: Parameter {
-                variable: Variable {
-                    name: "data".to_string(),
-                    is_mutable: false,
-                },
-                param_type: Type::Any,
-                is_mutable: false,
-                is_self: false,
-            },
-            is_mutable: false,
-        };
-
-        global_module.namespace.util_add_external_function(
-            "print",
-            print_id,
-            &[any_parameter],
-            resolved_program.types.unit_type(),
-        )?;
-
-        resolved_program
-            .modules
-            .modules
-            .insert(global_module.module_path.clone(), global_module);
-
-        {
-            let namespace = &mut mangrove_module.namespace;
-
-            interpreter
-                .register_external_function("print", print_id, move |args: &[Value]| {
-                    if let Some(value) = args.first() {
-                        let display_value = value.to_string();
-                        println!("{}", display_value);
-                        Ok(Value::Unit)
-                    } else {
-                        Err("print requires at least one argument".to_string())?
-                    }
-                })
-                .expect("should work to register");
-        }
-
-        resolved_program
-            .modules
-            .modules
-            .insert(mangrove_module.module_path.clone(), mangrove_module);
-
-        let root_module_path = ModulePath(vec!["main".to_string()]);
-
-        let mut dependency_parser = DependencyParser::new();
-        dependency_parser.add_ast_module(root_module_path.clone(), parse_module);
-
-        let module_paths_in_order = parse_dependant_modules_and_resolve(
-            path.to_owned(),
-            root_module_path.clone(),
-            &mut dependency_parser,
-        )?;
-
-        resolve_program(
-            &mut resolved_program,
-            &module_paths_in_order,
-            &dependency_parser,
-        )?;
-
-        Ok(resolved_program)
-    }
-
-     */
-}
-
 // I didn't want to change the implementation of GameAssets.
 // There might be a better way to do this, but I could not find a way.
 // Let's do some pointer magic
@@ -262,7 +164,7 @@ pub struct Script {
 
 impl Debug for Script {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        write!(f, "script")
     }
 }
 
@@ -285,46 +187,125 @@ impl Script {
 
     pub fn tick(&mut self) {}
 
+    fn compile(&mut self, path: &Path) -> Result<Value, MangroveError> {
+        let parser = AstParser::new();
+
+        let path_buf = resolve_swamp_file(Path::new(path))?;
+
+        let main_swamp = fs::read_to_string(&path_buf)?;
+
+        let ast_module = parser.parse_script(&main_swamp)?;
+
+        trace!("ast_program:\n{:#?}", ast_module);
+
+        let parse_module = ParseModule { ast_module };
+
+        let mut mangrove_module = ResolvedModule::new(ModulePath(vec!["mangrove".to_string()]));
+        let asset_struct = self.register_asset_struct(&mut mangrove_module.namespace)?;
+
+        let print_id = self.resolved_program.state.allocate_external_function_id();
+
+        let root_module_path = ModulePath(vec!["main".to_string()]);
+        let mut global_module = ResolvedModule::new(root_module_path.clone());
+
+        let any_parameter = ResolvedParameter {
+            name: "data".to_string(),
+            resolved_type: ResolvedType::Any,
+            ast_parameter: Parameter {
+                variable: Variable {
+                    name: "data".to_string(),
+                    is_mutable: false,
+                },
+                param_type: Type::Any,
+                is_mutable: false,
+                is_self: false,
+            },
+            is_mutable: false,
+        };
+
+        global_module.namespace.util_add_external_function(
+            "print",
+            print_id,
+            &[any_parameter],
+            self.resolved_program.types.unit_type(),
+        )?;
+
+        self.resolved_program
+            .modules
+            .modules
+            .insert(global_module.module_path.clone(), global_module);
+
+        {
+            self.interpreter
+                .register_external_function("print", print_id, move |args: &[Value], _| {
+                    if let Some(value) = args.first() {
+                        let display_value = value.to_string();
+                        println!("{}", display_value);
+                        Ok(Value::Unit)
+                    } else {
+                        Err("print requires at least one argument".to_string())?
+                    }
+                })
+                .expect("should work to register");
+        }
+
+        self.resolved_program
+            .modules
+            .modules
+            .insert(mangrove_module.module_path.clone(), mangrove_module);
+
+        let mut dependency_parser = DependencyParser::new();
+        dependency_parser.add_ast_module(root_module_path.clone(), parse_module);
+
+        let module_paths_in_order = parse_dependant_modules_and_resolve(
+            path.to_owned(),
+            root_module_path.clone(),
+            &mut dependency_parser,
+        )?;
+
+        resolve_program(
+            &self.resolved_program.types,
+            &mut self.resolved_program.state,
+            &mut self.resolved_program.modules,
+            &module_paths_in_order,
+            &dependency_parser,
+        )?;
+
+        Ok(asset_struct)
+    }
+
     fn boot_call_main(
         &mut self,
         mut resource_storage: &mut ResourceStorage,
     ) -> Result<(), MangroveError> {
-        let mut script_integration = ScriptIntegration::new();
+        let assets_value_ref = self
+            .compile(Path::new("main.swamp"))
+            .expect("Failed to compile main.swamp");
 
-        let mut interpreter = Interpreter::<ScriptContext>::new();
-
-        let module_path = ModulePath(vec!["main".to_string()]);
-        let mut namespace = ResolvedModuleNamespace::new(module_path);
-        /*
-               let whole_program = script_integration
-                   .compile(Path::new("main.swamp"), &mut interpreter)
-                   .expect("Failed to compile main.swamp");
-
-        */
-        let whole_program = ResolvedProgram::new();
-        let mut game_assets = GameAssets::new(&mut resource_storage, Millis::new(0));
-
-        let mut script_context = ScriptContext {
-            game_assets: GameAssetsWrapper::new(&mut game_assets),
-        };
-
-        let main_module = whole_program
+        let main_module = self
+            .resolved_program
             .modules
             .get(&ModulePath(vec!["main".to_string()]))
             .expect("Failed to find main module");
 
-        let _script_value_with_signal = interpreter
-            .eval_module(&main_module, &mut script_context)
-            .expect("TODO: panic message");
-        /*
         let main_fn = main_module
             .namespace
             .get_internal_function("main")
             .expect("No main function");
 
-        let script_app = interpreter
-            .util_execute_function(&main_fn, &[script_integration.assets_value_ref.clone()])
-            .expect("should work");
+        let script_app: Value;
+        {
+            let mut game_assets = GameAssets::new(&mut resource_storage, Millis::new(0));
+
+            let mut script_context = ScriptContext {
+                game_assets: GameAssetsWrapper::new(&mut game_assets),
+            };
+
+            script_app = self
+                .interpreter
+                .util_execute_function(&main_fn, &[assets_value_ref.clone()], &mut script_context)
+                .expect("should work");
+        }
 
         let struct_type_ref = match script_app {
             Value::Struct(ref struct_type, _, _) => struct_type,
@@ -338,12 +319,11 @@ impl Script {
             .borrow()
             .get_internal_member(identifier_name)
             .expect("must have tick");
-         */
 
         Ok(())
     }
 
-    pub fn assets_value(
+    pub fn register_asset_struct(
         &mut self,
         namespace: &mut ResolvedModuleNamespace,
     ) -> Result<Value, MangroveError> {
