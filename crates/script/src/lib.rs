@@ -5,15 +5,17 @@ use crate::script::Script;
 use swamp::prelude::*;
 
 pub fn logic_tick(mut script: LoReM<Script>) {
-    script.tick();
+    script.tick().expect("script.tick() crashed");
 }
 
 pub fn render_tick(mut script: LoReM<Script>, mut wgpu_render: ReM<Render>) {
-    script.render(&mut wgpu_render);
+    script
+        .render(&mut wgpu_render)
+        .expect("script.render() crashed");
 }
 
 pub fn flush_render_tick(
-    mut script: LoReM<Script>,
+    script: LoRe<Script>,
     wgpu_window: Re<WgpuWindow>,
     mut wgpu_render: ReM<Render>,
     materials: Re<LimnusAssets<Material>>,
@@ -35,7 +37,9 @@ impl Plugin for ScriptPlugin {
         let mut all_resources = app.resources_mut();
         let mut script = Script::new();
 
-        script.boot(&mut all_resources);
+        script
+            .boot(&mut all_resources)
+            .expect("script.boot() crashed");
 
         app.add_system(UpdatePhase::Update, logic_tick);
         app.add_system(UpdatePhase::Update, render_tick);

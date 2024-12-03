@@ -1,5 +1,4 @@
 use mangrove_script::ScriptPlugin;
-use std::fmt::Debug;
 use swamp::prelude::SwampDefaultPlugins;
 use swamp::prelude::*;
 

@@ -12,17 +12,17 @@ use swamp::prelude::{GameAssets, Render};
 use swamp::prelude::{LocalResource, UVec2, Vec3};
 use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, IdentifierName,
-    ModulePath, Parameter, ParseModule, ResolveError, StructType, Type, Variable,
+    ModulePath, Parameter, ParseModule, ResolveError, Type, Variable,
 };
 use swamp_script::ScriptResolveError;
 use swamp_script_eval::prelude::Value;
-use swamp_script_eval::{util_execute_function, ExecuteError, ExternalFunctions, Interpreter};
+use swamp_script_eval::{util_execute_function, ExecuteError, ExternalFunctions};
 use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::{AstParser, Rule};
 use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
 use swamp_script_semantic::{
     ExternalFunctionId, ResolvedInternalFunctionDefinitionRef, ResolvedModule, ResolvedParameter,
-    ResolvedProgram, ResolvedStructType, ResolvedStructTypeRef, ResolvedType,
+    ResolvedProgram, ResolvedStructTypeRef, ResolvedType,
 };
 use tracing::trace;
 
@@ -119,11 +119,6 @@ impl From<String> for MangroveError {
     fn from(value: String) -> Self {
         Self::Other(value)
     }
-}
-
-pub struct ScriptIntegration {
-    pub assets_material_png_id: ExternalFunctionId,
-    assets_value_ref: Value,
 }
 
 // I didn't want to change the implementation of GameAssets.
@@ -231,11 +226,12 @@ impl Script {
         self.clock.now()
     }
 
-    pub fn boot(&mut self, resource_storage: &mut ResourceStorage) {
-        self.boot_call_main(resource_storage);
+    pub fn boot(&mut self, resource_storage: &mut ResourceStorage) -> Result<(), ExecuteError> {
+        self.boot_call_main(resource_storage)?;
+        Ok(())
     }
 
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self) -> Result<(), ExecuteError> {
         let mut script_context = ScriptContext {
             game_assets: None,
             render: None,
@@ -246,7 +242,9 @@ impl Script {
             self.tick_fn.as_ref().unwrap(),
             &[self.mutable_script_app_reference.clone()].to_vec(),
             &mut script_context,
-        );
+        )?;
+
+        Ok(())
     }
 
     fn compile(&mut self, path: &Path) -> Result<Value, MangroveError> {
@@ -346,7 +344,7 @@ impl Script {
     fn boot_call_main(
         &mut self,
         mut resource_storage: &mut ResourceStorage,
-    ) -> Result<(), MangroveError> {
+    ) -> Result<(), ExecuteError> {
         let assets_value_ref = self
             .compile(Path::new("scripts/main.swamp"))
             .expect("Failed to compile main.swamp");
@@ -410,7 +408,7 @@ impl Script {
         Ok(())
     }
 
-    pub fn render(&mut self, mut wgpu_render: &mut Render) {
+    pub fn render(&mut self, wgpu_render: &mut Render) -> Result<(), ExecuteError> {
         let mut script_context = ScriptContext {
             game_assets: None,
             render: Some(RenderWrapper::new(wgpu_render)),
@@ -425,7 +423,9 @@ impl Script {
             ]
             .to_vec(),
             &mut script_context,
-        );
+        )?;
+
+        Ok(())
     }
 
     pub fn register_asset_struct(
@@ -607,7 +607,7 @@ impl Script {
             "sprite",
             unique_id,
             move |params: &[Value], context| {
-                let self_value = &params[0];
+                //let _self_value = &params[0]; // the Gfx struct is empty by design.
                 let x = params[1].expect_int()?;
                 let y = params[2].expect_int()?;
                 let z = params[3].expect_int()?;
@@ -616,11 +616,6 @@ impl Script {
 
                 let material_ref = params[4].downcast_hidden_rust::<MaterialRef>().unwrap();
 
-                println!(
-                    "gfx.sprite called with (self:{self_value} asset_name:'{}')",
-                    material_ref.borrow().asset_name().unwrap()
-                );
-
                 context
                     .render
                     .as_mut()
@@ -628,7 +623,6 @@ impl Script {
                     .push_sprite(pos, &material_ref.borrow());
 
                 Ok(Value::Unit)
-                //Ok(context.render.sprite(asset_name))
             },
         )?;
 

@@ -20,9 +20,7 @@ impl MyTest {
 
 
 fn main(mut assets: mangrove::Assets) -> MyTest {
-    print("script main()!")
     flying_material_ref = assets.material_png('flying_46x30')
-    print('script got {flying_material_ref} as a material handle')
 
     MyTest {
         tick_count: 0,
