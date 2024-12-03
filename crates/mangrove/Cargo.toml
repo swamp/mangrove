@@ -1,10 +1,14 @@
 [package]
-name = "mangrove"
+name = "mangrove-engine"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
 description = "2D game engine powered by swamp-script"
 repository = "https://github.com/swamp/mangrove"
+
+[[bin]]
+name = "mangrove"
+path = "src/main.rs"
 
 [dependencies]
 swamp = { path = "../../../swamp/crates/swamp", version = "0.0.13" }
