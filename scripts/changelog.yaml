@@ -1,0 +1,26 @@
+repo: swamp/mangrove
+
+# added
+# changed
+# fixed
+# workaround
+# optimization
+# examples
+# test
+# removed
+# improved
+# breaking
+# deprecated
+# refactor
+# experimental
+# docs
+# known issue
+# style
+# unreleased
+# security
+
+releases:
+  v0.0.1:
+    date: "2024-12-03"
+    notice: |
+      first release
