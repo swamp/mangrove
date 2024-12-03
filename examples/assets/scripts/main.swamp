@@ -29,7 +29,7 @@ impl Render {
 
     fn render(self, logic: Logic, mut gfx: mangrove::Gfx) {
         x = 100 + logic.tick_count % 60
-        gfx.sprite(x, 100, 0, self.flying_material_ref)
+        gfx.sprite(x, 100, 0, self.flying_material_ref, 46, 30)
     }
 }
 

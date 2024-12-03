@@ -142,14 +142,14 @@ impl RenderWrapper {
         }
     }
 
-    pub fn push_sprite(&self, pos: Vec3, material_ref: &MaterialRef) {
+    pub fn push_sprite(&self, pos: Vec3, material_ref: &MaterialRef, size: UVec2) {
         // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
         let render: &mut Render;
         unsafe {
             render = &mut *self.render;
         }
 
-        render.draw_sprite(pos, UVec2::new(46, 30), material_ref);
+        render.draw_sprite(pos, size, material_ref);
     }
 }
 
@@ -275,7 +275,7 @@ pub fn register_asset_struct_value_with_members(
         "material_png",
         unique_id,
         move |params: &[Value], context| {
-            let self_value = &params[0];
+            //let self_value = &params[0]; // Assets is, by design, an empty struct
             let asset_name = &params[1].expect_string()?;
 
             Ok(context
@@ -375,6 +375,36 @@ pub fn register_gfx_struct_value_with_members(
         is_mutable: false,
     };
 
+    let width_param = ResolvedParameter {
+        name: "width".to_string(),
+        resolved_type: types.int_type(),
+        ast_parameter: Parameter {
+            variable: Variable {
+                name: "".to_string(),
+                is_mutable: false,
+            },
+            param_type: Type::Int,
+            is_mutable: false,
+            is_self: false,
+        },
+        is_mutable: false,
+    };
+
+    let height_param = ResolvedParameter {
+        name: "height".to_string(),
+        resolved_type: types.int_type(),
+        ast_parameter: Parameter {
+            variable: Variable {
+                name: "".to_string(),
+                is_mutable: false,
+            },
+            param_type: Type::Int,
+            is_mutable: false,
+            is_self: false,
+        },
+        is_mutable: false,
+    };
+
     let unique_id: ExternalFunctionId = state.allocate_external_function_id();
 
     let _material_png_fn = namespace.util_add_member_external_function(
@@ -387,6 +417,8 @@ pub fn register_gfx_struct_value_with_members(
             y_param,
             z_param,
             material_handle,
+            width_param,
+            height_param,
         ],
         types.int_type(),
     )?;
@@ -404,11 +436,16 @@ pub fn register_gfx_struct_value_with_members(
 
             let material_ref = params[4].downcast_hidden_rust::<MaterialRef>().unwrap();
 
+            let size = UVec2::new(
+                params[5].expect_int()? as u16,
+                params[6].expect_int()? as u16,
+            );
+
             context
                 .render
                 .as_mut()
                 .unwrap()
-                .push_sprite(pos, &material_ref.borrow());
+                .push_sprite(pos, &material_ref.borrow(), size);
 
             Ok(Value::Unit)
         },
