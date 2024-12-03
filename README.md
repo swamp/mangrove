@@ -1,4 +1,4 @@
-# mangrove
+# Mangrove 🌳
 
 A cool 2D game engine that combines the power of [Limnus](https://github.com/swamp/limnus), 
 [Swamp](https://github.com/swamp/swamp) and [Swamp Script](https://github.com/swamp/script)
@@ -14,6 +14,17 @@ Mangrove is a 2D game engine built in Rust that integrates several key component
 - [**Swamp**](https://github.com/swamp/swamp) - Game development framework
 - [**Limnus**](https://github.com/swamp/limnus) - Core game engine functionality 
 
+## Installation
+
+Download the executable from the [Releases])(https://github.com/swamp/mangrove/releases), or if you want to build it yourself:
+
+```bash
+cargo install --path crates/mangrove/
+```
+
+## Examples
+
+Execute `mangrove` while you are in this [`examples/`](examples/README.md) directory.
 
 ## About Contributions
 
