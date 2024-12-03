@@ -11,6 +11,11 @@ impl MyTest {
             print('tick: {self.tick_count}')
         }
     }
+
+    fn render(self, mut gfx: mangrove::Gfx) {
+        x = 100 + self.tick_count % 60
+        gfx.sprite(x, 100, 0, self.flying_material_ref)
+    }
 }
 
 

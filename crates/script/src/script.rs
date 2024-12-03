@@ -6,10 +6,10 @@ use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{fs, io};
-use swamp::prelude::GameAssets;
-use swamp::prelude::LocalResource;
 use swamp::prelude::ResourceStorage;
 use swamp::prelude::{Assets, MaterialRef};
+use swamp::prelude::{GameAssets, Render};
+use swamp::prelude::{LocalResource, UVec2, Vec3};
 use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, IdentifierName,
     ModulePath, Parameter, ParseModule, ResolveError, StructType, Type, Variable,
@@ -21,8 +21,8 @@ use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::{AstParser, Rule};
 use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
 use swamp_script_semantic::{
-    ExternalFunctionId, ResolvedModule, ResolvedParameter, ResolvedProgram, ResolvedStructType,
-    ResolvedStructTypeRef, ResolvedType,
+    ExternalFunctionId, ResolvedInternalFunctionDefinitionRef, ResolvedModule, ResolvedParameter,
+    ResolvedProgram, ResolvedStructType, ResolvedStructTypeRef, ResolvedType,
 };
 use tracing::trace;
 
@@ -129,6 +129,32 @@ pub struct ScriptIntegration {
 // I didn't want to change the implementation of GameAssets.
 // There might be a better way to do this, but I could not find a way.
 // Let's do some pointer magic
+pub struct RenderWrapper {
+    render: *mut Render,
+}
+
+impl RenderWrapper {
+    pub fn new(render: &mut Render) -> Self {
+        let ptr = render as *mut Render;
+        Self {
+            render: ptr as *mut Render, // Coerce. is there a better way?
+        }
+    }
+
+    pub fn push_sprite(&self, pos: Vec3, material_ref: &MaterialRef) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.draw_sprite(pos, UVec2::new(46, 30), material_ref);
+    }
+}
+
+// I didn't want to change the implementation of GameAssets.
+// There might be a better way to do this, but I could not find a way.
+// Let's do some pointer magic
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
     material_struct_type: ResolvedStructTypeRef,
@@ -165,7 +191,8 @@ impl GameAssetsWrapper {
 }
 
 pub struct ScriptContext {
-    game_assets: GameAssetsWrapper,
+    game_assets: Option<GameAssetsWrapper>,
+    render: Option<RenderWrapper>,
 }
 
 #[derive(LocalResource)]
@@ -174,6 +201,10 @@ pub struct Script {
     resolved_program: ResolvedProgram,
     externals: ExternalFunctions<ScriptContext>,
     material_handle_struct_ref: Option<ResolvedStructTypeRef>,
+    gfx_struct_value: Value,
+    render_fn: Option<ResolvedInternalFunctionDefinitionRef>,
+    tick_fn: Option<ResolvedInternalFunctionDefinitionRef>,
+    mutable_script_app_reference: Value,
 }
 
 impl Debug for Script {
@@ -189,6 +220,10 @@ impl Script {
             resolved_program: ResolvedProgram::new(),
             externals: ExternalFunctions::new(),
             material_handle_struct_ref: None,
+            gfx_struct_value: Value::Unit,
+            render_fn: None,
+            tick_fn: None,
+            mutable_script_app_reference: Value::Unit,
         }
     }
 
@@ -200,7 +235,19 @@ impl Script {
         self.boot_call_main(resource_storage);
     }
 
-    pub fn tick(&mut self) {}
+    pub fn tick(&mut self) {
+        let mut script_context = ScriptContext {
+            game_assets: None,
+            render: None,
+        };
+
+        util_execute_function(
+            &self.externals,
+            self.tick_fn.as_ref().unwrap(),
+            &[self.mutable_script_app_reference.clone()].to_vec(),
+            &mut script_context,
+        );
+    }
 
     fn compile(&mut self, path: &Path) -> Result<Value, MangroveError> {
         let parser = AstParser::new();
@@ -217,12 +264,13 @@ impl Script {
 
         let mut mangrove_module = ResolvedModule::new(ModulePath(vec!["mangrove".to_string()]));
         let asset_struct = self.register_asset_struct(&mut mangrove_module.namespace)?;
-
         self.material_handle_struct_ref = Some(
             mangrove_module
                 .namespace
                 .util_insert_struct_type("MaterialHandle", &[("hidden", ResolvedType::Any)])?,
         );
+
+        self.gfx_struct_value = self.register_gfx_struct(&mut mangrove_module.namespace)?;
 
         let print_id = self.resolved_program.state.allocate_external_function_id();
 
@@ -319,10 +367,11 @@ impl Script {
             let mut game_assets = GameAssets::new(&mut resource_storage, Millis::new(0));
 
             let mut script_context = ScriptContext {
-                game_assets: GameAssetsWrapper::new(
+                game_assets: Some(GameAssetsWrapper::new(
                     &mut game_assets,
                     self.material_handle_struct_ref.as_ref().unwrap().clone(),
-                ),
+                )),
+                render: None,
             };
 
             script_app = util_execute_function(
@@ -339,7 +388,8 @@ impl Script {
             _ => panic!("only support struct for now"),
         };
 
-        let mutable_reference = Value::Reference(Rc::new(RefCell::new(script_app.clone())));
+        self.mutable_script_app_reference =
+            Value::Reference(Rc::new(RefCell::new(script_app.clone())));
 
         let identifier_name = IdentifierName("tick".to_string());
         let tick_fn = &struct_type_ref
@@ -347,7 +397,35 @@ impl Script {
             .get_internal_member(identifier_name)
             .expect("must have tick");
 
+        self.tick_fn = Some(tick_fn.clone());
+
+        let identifier_name = IdentifierName("render".to_string());
+        let render_fn = &struct_type_ref
+            .borrow()
+            .get_internal_member(identifier_name)
+            .expect("must have render");
+
+        self.render_fn = Some(render_fn.clone());
+
         Ok(())
+    }
+
+    pub fn render(&mut self, mut wgpu_render: &mut Render) {
+        let mut script_context = ScriptContext {
+            game_assets: None,
+            render: Some(RenderWrapper::new(wgpu_render)),
+        };
+
+        util_execute_function(
+            &self.externals,
+            self.render_fn.as_ref().unwrap(),
+            &[
+                self.mutable_script_app_reference.clone(),
+                self.gfx_struct_value.clone(),
+            ]
+            .to_vec(),
+            &mut script_context,
+        );
     }
 
     pub fn register_asset_struct(
@@ -411,10 +489,149 @@ impl Script {
 
                 println!("material_png called with (self:{self_value} asset_name:'{asset_name}')");
 
-                Ok(context.game_assets.material_png(asset_name))
+                Ok(context
+                    .game_assets
+                    .as_mut()
+                    .unwrap()
+                    .material_png(asset_name))
             },
         )?;
 
         Ok(assets_value_mut)
+    }
+
+    pub fn register_gfx_struct(
+        &mut self,
+        namespace: &mut ResolvedModuleNamespace,
+    ) -> Result<Value, MangroveError> {
+        let value = 3;
+        let (gfx_value, assets_type) = Value::new_hidden_rust_type("Gfx", value, namespace)?;
+        let gfx_value_mut = Value::Reference(Rc::new(RefCell::new(gfx_value.clone())));
+
+        let assets_general_type = ResolvedType::Struct(assets_type.clone());
+
+        let mut_self_parameter = ResolvedParameter {
+            name: "self".to_string(),
+            resolved_type: assets_general_type.clone(),
+            ast_parameter: Parameter {
+                variable: Variable {
+                    name: "self".to_string(),
+                    is_mutable: false,
+                },
+                param_type: Type::Int,
+                is_mutable: true,
+                is_self: true,
+            },
+            is_mutable: true,
+        };
+
+        let string_type = self.resolved_program.types.string_type();
+        let material_handle = ResolvedParameter {
+            name: "material_handle".to_string(),
+            resolved_type: string_type,
+            ast_parameter: Parameter {
+                variable: Variable {
+                    name: "".to_string(),
+                    is_mutable: false,
+                },
+                param_type: Type::Any,
+                is_mutable: false,
+                is_self: false,
+            },
+            is_mutable: false,
+        };
+
+        let x_param = ResolvedParameter {
+            name: "x".to_string(),
+            resolved_type: self.resolved_program.types.int_type(),
+            ast_parameter: Parameter {
+                variable: Variable {
+                    name: "".to_string(),
+                    is_mutable: false,
+                },
+                param_type: Type::Int,
+                is_mutable: false,
+                is_self: false,
+            },
+            is_mutable: false,
+        };
+
+        let y_param = ResolvedParameter {
+            name: "y".to_string(),
+            resolved_type: self.resolved_program.types.int_type(),
+            ast_parameter: Parameter {
+                variable: Variable {
+                    name: "".to_string(),
+                    is_mutable: false,
+                },
+                param_type: Type::Int,
+                is_mutable: false,
+                is_self: false,
+            },
+            is_mutable: false,
+        };
+
+        let z_param = ResolvedParameter {
+            name: "z".to_string(),
+            resolved_type: self.resolved_program.types.int_type(),
+            ast_parameter: Parameter {
+                variable: Variable {
+                    name: "".to_string(),
+                    is_mutable: false,
+                },
+                param_type: Type::Int,
+                is_mutable: false,
+                is_self: false,
+            },
+            is_mutable: false,
+        };
+
+        let unique_id: ExternalFunctionId =
+            self.resolved_program.state.allocate_external_function_id();
+
+        let _material_png_fn = namespace.util_add_member_external_function(
+            &assets_general_type,
+            "sprite",
+            unique_id,
+            &[
+                mut_self_parameter,
+                x_param,
+                y_param,
+                z_param,
+                material_handle,
+            ],
+            self.resolved_program.types.int_type(),
+        )?;
+
+        self.externals.register_external_function(
+            "sprite",
+            unique_id,
+            move |params: &[Value], context| {
+                let self_value = &params[0];
+                let x = params[1].expect_int()?;
+                let y = params[2].expect_int()?;
+                let z = params[3].expect_int()?;
+
+                let pos = Vec3::new(x as i16, y as i16, z as i16);
+
+                let material_ref = params[4].downcast_hidden_rust::<MaterialRef>().unwrap();
+
+                println!(
+                    "gfx.sprite called with (self:{self_value} asset_name:'{}')",
+                    material_ref.borrow().asset_name().unwrap()
+                );
+
+                context
+                    .render
+                    .as_mut()
+                    .unwrap()
+                    .push_sprite(pos, &material_ref.borrow());
+
+                Ok(Value::Unit)
+                //Ok(context.render.sprite(asset_name))
+            },
+        )?;
+
+        Ok(gfx_value_mut)
     }
 }

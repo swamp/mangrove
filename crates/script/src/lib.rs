@@ -4,15 +4,28 @@ use crate::script::Script;
 
 use swamp::prelude::*;
 
-pub fn script_tick(
+pub fn logic_tick(mut script: LoReM<Script>) {
+    script.tick();
+}
+
+pub fn render_tick(mut script: LoReM<Script>, mut wgpu_render: ReM<Render>) {
+    script.render(&mut wgpu_render);
+}
+
+pub fn flush_render_tick(
     mut script: LoReM<Script>,
-    window: Re<WgpuWindow>,
+    wgpu_window: Re<WgpuWindow>,
     mut wgpu_render: ReM<Render>,
-    mut all_resources: ReAll,
+    materials: Re<LimnusAssets<Material>>,
+    fonts: Re<LimnusAssets<Font>>,
 ) {
     let now = script.now();
 
-    script.tick();
+    wgpu_window
+        .render(wgpu_render.clear_color(), |render_pass| {
+            wgpu_render.render(render_pass, &materials, &fonts, now)
+        })
+        .unwrap();
 }
 
 pub struct ScriptPlugin;
@@ -24,7 +37,9 @@ impl Plugin for ScriptPlugin {
 
         script.boot(&mut all_resources);
 
-        app.add_system(UpdatePhase::Update, script_tick);
+        app.add_system(UpdatePhase::Update, logic_tick);
+        app.add_system(UpdatePhase::Update, render_tick);
+        app.add_system(UpdatePhase::Update, flush_render_tick);
         app.insert_local_resource(script);
     }
 }
