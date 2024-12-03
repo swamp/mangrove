@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
+ * Licensed under the MIT License. See LICENSE in the project root for license information.
+ */
+
 use monotonic_time_rs::{InstantMonotonicClock, Millis, MonotonicClock};
 use seq_map::SeqMapError;
 use std::cell::RefCell;
@@ -272,8 +277,6 @@ pub fn register_asset_struct_value_with_members(
         move |params: &[Value], context| {
             let self_value = &params[0];
             let asset_name = &params[1].expect_string()?;
-
-            println!("material_png called with (self:{self_value} asset_name:'{asset_name}')");
 
             Ok(context
                 .game_assets
