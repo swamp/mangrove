@@ -1,8 +1,8 @@
-# Mangrove
-
 <p align="center">
   <img src="docs/images/mangrove.png" alt="Mangrove Game Engine" width="200">
 </p>
+
+# Mangrove
 
 A cool 2D game engine that combines the power of [Limnus](https://github.com/swamp/limnus), 
 [Swamp](https://github.com/swamp/swamp) and [Swamp Script](https://github.com/swamp/script)
