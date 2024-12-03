@@ -1646,9 +1646,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5592dc2e0c67700bcf49ff2bc0724e970269e62f8b8e7c305339fad8f76d298"
 dependencies = [
  "limnus-app",
- "limnus-asset-id 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-asset-id",
  "limnus-asset-registry",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-assets-loader",
  "limnus-audio-device",
  "limnus-audio-mixer",
@@ -1659,9 +1659,9 @@ dependencies = [
  "limnus-gamepad-gilrs",
  "limnus-loader",
  "limnus-log",
- "limnus-macros 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-macros",
  "limnus-message",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-screen",
  "limnus-system-params",
  "limnus-system-runner",
@@ -1679,20 +1679,10 @@ checksum = "53d0ac767b56090ee3e65c7cf535b8251be3f6bad68552c7970f51a6ff5b29bd"
 dependencies = [
  "limnus-local-resource",
  "limnus-message",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-system",
  "limnus-system-runner",
  "limnus-system-state",
- "tracing",
-]
-
-[[package]]
-name = "limnus-asset-id"
-version = "0.0.11"
-dependencies = [
- "colored",
- "fixstr 0.0.1",
- "message-channel",
  "tracing",
 ]
 
@@ -1717,10 +1707,10 @@ dependencies = [
  "chunk-reader",
  "future-runner",
  "limnus-app",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-assets-loader",
  "limnus-loader",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-system-params",
  "limnus-system-runner",
  "message-channel",
@@ -1730,23 +1720,12 @@ dependencies = [
 [[package]]
 name = "limnus-assets"
 version = "0.0.11"
-dependencies = [
- "limnus-asset-id 0.0.11",
- "limnus-macros 0.0.11",
- "limnus-resource 0.0.11",
- "sparse-slot",
- "tracing",
-]
-
-[[package]]
-name = "limnus-assets"
-version = "0.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "505c5c81b14b530f2a76a0005eb2217b4b0d2ef49635782260570888211bd9d5"
 dependencies = [
- "limnus-asset-id 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "limnus-macros 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-asset-id",
+ "limnus-macros",
+ "limnus-resource",
  "sparse-slot",
  "tracing",
 ]
@@ -1758,8 +1737,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fcc9791095e21c4f24a468b5a425d6e1b85b190cd921c4497a07809318cb18d"
 dependencies = [
  "limnus-app",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
+ "limnus-resource",
  "tracing",
 ]
 
@@ -1782,7 +1761,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0094680af4bf0b3bd0e5f6270cbd02f60d7ff50f58b3c8b63b9f60cf03f28529"
 dependencies = [
  "limnus-app",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-local-resource",
  "oddio",
 ]
@@ -1796,7 +1775,7 @@ dependencies = [
  "hound",
  "limnus-app",
  "limnus-asset-registry",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-assets-loader",
  "limnus-audio-mixer",
  "oddio",
@@ -1837,7 +1816,7 @@ dependencies = [
  "fixstr 0.0.3",
  "limnus-app",
  "limnus-message",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "tracing",
 ]
 
@@ -1865,8 +1844,8 @@ checksum = "7423f66c69f544b3f05c7fc3e0a2c4f48a2da0c7de2fd675e42c2417acb514ce"
 dependencies = [
  "chunk-reader",
  "limnus-app",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
+ "limnus-resource",
  "message-channel",
  "tracing",
 ]
@@ -1877,7 +1856,7 @@ version = "0.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e9565bf26f659b2ab8be478bfb622cfaea840ff3896c4115e436058b2de5ef09"
 dependencies = [
- "limnus-macros 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-macros",
 ]
 
 [[package]]
@@ -1897,14 +1876,6 @@ dependencies = [
 [[package]]
 name = "limnus-macros"
 version = "0.0.11"
-dependencies = [
- "quote",
- "syn",
-]
-
-[[package]]
-name = "limnus-macros"
-version = "0.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "024c0ce9c711b8eb57668695719270a2dabceb79f2cf4d2b21afa25c4319e405"
 dependencies = [
@@ -1918,16 +1889,9 @@ version = "0.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "023cf038c749415b370c838ddd707b5841ecaddf7c6592764a8e73b8e0d30d56"
 dependencies = [
- "limnus-macros 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-macros",
+ "limnus-resource",
  "tracing",
-]
-
-[[package]]
-name = "limnus-resource"
-version = "0.0.11"
-dependencies = [
- "limnus-macros 0.0.11",
 ]
 
 [[package]]
@@ -1936,7 +1900,7 @@ version = "0.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0acc822b753d10d610f69182ecf83fb81ffe7473f913cb7b8302d79ef9792afd"
 dependencies = [
- "limnus-macros 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-macros",
 ]
 
 [[package]]
@@ -1947,7 +1911,7 @@ checksum = "84855c85cfc6c372d0a65d32595bd88b9d05f053abd2f1605381bdf9df736f83"
 dependencies = [
  "int_math",
  "limnus-message",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
 ]
 
 [[package]]
@@ -1967,7 +1931,7 @@ checksum = "9afa1a38709d3770f241ca20561531affae1191e038f6a456adc8c51ca894380"
 dependencies = [
  "limnus-local-resource",
  "limnus-message",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-system",
  "limnus-system-state",
 ]
@@ -1990,7 +1954,7 @@ checksum = "fcc9a7dfc35deaa7d9c3d50cc3428d18d459f591376cfc26ee64d4f2a4da4bb7"
 dependencies = [
  "limnus-local-resource",
  "limnus-message",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
 ]
 
 [[package]]
@@ -2009,7 +1973,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "84c6a001b17a72e7bddfd8b6e13396fa96113e9d185227a848ac726b7b66a59f"
 dependencies = [
  "limnus-app",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-screen",
  "limnus-system-params",
  "limnus-system-runner",
@@ -2041,7 +2005,7 @@ dependencies = [
  "int_math",
  "limnus-app",
  "limnus-basic-input",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-screen",
  "limnus-wgpu-window",
  "limnus-window",
@@ -2111,8 +2075,18 @@ dependencies = [
 name = "mangrove"
 version = "0.0.1"
 dependencies = [
- "limnus-asset-id 0.0.11",
- "limnus-assets 0.0.11",
+ "mangrove-script",
+ "pest",
+ "seq-map",
+ "swamp",
+ "tracing",
+]
+
+[[package]]
+name = "mangrove-script"
+version = "0.0.1"
+dependencies = [
+ "monotonic-time-rs",
  "pest",
  "seq-map",
  "swamp",
@@ -3338,7 +3312,14 @@ dependencies = [
  "fixed32",
  "int_math",
  "limnus",
+ "limnus-app",
  "limnus-gamepad",
+ "limnus-local-resource",
+ "limnus-resource",
+ "limnus-screen",
+ "limnus-system-params",
+ "limnus-system-runner",
+ "limnus-wgpu-window",
  "monotonic-time-rs",
  "swamp-advanced-game",
  "swamp-boot-advanced-game",
@@ -3347,6 +3328,7 @@ dependencies = [
  "swamp-game",
  "swamp-game-assets",
  "swamp-game-audio",
+ "swamp-material",
  "swamp-render",
  "swamp-render-wgpu",
  "tracing",
@@ -3359,13 +3341,13 @@ dependencies = [
  "fixed32",
  "int_math",
  "limnus-app",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-audio-mixer",
  "limnus-basic-input",
  "limnus-gamepad",
  "limnus-local-resource",
  "limnus-message",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-screen",
  "limnus-system-params",
  "limnus-system-runner",
@@ -3413,7 +3395,7 @@ dependencies = [
  "int_math",
  "limnus-app",
  "limnus-asset-registry",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-assets-loader",
  "tracing",
 ]
@@ -3425,13 +3407,13 @@ dependencies = [
  "fixed32",
  "int_math",
  "limnus-app",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-audio-mixer",
  "limnus-basic-input",
  "limnus-gamepad",
  "limnus-local-resource",
  "limnus-message",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-screen",
  "limnus-system-params",
  "limnus-system-runner",
@@ -3450,11 +3432,11 @@ name = "swamp-game-assets"
 version = "0.0.12"
 dependencies = [
  "int_math",
- "limnus-asset-id 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-asset-id",
  "limnus-asset-registry",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-audio-mixer",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "monotonic-time-rs",
  "swamp-font",
  "swamp-render-wgpu",
@@ -3465,7 +3447,7 @@ dependencies = [
 name = "swamp-game-audio"
 version = "0.0.12"
 dependencies = [
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-audio-mixer",
  "tracing",
 ]
@@ -3476,11 +3458,11 @@ version = "0.0.12"
 dependencies = [
  "image",
  "limnus-app",
- "limnus-asset-id 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-asset-id",
  "limnus-asset-registry",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
  "limnus-assets-loader",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-resource",
  "limnus-wgpu-window",
  "swamp-render-wgpu",
  "swamp-wgpu-sprites",
@@ -3503,8 +3485,8 @@ dependencies = [
  "bytemuck",
  "int_math",
  "limnus-app",
- "limnus-assets 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
- "limnus-resource 0.0.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "limnus-assets",
+ "limnus-resource",
  "limnus-screen",
  "limnus-system-params",
  "limnus-system-runner",

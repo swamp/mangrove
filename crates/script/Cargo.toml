@@ -1,0 +1,21 @@
+[package]
+name = "mangrove-script"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+swamp = { path = "../../../swamp/crates/swamp", version = "0.0.12" }
+
+# Swamp Script
+swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.2-a03" }
+swamp-script-eval-loader = { path = "../../../script/crates/eval-loader", version = "0.0.2-a03" }
+swamp-script-parser = { path = "../../../script/crates/parser", version = "0.0.2-a03" }
+swamp-script-semantic = { path = "../../../script/crates/semantic", version = "0.0.2-a03" }
+swamp-script-eval = { path = "../../../script/crates/eval", version = "0.0.2-a03" }
+
+
+tracing = "0.1.41"
+seq-map = "0.0.11"
+
+pest = "2.7.14"
+monotonic-time-rs = "0.0.5"
