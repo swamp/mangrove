@@ -1,9 +1,8 @@
-struct MyTest {
+struct Logic {
     tick_count: Int,
-    flying_material_ref: mangrove::MaterialHandle,
 }
 
-impl MyTest {
+impl Logic {
     fn tick(mut self) {
         self.tick_count = self.tick_count + 1
 
@@ -12,18 +11,47 @@ impl MyTest {
         }
     }
 
-    fn render(self, mut gfx: mangrove::Gfx) {
-        x = 100 + self.tick_count % 60
+}
+
+struct Render {
+    flying_material_ref: mangrove::MaterialHandle,
+}
+
+
+impl Render {
+    fn new(mut assets: mangrove::Assets) -> Render {
+        flying_material_ref = assets.material_png('flying_46x30')
+
+        Render {
+            flying_material_ref: flying_material_ref,
+        }
+    }
+
+    fn render(self, logic: Logic, mut gfx: mangrove::Gfx) {
+        x = 100 + logic.tick_count % 60
         gfx.sprite(x, 100, 0, self.flying_material_ref)
     }
 }
 
+struct Audio {
+}
 
-fn main(mut assets: mangrove::Assets) -> MyTest {
-    flying_material_ref = assets.material_png('flying_46x30')
-
-    MyTest {
-        tick_count: 0,
-        flying_material_ref: flying_material_ref,
+impl Audio {
+    fn audio(self, logic: Logic)  {
     }
+}
+
+
+fn main(mut assets: mangrove::Assets) -> (Logic, Render, Audio) {
+    logic = Logic {
+        tick_count: 0,
+    }
+
+    render = Render::new(assets)
+
+    audio = Audio {
+
+    }
+
+    (logic, render, audio)
 }

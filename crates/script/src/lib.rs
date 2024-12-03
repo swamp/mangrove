@@ -34,12 +34,8 @@ pub struct ScriptPlugin;
 
 impl Plugin for ScriptPlugin {
     fn build(&self, app: &mut App) {
-        let mut all_resources = app.resources_mut();
-        let mut script = Script::new();
-
-        script
-            .boot(&mut all_resources)
-            .expect("script.boot() crashed");
+        let all_resources = app.resources_mut();
+        let script = Script::new(all_resources).expect("script.boot() crashed");
 
         app.add_system(UpdatePhase::Update, logic_tick);
         app.add_system(UpdatePhase::Update, render_tick);
