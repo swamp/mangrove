@@ -2,6 +2,9 @@
 name = "mangrove-save-detector"
 version = "0.0.2"
 edition = "2021"
+license = "MIT"
+description = "Detects file changes and sends message to mangrove script plugin"
+repository = "https://github.com/swamp/mangrove"
 
 [dependencies]
 notify = "7.0.0"
