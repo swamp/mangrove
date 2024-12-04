@@ -1,6 +1,6 @@
 [package]
 name = "mangrove-save-detector"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 
 [dependencies]
@@ -8,4 +8,4 @@ notify = "7.0.0"
 swamp = "0.0.13"
 limnus-message = "0.0.12"
 message-channel = "0.0.1"
-mangrove-script = { path = "../script", version = "0.0.1" }
+mangrove-script = { path = "../script", version = "0.0.2" }

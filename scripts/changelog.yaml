@@ -20,6 +20,11 @@ repo: swamp/mangrove
 # security
 
 releases:
+  v0.0.2:
+    date: "2024-12-04"
+    notice: |
+      - Basic hotload script support. Doesn't convert the state, but clears the state and reloads the script.
+
   v0.0.1:
     date: "2024-12-03"
     notice: |

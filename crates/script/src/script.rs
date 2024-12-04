@@ -28,7 +28,7 @@ use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
 use swamp_script_semantic::{
     ExternalFunctionId, ResolvedInternalFunctionDefinitionRef, ResolvedModule, ResolvedModules,
     ResolvedParameter, ResolvedProgramState, ResolvedProgramTypes, ResolvedStructTypeRef,
-    ResolvedTupleType, ResolvedTupleTypeRef, ResolvedType,
+    ResolvedTupleType, ResolvedType,
 };
 use tracing::trace;
 
