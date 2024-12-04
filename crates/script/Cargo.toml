@@ -8,6 +8,7 @@ repository = "https://github.com/swamp/mangrove"
 
 [dependencies]
 swamp = "0.0.13"
+limnus-message = "0.0.12"
 
 # Swamp Script
 swamp-script = "0.0.4"

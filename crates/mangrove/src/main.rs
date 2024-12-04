@@ -3,6 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 
+use mangrove_save_detector::SaveDetectorPlugin;
 use mangrove_script::ScriptPlugin;
 use swamp::prelude::SwampDefaultPlugins;
 use swamp::prelude::*;
@@ -18,5 +19,6 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(SwampDefaultPlugins) // these should be in SwampDefaultPlugins
         .add_plugins(ScriptPlugin)
+        .add_plugins(SaveDetectorPlugin)
         .run();
 }
