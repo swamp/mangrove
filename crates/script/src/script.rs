@@ -21,6 +21,7 @@ use swamp_script::prelude::{
 };
 use swamp_script::ScriptResolveError;
 use swamp_script_eval::prelude::Value;
+use swamp_script_eval::value::ConversionError;
 use swamp_script_eval::{util_execute_function, ExecuteError, ExternalFunctions};
 use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::{AstParser, Rule};
@@ -28,7 +29,7 @@ use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
 use swamp_script_semantic::{
     ExternalFunctionId, ResolvedInternalFunctionDefinitionRef, ResolvedModule, ResolvedModules,
     ResolvedParameter, ResolvedProgramState, ResolvedProgramTypes, ResolvedStructTypeRef,
-    ResolvedType,
+    ResolvedTupleType, ResolvedTupleTypeRef, ResolvedType,
 };
 use tracing::trace;
 
@@ -289,6 +290,31 @@ pub fn register_asset_struct_value_with_members(
     Ok(assets_value_mut)
 }
 
+fn vec3_like(v: &Value) -> Result<Vec3, ConversionError> {
+    match v {
+        Value::Tuple(_, fields) => {
+            let x = fields[0].expect_int()?;
+            let y = fields[1].expect_int()?;
+            let z = fields[2].expect_int()?;
+
+            Ok(Vec3::new(x as i16, y as i16, z as i16))
+        }
+        _ => Err(ConversionError::ValueError("not a vec3".to_string())),
+    }
+}
+
+fn uvec2_like(v: &Value) -> Result<UVec2, ConversionError> {
+    match v {
+        Value::Tuple(_, fields) => {
+            let width = fields[0].expect_int()?;
+            let height = fields[1].expect_int()?;
+
+            Ok(UVec2::new(width as u16, height as u16))
+        }
+        _ => Err(ConversionError::ValueError("not a vec3".to_string())),
+    }
+}
+
 pub fn register_gfx_struct_value_with_members(
     types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
@@ -330,69 +356,31 @@ pub fn register_gfx_struct_value_with_members(
         is_mutable: false,
     };
 
-    let x_param = ResolvedParameter {
-        name: "x".to_string(),
-        resolved_type: types.int_type(),
+    let int_type = types.int_type();
+    let tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
+    let tuple_type_ref = Rc::new(tuple_type);
+
+    let position_param = ResolvedParameter {
+        name: "position".to_string(),
+        resolved_type: ResolvedType::Tuple(tuple_type_ref),
         ast_parameter: Parameter {
             variable: Variable {
                 name: "".to_string(),
                 is_mutable: false,
             },
-            param_type: Type::Int,
+            param_type: Type::Any,
             is_mutable: false,
             is_self: false,
         },
         is_mutable: false,
     };
 
-    let y_param = ResolvedParameter {
-        name: "y".to_string(),
-        resolved_type: types.int_type(),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Int,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
-    };
+    let size_int_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
+    let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
 
-    let z_param = ResolvedParameter {
-        name: "z".to_string(),
-        resolved_type: types.int_type(),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Int,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
-    };
-
-    let width_param = ResolvedParameter {
-        name: "width".to_string(),
-        resolved_type: types.int_type(),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Int,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
-    };
-
-    let height_param = ResolvedParameter {
-        name: "height".to_string(),
-        resolved_type: types.int_type(),
+    let size_param = ResolvedParameter {
+        name: "size".to_string(),
+        resolved_type: ResolvedType::Tuple(size_int_tuple_type_ref),
         ast_parameter: Parameter {
             variable: Variable {
                 name: "".to_string(),
@@ -413,12 +401,9 @@ pub fn register_gfx_struct_value_with_members(
         unique_id,
         &[
             mut_self_parameter,
-            x_param,
-            y_param,
-            z_param,
+            position_param,
             material_handle,
-            width_param,
-            height_param,
+            size_param,
         ],
         types.int_type(),
     )?;
@@ -428,24 +413,17 @@ pub fn register_gfx_struct_value_with_members(
         unique_id,
         move |params: &[Value], context| {
             //let _self_value = &params[0]; // the Gfx struct is empty by design.
-            let x = params[1].expect_int()?;
-            let y = params[2].expect_int()?;
-            let z = params[3].expect_int()?;
+            let position = vec3_like(&params[1])?;
 
-            let pos = Vec3::new(x as i16, y as i16, z as i16);
+            let material_ref = params[2].downcast_hidden_rust::<MaterialRef>().unwrap();
 
-            let material_ref = params[4].downcast_hidden_rust::<MaterialRef>().unwrap();
-
-            let size = UVec2::new(
-                params[5].expect_int()? as u16,
-                params[6].expect_int()? as u16,
-            );
+            let size = uvec2_like(&params[3])?;
 
             context
                 .render
                 .as_mut()
                 .unwrap()
-                .push_sprite(pos, &material_ref.borrow(), size);
+                .push_sprite(position, &material_ref.borrow(), size);
 
             Ok(Value::Unit)
         },

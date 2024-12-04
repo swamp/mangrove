@@ -36,10 +36,22 @@ pub fn flush_render_tick(
         .unwrap();
 }
 
-pub fn detect_reload_tick(script_messages: Msg<ScriptMessage>) {
+pub fn detect_reload_tick(
+    script_messages: Msg<ScriptMessage>,
+    mut script_runtime: LoReM<Script>,
+    mut all_resources: ReAll,
+) {
     for msg in script_messages.iter_previous() {
         match msg {
-            ScriptMessage::Reload => info!("SHOULD RELOAD NOW!"),
+            ScriptMessage::Reload => match Script::new(&mut all_resources) {
+                Ok(new_compiled_script) => {
+                    *script_runtime = new_compiled_script;
+                }
+                Err(err) => {
+                    eprintln!("could not compile: {}", err);
+                    error!(err = ?err, "could not compile");
+                }
+            },
         }
     }
 }
