@@ -511,7 +511,7 @@ fn prepare_main_module(
     externals
         .register_external_function("print", print_id, move |args: &[Value], _| {
             if let Some(value) = args.first() {
-                let display_value = value.to_string();
+                let display_value = value.convert_to_string_if_needed();
                 println!("{}", display_value);
                 Ok(Value::Unit)
             } else {
