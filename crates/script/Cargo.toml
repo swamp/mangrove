@@ -11,13 +11,13 @@ swamp = "0.0.13"
 limnus-message = "0.0.12"
 
 # Swamp Script
-swamp-script = "0.0.4"
-swamp-script-eval-loader = "0.0.4"
-swamp-script-parser = "0.0.4"
-swamp-script-semantic = "0.0.4"
-swamp-script-eval = "0.0.4"
+swamp-script = { path = "../../../script/crates/swamp-script" }
+swamp-script-eval-loader = { path = "../../../script/crates/eval-loader" }
+swamp-script-parser = { path = "../../../script/crates/parser" }
+swamp-script-semantic = { path = "../../../script/crates/semantic" }
+swamp-script-eval = { path = "../../../script/crates/eval" }
 
 tracing = "0.1.41"
-seq-map = "0.0.11"
+seq-map = "0.0.12"
 pest = "2.7.14"
 monotonic-time-rs = "0.0.5"

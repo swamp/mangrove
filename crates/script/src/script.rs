@@ -19,17 +19,12 @@ use swamp_script::prelude::{
     ModulePath, Parameter, ParseModule, ResolveError, Type, Variable,
 };
 use swamp_script::ScriptResolveError;
-use swamp_script_eval::prelude::Value;
-use swamp_script_eval::value::ConversionError;
-use swamp_script_eval::{util_execute_function, ExecuteError, ExternalFunctions};
+use swamp_script_eval::prelude::*;
 use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::{AstParser, Rule};
-use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
-use swamp_script_semantic::{
-    ExternalFunctionId, ResolvedInternalFunctionDefinitionRef, ResolvedModule, ResolvedModules,
-    ResolvedParameter, ResolvedProgramState, ResolvedProgramTypes, ResolvedStructTypeRef,
-    ResolvedTupleType, ResolvedType,
-};
+//use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
+use swamp_script_semantic::prelude::*;
+use swamp_script_semantic::ResolvedRustType;
 use tracing::trace;
 
 fn resolve_swamp_file(path: &Path) -> Result<PathBuf, String> {
@@ -159,19 +154,29 @@ impl RenderWrapper {
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
     material_struct_type: ResolvedStructTypeRef,
+    material_rust_type_ref: ResolvedRustTypeRef,
 }
 
 impl GameAssetsWrapper {
-    pub fn new(game_assets: &mut GameAssets, material_struct_type: ResolvedStructTypeRef) -> Self {
+    pub fn new(
+        game_assets: &mut GameAssets,
+        material_struct_type: ResolvedStructTypeRef,
+        material_rust_type_ref: ResolvedRustTypeRef,
+    ) -> Self {
         let ptr = game_assets as *mut GameAssets;
         Self {
             game_assets: ptr as *mut GameAssets<'static>, // Coerce to 'static. is there a better way?
             material_struct_type,
+            material_rust_type_ref,
         }
     }
 
     fn material_handle(&self, material_ref: MaterialRef) -> Value {
-        let material_ref_value = Value::RustValue(Rc::new(RefCell::new(Box::new(material_ref))));
+        let material_ref_value = Value::RustValue(
+            self.material_rust_type_ref.clone(),
+            Rc::new(RefCell::new(Box::new(material_ref))),
+        );
+
         Value::Struct(
             self.material_struct_type.clone(),
             [material_ref_value].to_vec(),
@@ -224,6 +229,7 @@ pub fn register_asset_struct_value_with_members(
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptContext>,
     namespace: &mut ResolvedModuleNamespace,
+    material_struct_type_ref: ResolvedStructTypeRef,
 ) -> Result<Value, MangroveError> {
     let (assets_value, assets_type) = create_empty_struct_value_util(namespace, "Assets")?;
     let assets_value_mut = Value::Reference(Rc::new(RefCell::new(assets_value.clone())));
@@ -268,7 +274,7 @@ pub fn register_asset_struct_value_with_members(
         "material_png",
         unique_id,
         &[mut_self_parameter, asset_name_parameter],
-        types.int_type(),
+        ResolvedType::Struct(material_struct_type_ref),
     )?;
 
     externals.register_external_function(
@@ -435,14 +441,24 @@ fn create_mangrove_module(
     types: &ResolvedProgramTypes,
     mut state: &mut ResolvedProgramState,
     mut externals: &mut ExternalFunctions<ScriptContext>,
+    material_handle_rust_type_ref: ResolvedRustTypeRef,
 ) -> Result<(ResolvedModule, Value, Value, ResolvedStructTypeRef), MangroveError> {
     let mut mangrove_module = ResolvedModule::new(ModulePath(vec!["mangrove".to_string()]));
+
+    let material_handle_struct_ref = mangrove_module.namespace.util_insert_struct_type(
+        "MaterialHandle",
+        &[(
+            "hidden",
+            ResolvedType::RustType(material_handle_rust_type_ref.clone()),
+        )],
+    )?;
 
     let assets_struct_value = register_asset_struct_value_with_members(
         &types,
         &mut state,
         &mut externals,
         &mut mangrove_module.namespace,
+        material_handle_struct_ref.clone(),
     )?;
 
     let gfx_struct_value = register_gfx_struct_value_with_members(
@@ -451,10 +467,6 @@ fn create_mangrove_module(
         &mut externals,
         &mut mangrove_module.namespace,
     )?;
-
-    let material_handle_struct_ref = mangrove_module
-        .namespace
-        .util_insert_struct_type("MaterialHandle", &[("hidden", ResolvedType::Any)])?;
 
     Ok((
         mangrove_module,
@@ -533,11 +545,12 @@ fn compile(
     mut state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptContext>,
     mut modules: &mut ResolvedModules,
+    material_handle_rust_type_ref: ResolvedRustTypeRef,
 ) -> Result<(Value, Value, ResolvedStructTypeRef), MangroveError> {
     let parsed_module = parse_module(PathBuf::from(path))?;
 
     let (mangrove_module, assets_value, gfx_value, material_struct_ref) =
-        create_mangrove_module(types, state, externals)?;
+        create_mangrove_module(types, state, externals, material_handle_rust_type_ref)?;
     let main_module = prepare_main_module(types, state, externals)?;
     let main_path = main_module.module_path.clone();
     modules.add_module(main_module)?;
@@ -567,6 +580,7 @@ fn boot_call_main(
     main_module: &ResolvedModule,
     mut resource_storage: &mut ResourceStorage,
     material_handle_struct_ref: ResolvedStructTypeRef,
+    material_handle_rust_type_ref: ResolvedRustTypeRef,
     externals: &ExternalFunctions<ScriptContext>,
     assets_value_mut: Value,
 ) -> Result<
@@ -593,6 +607,7 @@ fn boot_call_main(
             game_assets: Some(GameAssetsWrapper::new(
                 &mut game_assets,
                 material_handle_struct_ref.clone(),
+                material_handle_rust_type_ref,
             )),
             render: None,
         };
@@ -680,12 +695,18 @@ impl Script {
         let types = ResolvedProgramTypes::new();
         let mut externals = ExternalFunctions::<ScriptContext>::new();
 
+        let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
+            type_name: "MaterialHandle".to_string(),
+            number: 91,
+        });
+
         let (assets_value_mut, gfx_value_mut, material_struct_ref) = compile(
             Path::new("scripts/main.swamp"),
             &types,
             &mut state,
             &mut externals,
             &mut modules,
+            material_handle_rust_type_ref.clone(),
         )?;
 
         let main_module = modules
@@ -697,6 +718,7 @@ impl Script {
                 main_module,
                 resource_storage,
                 material_struct_ref.clone(),
+                material_handle_rust_type_ref,
                 &externals,
                 assets_value_mut,
             )?;

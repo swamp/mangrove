@@ -1788,7 +1788,7 @@ dependencies = [
  "limnus-asset-id",
  "limnus-macros",
  "limnus-resource",
- "sparse-slot",
+ "sparse-slot 0.0.1",
  "tracing",
 ]
 
@@ -3258,9 +3258,9 @@ checksum = "53c590392453030c0114e051a02cc7a222b63f329307eeed91f95e3a548bfe5a"
 
 [[package]]
 name = "seq-map"
-version = "0.0.11"
+version = "0.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8974a8afd8d0506229c7b2cbdcdb332ccc8aae705b7841b5a3647228250c9d40"
+checksum = "3615451ea918ebb7d4112561b9162a3b6a9354882117ab81a35f46285af77645"
 
 [[package]]
 name = "serde"
@@ -3395,6 +3395,12 @@ name = "sparse-slot"
 version = "0.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5581913f8a88c0b7dfbc1e8208de08d027f471be279b07573f5c381a77ada068"
+
+[[package]]
+name = "sparse-slot"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ece15de81f5776fd7731176cfa9c617d3f965542e9799717cde7a352ace66e5a"
 
 [[package]]
 name = "spirv"
@@ -3638,9 +3644,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6916b775911ff814ba26e9a2aa10bb762e8069daf227f1c91fdb39fd28be2866"
+version = "0.0.6"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3653,9 +3657,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-analyzer"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d64d59b2c3f6ff3a7d0a805a8af367a65675938255590aa35ccc4d943c08e312"
+version = "0.0.6"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3665,9 +3667,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-ast"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c1abc133e4281b3c9c6ac4cd7a4d4be0c25d94ca46e26d12ee406d16e0e922f"
+version = "0.0.6"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3675,9 +3675,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-dep-loader"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21ee15fc90ddf9dd09c9e4b4b78dd77ef936a9d6981849e64066b67b6374334d"
+version = "0.0.6"
 dependencies = [
  "pest",
  "seq-map",
@@ -3688,21 +3686,19 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29fffb1dc4309f63171b8e8b6986f4912fa4cb8a6a7c5a889a4e70b2d85230e2"
+version = "0.0.6"
 dependencies = [
  "fixed32",
  "seq-fmt",
+ "seq-map",
+ "sparse-slot 0.0.3",
  "swamp-script-semantic",
  "tracing",
 ]
 
 [[package]]
 name = "swamp-script-eval-loader"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83e7f3f3cb677a2f41e9fb79948f88e270dc377908866ce288c2ad3d8a9403a7"
+version = "0.0.6"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3712,9 +3708,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-parser"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "becf223db1ac18915c43d6d6a403cfd17b42c07963ea8d305b85e2fa61ab998a"
+version = "0.0.6"
 dependencies = [
  "fixed32",
  "pest",
@@ -3726,9 +3720,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-semantic"
-version = "0.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a62f8f8e4bb93597e8217b0070598703ac984817d43f732aaa390a4671a7f529"
+version = "0.0.6"
 dependencies = [
  "fixed32",
  "seq-fmt",
