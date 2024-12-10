@@ -4,6 +4,7 @@ struct Render {
 }
 
 impl Render {
+
     fn new(mut assets: mangrove::render::Assets) -> Render {
         player_ship_material = assets.material_png('player/ship_16x16')
 
@@ -12,6 +13,7 @@ impl Render {
         }
     }
 
+    /// Called by the mangrove engine every render tick
     fn render(self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
         x = logic.x.floor()
 
@@ -20,8 +22,10 @@ impl Render {
 
         gfx.sprite(player_ship_pos, self.player_ship_material, sprite_size) // sprite_size should be optional in future versions
     }
+
 }
 
+/// Called by the mangrove engine at startup
 fn main(mut assets: mangrove::render::Assets) -> Render {
     Render::new(assets)
 }

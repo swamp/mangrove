@@ -484,7 +484,7 @@ pub fn boot(
 
 pub fn render_tick(
     mut script: LoReM<ScriptRender>,
-    mut logic: LoRe<ScriptLogic>,
+    logic: LoRe<ScriptLogic>,
     mut wgpu_render: ReM<Render>,
 ) {
     script

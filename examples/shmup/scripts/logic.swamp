@@ -5,10 +5,10 @@ struct Logic {
 }
 
 impl Logic {
+
+    /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.x = self.x + self.direction
-
-
 
         self.tick_count = self.tick_count + 1
         if self.tick_count % 60 == 0 {
@@ -16,16 +16,17 @@ impl Logic {
         }
     }
 
-    fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) { // axis: Axis,
-        // print('gamepad: {gamepad} value: {value}') //axis: {axis}
+    /// Called by the mangrove egine when a gamepad axis changes
+    fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) {
         match axis {
             LeftStickX => self.direction = value * 4.0,
-            _ => print('axis: {axis} value: {value}'),
+            _ => print('not handled axis: {axis} value: {value}'),
         }
     }
+
 }
 
-
+/// Called by the mangrove engine at startup
 fn main() -> Logic {
     Logic {
         tick_count: 0,
