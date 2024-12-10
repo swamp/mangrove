@@ -16,7 +16,7 @@ impl Render {
         x = logic.x.floor()
 
         player_ship_pos = (x, 10, 0)
-        sprite_size = (46, 30)
+        sprite_size = (16, 16)
 
         gfx.sprite(player_ship_pos, self.player_ship_material, sprite_size) // sprite_size should be optional in future versions
     }

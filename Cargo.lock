@@ -2166,6 +2166,7 @@ dependencies = [
  "swamp-advanced-game",
  "swamp-script",
  "swamp-script-core",
+ "swamp-script-derive",
  "swamp-script-eval",
  "swamp-script-eval-loader",
  "swamp-script-parser",
@@ -3696,6 +3697,15 @@ dependencies = [
  "swamp-script-ast",
  "swamp-script-parser",
  "tracing",
+]
+
+[[package]]
+name = "swamp-script-derive"
+version = "0.0.2-a03"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

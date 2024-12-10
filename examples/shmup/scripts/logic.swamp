@@ -16,9 +16,12 @@ impl Logic {
         }
     }
 
-    fn gamepad_axis_changed(mut self, gamepad: Int, value: Float) { // axis: Axis,
+    fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) { // axis: Axis,
         // print('gamepad: {gamepad} value: {value}') //axis: {axis}
-        self.direction = value * 4.0
+        match axis {
+            LeftStickX => self.direction = value * 4.0,
+            _ => print('axis: {axis} value: {value}'),
+        }
     }
 }
 

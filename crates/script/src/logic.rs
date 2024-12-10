@@ -1,17 +1,16 @@
 use crate::script::{compile, MangroveError};
 use crate::util::{get_impl_func, get_impl_func_optional};
-use limnus_gamepad::{Axis, GamepadMessage};
+use limnus_gamepad::{Axis, AxisValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
 use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, UpdatePhase};
 use swamp_advanced_game::ApplicationLogic;
-use swamp_script::prelude::ModulePath;
-use swamp_script_core::prelude::Value;
+use swamp_script::prelude::{ModulePath, ResolveError};
+use swamp_script_core::prelude::*;
+use swamp_script_derive::SwampExportEnum;
 use swamp_script_eval::prelude::ExecuteError;
 use swamp_script_eval::{util_execute_function, ExternalFunctions};
-use swamp_script_semantic::{
-    ResolvedInternalFunctionDefinitionRef, ResolvedModuleRef, ResolvedProgram,
-};
+use swamp_script_semantic::prelude::*;
 
 pub fn logic_tick(mut script: LoReM<ScriptLogic>) {
     script.tick().expect("script.tick() crashed");
@@ -34,6 +33,8 @@ pub struct ScriptLogic {
     external_functions: ExternalFunctions<ScriptLogicContext>,
     script_context: ScriptLogicContext,
     resolved_program: ResolvedProgram,
+    axis_enum_type: ResolvedEnumTypeRef,
+    input_module: ResolvedModuleRef,
 }
 
 impl ScriptLogic {
@@ -43,6 +44,8 @@ impl ScriptLogic {
         gamepad_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
         external_functions: ExternalFunctions<ScriptLogicContext>,
         resolved_program: ResolvedProgram,
+        axis_enum_type: ResolvedEnumTypeRef,
+        input_module: ResolvedModuleRef,
     ) -> Self {
         Self {
             logic_value_ref,
@@ -51,6 +54,8 @@ impl ScriptLogic {
             external_functions,
             script_context: ScriptLogicContext {},
             resolved_program,
+            axis_enum_type,
+            input_module,
         }
     }
 
@@ -109,26 +114,76 @@ impl ScriptLogic {
             GamepadMessage::Activated(_) => {}
             GamepadMessage::ButtonChanged(_, _, _) => {}
             GamepadMessage::AxisChanged(gamepad_id, axis, value) => {
-                if *axis != Axis::LeftStickX {
-                    return;
-                }
-                if let Some(found_fn) = &self.gamepad_axis_changed_fn {
-                    let gamepad_id_value = Value::Int(*gamepad_id as i32);
-                    let axis_value = Value::Float(Fp::from(*value));
-
-                    let fn_ref = found_fn.clone(); // Assuming found_fn can be cloned
-
-                    self.execute(&fn_ref, &[gamepad_id_value, axis_value])
-                        .expect("gamepad_axis_changed");
-                }
+                self.axis_changed(gamepad_id, axis, value)
             }
         }
     }
+
+    fn axis_changed(&mut self, gamepad_id: &GamePadId, axis: &Axis, value: &AxisValueType) {
+        let script_axis_value = {
+            let input_module_ref = self.input_module.borrow();
+            let axis_str = match axis {
+                Axis::LeftStickX => "LeftStickX",
+                Axis::LeftStickY => "LeftStickY",
+                Axis::RightStickX => "RightStickX",
+                Axis::RightStickY => "RightStickY",
+            };
+
+            let variant = input_module_ref
+                .namespace
+                .get_enum_variant_type_str("Axis", axis_str)
+                .expect("axis");
+
+            Value::EnumVariantSimple(variant.clone())
+        };
+
+        if let Some(found_fn) = &self.gamepad_axis_changed_fn {
+            let gamepad_id_value = Value::Int(*gamepad_id as i32);
+            let axis_value = Value::Float(Fp::from(*value));
+
+            let fn_ref = found_fn.clone();
+
+            self.execute(&fn_ref, &[gamepad_id_value, script_axis_value, axis_value])
+                .expect("gamepad_axis_changed");
+        }
+    }
+}
+
+pub fn input_module(
+    resolve_state: &mut ResolvedProgramState,
+) -> Result<(ResolvedModule, ResolvedEnumTypeRef), ResolveError> {
+    let mut module = ResolvedModule::new(ModulePath(vec!["input".to_string()]));
+
+    let enum_type_id = resolve_state.allocate_number(); // TODO: HACK
+    let enum_type_ref = module
+        .namespace
+        .create_enum_type(&LocalTypeIdentifier::from_str("Axis"), enum_type_id)?;
+
+    let names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
+
+    for name in names {
+        let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
+        let variant = ResolvedEnumVariantType::new(
+            enum_type_ref.clone(),
+            LocalTypeIdentifier::from_str(name),
+            ResolvedEnumVariantContainerType::Nothing,
+            variant_type_id,
+        );
+        module.namespace.add_enum_variant(variant)?;
+    }
+
+    Ok((module, enum_type_ref))
 }
 
 pub fn boot() -> Result<ScriptLogic, MangroveError> {
     let mut resolved_program = ResolvedProgram::new();
     let mut external_functions = ExternalFunctions::<ScriptLogicContext>::new();
+
+    let (input_module, axis_enum_type) = input_module(&mut resolved_program.state)?;
+    let input_module_ref = Rc::new(RefCell::new(input_module));
+    resolved_program
+        .modules
+        .add_module(input_module_ref.clone())?;
 
     compile(
         "scripts/logic.swamp".as_ref(),
@@ -175,6 +230,8 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
         gamepad_changed_fn,
         external_functions,
         resolved_program,
+        axis_enum_type,
+        input_module_ref.clone(),
     ))
 }
 
