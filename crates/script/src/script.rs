@@ -2,9 +2,6 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-//use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
-use crate::render::ScriptRenderTypes;
-use monotonic_time_rs::{InstantMonotonicClock, Millis, MonotonicClock};
 use seq_map::SeqMapError;
 use std::cell::RefCell;
 use std::error::Error;
@@ -12,9 +9,6 @@ use std::fmt::{Debug, Display, Formatter};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{fs, io};
-use swamp::prelude::ResourceStorage;
-use swamp::prelude::{Assets, MaterialRef};
-use swamp::prelude::{GameAssets, Render};
 use swamp::prelude::{UVec2, Vec3};
 use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ModulePath, Parameter,

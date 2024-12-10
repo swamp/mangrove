@@ -8,7 +8,7 @@ repository = "https://github.com/swamp/mangrove"
 
 [dependencies]
 notify = "7.0.0"
-swamp = "0.0.13"
+swamp = { path = "../../../swamp/crates/swamp" }
 limnus-message = "0.0.12"
 message-channel = "0.0.1"
 mangrove-script = { path = "../script", version = "0.0.2" }

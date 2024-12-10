@@ -16,7 +16,7 @@ impl Logic {
         }
     }
 
-    /// Called by the mangrove egine when a gamepad axis changes
+    /// Called by the mangrove engine when a gamepad axis changes
     fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) {
         match axis {
             LeftStickX => self.direction = value * 4.0,

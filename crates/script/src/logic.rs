@@ -31,7 +31,7 @@ pub struct ScriptLogic {
     external_functions: ExternalFunctions<ScriptLogicContext>,
     script_context: ScriptLogicContext,
     resolved_program: ResolvedProgram,
-    axis_enum_type: ResolvedEnumTypeRef,
+    //axis_enum_type: ResolvedEnumTypeRef,
     input_module: ResolvedModuleRef,
 }
 
@@ -42,7 +42,7 @@ impl ScriptLogic {
         gamepad_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
         external_functions: ExternalFunctions<ScriptLogicContext>,
         resolved_program: ResolvedProgram,
-        axis_enum_type: ResolvedEnumTypeRef,
+        //axis_enum_type: ResolvedEnumTypeRef,
         input_module: ResolvedModuleRef,
     ) -> Self {
         Self {
@@ -52,7 +52,7 @@ impl ScriptLogic {
             external_functions,
             script_context: ScriptLogicContext {},
             resolved_program,
-            axis_enum_type,
+            //axis_enum_type,
             input_module,
         }
     }
@@ -228,7 +228,7 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
         gamepad_changed_fn,
         external_functions,
         resolved_program,
-        axis_enum_type,
+        // axis_enum_type,
         input_module_ref.clone(),
     ))
 }
