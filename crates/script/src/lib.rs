@@ -2,16 +2,29 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-mod script;
+use limnus_message::prelude::Message;
+use swamp::prelude::{App, Plugin};
 
+mod audio;
+pub mod logic;
+mod modules;
+mod render;
+mod script;
+pub mod temp;
+mod util;
+
+#[derive(Message, Debug)]
+pub enum ScriptMessage {
+    Reload,
+}
+
+/*
 use crate::script::Script;
 use limnus_message::prelude::Message;
 
+use crate::logic::ScriptLogicPlugin;
+use crate::modules::ScriptModulesPlugin;
 use swamp::prelude::*;
-
-pub fn logic_tick(mut script: LoReM<Script>) {
-    script.tick().expect("script.tick() crashed");
-}
 
 pub fn render_tick(mut script: LoReM<Script>, mut wgpu_render: ReM<Render>) {
     script
@@ -19,21 +32,11 @@ pub fn render_tick(mut script: LoReM<Script>, mut wgpu_render: ReM<Render>) {
         .expect("script.render() crashed");
 }
 
-pub fn flush_render_tick(
-    script: LoRe<Script>,
-    wgpu_window: Re<WgpuWindow>,
-    mut wgpu_render: ReM<Render>,
-    materials: Re<LimnusAssets<Material>>,
-    fonts: Re<LimnusAssets<Font>>,
-) {
-    let now = script.now();
+// TODO: Should be moved to swamp engine
 
-    wgpu_window
-        .render(wgpu_render.clear_color(), |render_pass| {
-            wgpu_render.render(render_pass, &materials, &fonts, now)
-        })
-        .unwrap();
-}
+*/
+
+/*
 
 pub fn detect_reload_tick(
     script_messages: Msg<ScriptMessage>,
@@ -54,23 +57,33 @@ pub fn detect_reload_tick(
         }
     }
 }
-#[derive(Message, Debug)]
-pub enum ScriptMessage {
-    Reload,
-}
+
 
 pub struct ScriptPlugin;
 
 impl Plugin for ScriptPlugin {
     fn build(&self, app: &mut App) {
         let all_resources = app.resources_mut();
-        let script = Script::new(all_resources).expect("script.boot() crashed");
+        //let script = Script::new(all_resources).expect("script.boot() crashed");
         app.create_message_type::<ScriptMessage>();
+        app.add_plugins(ScriptModulesPlugin);
+        app.add_plugins(ScriptLogicPlugin);
 
-        app.add_system(UpdatePhase::Update, detect_reload_tick);
-        app.add_system(UpdatePhase::Update, logic_tick);
+        // app.add_system(UpdatePhase::Update, detect_reload_tick);
+
         app.add_system(UpdatePhase::Update, render_tick);
-        app.add_system(UpdatePhase::Update, flush_render_tick);
+
         app.insert_local_resource(script);
+    }
+}
+
+
+ */
+
+pub struct ScriptPlugin;
+
+impl Plugin for ScriptPlugin {
+    fn build(&self, app: &mut App) {
+        app.create_message_type::<ScriptMessage>();
     }
 }

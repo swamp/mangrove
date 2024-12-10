@@ -1,28 +1,4 @@
 
-struct Logic {
-    tick_count: Int, /// how many ticks have passed
-    direction: Int, /// which direction the bats are moving
-    x: Int, /// This is just to to move the bats back and forth
-}
-
-impl Logic {
-    fn tick(mut self) {
-        self.tick_count = self.tick_count + 1
-        self.x = self.x + self.direction * 2
-
-        if self.x > 200 {
-            self.direction = -self.direction
-            self.x = 200
-        } else if self.x < -50 {
-            self.direction = -self.direction
-            self.x = -50
-        }
-
-        if self.tick_count % 60 == 0 {
-            print('tick: {self.tick_count}')
-        }
-    }
-}
 
 /// Handles the rendering of the game
 struct Render {
@@ -41,7 +17,7 @@ impl Render {
 
     fn render(self, logic: Logic, mut gfx: mangrove::Gfx) {
         x = logic.x
-        
+
         for i in 0..20 {
             bat_position = (x + i * 32, 10 + (i % 6) * 30, 0)
             sprite_size = (46, 30)
@@ -60,12 +36,7 @@ impl Audio {
 }
 
 
-fn main(mut assets: mangrove::Assets) -> (Logic, Render, Audio) {
-    logic = Logic {
-        tick_count: 0,
-        direction: 1,
-        x: 0,
-    }
+fn main(mut assets: mangrove::Assets) -> ( Render, Audio) {
 
     render = Render::new(assets)
 
@@ -73,5 +44,5 @@ fn main(mut assets: mangrove::Assets) -> (Logic, Render, Audio) {
 
     }
 
-    (logic, render, audio)
+    ( render, audio)
 }
