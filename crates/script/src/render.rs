@@ -1,12 +1,23 @@
-use crate::script::{create_empty_struct_value_util, uvec2_like, vec3_like, MangroveError};
+use crate::logic::ScriptLogic;
+use crate::script::{
+    compile, create_empty_struct_value_util, uvec2_like, vec3_like, MangroveError,
+};
+use crate::util::get_impl_func;
+use monotonic_time_rs::Millis;
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{GameAssets, LocalResource, MaterialRef, Render, UVec2, Vec3};
+use swamp::prelude::{
+    App, Assets, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Plugin, ReM, Render,
+    ResourceStorage, UVec2, UpdatePhase, Vec3,
+};
 use swamp_script::prelude::{Type, Variable};
 use swamp_script_core::prelude::Value;
-use swamp_script_eval::ExternalFunctions;
+use swamp_script_eval::prelude::ExecuteError;
+use swamp_script_eval::{util_execute_function, ExternalFunctions};
 use swamp_script_semantic::prelude::*;
+use tracing::info;
 
+#[derive(Debug)]
 pub struct ScriptRenderContext {
     pub(crate) game_assets: Option<GameAssetsWrapper>,
     pub(crate) render: Option<RenderWrapper>,
@@ -15,6 +26,7 @@ pub struct ScriptRenderContext {
 // I didn't want to change the implementation of GameAssets.
 // There might be a better way to do this, but I could not find a way.
 // Let's do some pointer magic
+#[derive(Debug)]
 pub struct RenderWrapper {
     render: *mut Render,
 }
@@ -41,6 +53,7 @@ impl RenderWrapper {
 // I didn't want to change the implementation of GameAssets.
 // There might be a better way to do this, but I could not find a way.
 // Let's do some pointer magic
+#[derive(Debug)]
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
     material_struct_type: ResolvedStructTypeRef,
@@ -80,10 +93,9 @@ impl GameAssetsWrapper {
         unsafe {
             assets = &mut *self.game_assets;
         }
-        // let material_ref = assets.material_png(name);
+        let material_ref = assets.material_png(name);
 
-        //self.material_handle(material_ref)
-        Value::Bool(false)
+        self.material_handle(material_ref)
     }
 }
 
@@ -281,94 +293,52 @@ pub fn register_asset_struct_value_with_members(
 
     Ok(assets_value_mut)
 }
-/*
 
-
-
-
-impl ScriptRenderTypes {
-    pub fn new() -> Result<(Self, ResolvedModule), SemanticError> {
-        let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
-            type_name: "MaterialHandle".to_string(),
-            number: 91,
-        });
-
-        let mut mangrove_render_module = ResolvedModule::new(ModulePath(vec![
-            "mangrove".to_string(),
-            "render".to_string(),
-        ]));
-        let material_handle_struct_ref = mangrove_render_module.namespace.util_insert_struct_type(
-            "MaterialHandle",
-            &[(
-                "hidden",
-                ResolvedType::RustType(material_handle_rust_type_ref.clone()),
-            )],
-        )?;
-
-        let assets_struct_value = register_asset_struct_value_with_members(
-            &types,
-            &mut state,
-            &mut externals,
-            &mut mangrove_module.namespace,
-            material_handle_struct_ref.clone(),
-        )?;
-
-        let gfx_struct_value = register_gfx_struct_value_with_members(
-            &types,
-            &mut state,
-            &mut externals,
-            &mut mangrove_module.namespace,
-        )?;
-
-        Ok((
-            Self {
-                material_handle_struct_ref,
-                assets_struct_value,
-                gfx_struct_value,
-            },
-            mangrove_render_module,
-        ))
-    }
-}
-
+#[derive(LocalResource, Debug)]
 pub struct ScriptRender {
     render_value_ref: Value,
     render_fn: ResolvedInternalFunctionDefinitionRef,
+    externals: ExternalFunctions<ScriptRenderContext>,
+    gfx_struct_value: Value,
 }
 
 impl ScriptRender {
-    pub fn init(
-        resource_storage: &mut ResourceStorage,
+    pub fn new(
+        //resource_storage: &mut ResourceStorage,
         render_value_ref: Value,
         render_struct_type_ref: ResolvedStructTypeRef,
+        externals: ExternalFunctions<ScriptRenderContext>,
+        gfx_struct_value: Value,
     ) -> Result<Self, MangroveError> {
         let render_fn = get_impl_func(&render_struct_type_ref, "render");
 
         Ok(Self {
             render_fn,
             render_value_ref,
+            gfx_struct_value,
+            externals,
         })
     }
 
     pub fn render(
         &mut self,
         wgpu_render: &mut Render,
-        externals: &ExternalFunctions<ScriptContext>,
         logic_value_ref: &Value,
-        gfx_struct_value: &Value,
     ) -> Result<(), ExecuteError> {
-        let mut script_context = ScriptContext {
+        let mut script_context = ScriptRenderContext {
             game_assets: None,
             render: Some(RenderWrapper::new(wgpu_render)),
         };
 
+        info!(render_value=?self.render_value_ref, "render()");
+
         util_execute_function(
-            &externals,
+            &self.externals,
             &self.render_fn,
             &[
                 self.render_value_ref.clone(),
                 logic_value_ref.clone(),
-                gfx_struct_value.clone(),
+                self.gfx_struct_value.clone(),
             ]
             .to_vec(),
             &mut script_context,
@@ -378,19 +348,164 @@ impl ScriptRender {
     }
 }
 
+pub fn create_render_module(
+    resolved_program: &mut ResolvedProgram,
+    mut externals: &mut ExternalFunctions<ScriptRenderContext>,
+) -> Result<
+    (
+        ResolvedModule,
+        Value,
+        Value,
+        ResolvedStructTypeRef,
+        ResolvedRustTypeRef,
+    ),
+    MangroveError,
+> {
+    let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
+        type_name: "MaterialHandle".to_string(),
+        number: 91,
+    });
+
+    let mut mangrove_render_module = ResolvedModule::new(ModulePath(vec![
+        "mangrove".to_string(),
+        "render".to_string(),
+    ]));
+
+    let material_handle_struct_ref = mangrove_render_module.namespace.util_insert_struct_type(
+        "MaterialHandle",
+        &[(
+            "hidden",
+            ResolvedType::RustType(material_handle_rust_type_ref.clone()),
+        )],
+    )?;
+
+    let assets_struct_value = register_asset_struct_value_with_members(
+        &resolved_program.types,
+        &mut resolved_program.state,
+        &mut externals,
+        &mut mangrove_render_module.namespace,
+        material_handle_struct_ref.clone(),
+    )?;
+
+    let gfx_struct_value = register_gfx_struct_value_with_members(
+        &resolved_program.types,
+        &mut resolved_program.state,
+        &mut externals,
+        &mut mangrove_render_module.namespace,
+    )?;
+
+    Ok((
+        mangrove_render_module,
+        assets_struct_value,
+        gfx_struct_value,
+        material_handle_struct_ref,
+        material_handle_rust_type_ref,
+    ))
+}
+
+pub fn boot(
+    mut resource_storage: &mut ResourceStorage,
+    logic_main_module: &ResolvedModuleRef,
+) -> Result<ScriptRender, MangroveError> {
+    let mut resolved_program = ResolvedProgram::new();
+    let mut external_functions = ExternalFunctions::<ScriptRenderContext>::new();
+
+    let (
+        render_module,
+        assets_value,
+        gfx_value,
+        material_handle_struct_ref,
+        material_handle_rust_type_ref,
+    ) = create_render_module(&mut resolved_program, &mut external_functions)?;
+
+    let render_module_ref = Rc::new(RefCell::new(render_module));
+    resolved_program.modules.add_module(render_module_ref)?;
+    resolved_program.modules.add_linked_module(
+        ModulePath(["logic".to_string()].to_vec()),
+        logic_main_module.clone(),
+    )?;
+
+    compile(
+        "scripts/render.swamp".as_ref(),
+        &mut resolved_program,
+        &mut external_functions,
+    )?;
+
+    let root_module_path = ModulePath(vec!["main".to_string()]);
+    let main_module = resolved_program
+        .modules
+        .get(&root_module_path)
+        .expect("could not find main module");
+
+    let binding = main_module.borrow();
+    let main_fn = binding
+        .namespace
+        .get_internal_function("main")
+        .expect("No main function");
+
+    let mut game_assets = GameAssets::new(&mut resource_storage, Millis::new(0));
+
+    let mut script_context = ScriptRenderContext {
+        game_assets: Some(GameAssetsWrapper::new(
+            &mut game_assets,
+            material_handle_struct_ref.clone(),
+            material_handle_rust_type_ref,
+        )),
+        render: None,
+    };
+
+    let render_struct_value = util_execute_function(
+        &external_functions,
+        &main_fn,
+        &[assets_value],
+        &mut script_context,
+    )?;
+
+    let render_struct_type_ref =
+        if let Value::Struct(struct_type_ref, _, _) = render_struct_value.clone() {
+            struct_type_ref
+        } else {
+            return Err(MangroveError::Other("needs to be logic struct".to_string()));
+        };
+
+    // let render_fn = get_impl_func(&render_struct_type_ref, "render");
+
+    // Convert it to a mutable (reference), so it can be mutated in update ticks
+    let render_struct_value_mutable_ref =
+        Value::Reference(Rc::new(RefCell::new(render_struct_value)));
+
+    ScriptRender::new(
+        render_struct_value_mutable_ref.clone(),
+        render_struct_type_ref.clone(),
+        external_functions,
+        gfx_value,
+    )
+}
+
+pub fn render_tick(
+    mut script: LoReM<ScriptRender>,
+    mut logic: LoRe<ScriptLogic>,
+    mut wgpu_render: ReM<Render>,
+) {
+    script
+        .render(&mut wgpu_render, &logic.immutable_logic_value())
+        .expect("script.render() crashed");
+}
+
 pub struct ScriptRenderPlugin;
 
 impl Plugin for ScriptRenderPlugin {
     fn build(&self, app: &mut App) {
-        let script_render_types = ScriptRenderTypes::new().expect("render types failed");
-        app.insert_local_resource(script_render_types);
+        // Get the module in its own scope
+        let script_logic_module = {
+            let logic = app.local_resources().fetch::<ScriptLogic>();
+            logic.main_module().clone() // Assuming we can clone the module
+        }; // immutable borrow is dropped here
 
-        let mut resource_modules = app.resource_mut::<ScriptModules>();
-        resource_modules
-            .modules
-            .add_module(script_render_types.render_module);
+        let script_render =
+            boot(app.resources_mut(), &script_logic_module).expect("could not boot script render");
 
-
+        app.insert_local_resource(script_render);
+        app.add_system(UpdatePhase::Update, render_tick);
     }
 }
-*/

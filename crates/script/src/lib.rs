@@ -8,7 +8,7 @@ use swamp::prelude::{App, Plugin};
 mod audio;
 pub mod logic;
 mod modules;
-mod render;
+pub mod render;
 mod script;
 pub mod temp;
 mod util;
@@ -26,11 +26,7 @@ use crate::logic::ScriptLogicPlugin;
 use crate::modules::ScriptModulesPlugin;
 use swamp::prelude::*;
 
-pub fn render_tick(mut script: LoReM<Script>, mut wgpu_render: ReM<Render>) {
-    script
-        .render(&mut wgpu_render)
-        .expect("script.render() crashed");
-}
+
 
 // TODO: Should be moved to swamp engine
 

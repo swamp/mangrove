@@ -2,6 +2,8 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
+//use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
+use crate::render::ScriptRenderTypes;
 use monotonic_time_rs::{InstantMonotonicClock, Millis, MonotonicClock};
 use seq_map::SeqMapError;
 use std::cell::RefCell;
@@ -24,8 +26,6 @@ use swamp_script_core::value::ValueError;
 use swamp_script_eval::prelude::*;
 use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::{AstParser, Rule};
-//use swamp_script_semantic::ns::{ResolvedModuleNamespace, SemanticError};
-use crate::render::ScriptRenderTypes;
 use swamp_script_semantic::prelude::*;
 use swamp_script_semantic::ResolvedRustType;
 use tracing::trace;
@@ -238,16 +238,21 @@ fn parse_module(path: PathBuf) -> Result<ParseModule, MangroveError> {
 
 pub fn compile<C>(
     path: &Path,
-    types: &ResolvedProgramTypes,
-    mut state: &mut ResolvedProgramState,
+    resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
-    mut modules: &mut ResolvedModules,
 ) -> Result<(), MangroveError> {
     let parsed_module = parse_module(PathBuf::from(path))?;
 
-    let main_module = prepare_main_module(types, state, externals)?;
+    let main_module = prepare_main_module(
+        &resolved_program.types,
+        &mut resolved_program.state,
+        externals,
+    )?;
+
     let main_path = main_module.module_path.clone();
-    modules.add_module(main_module)?;
+
+    let main_module_ref = Rc::new(RefCell::new(main_module));
+    resolved_program.modules.add_module(main_module_ref)?;
 
     let mut dependency_parser = DependencyParser::new();
     dependency_parser.add_ast_module(main_path.clone(), parsed_module);
@@ -259,9 +264,9 @@ pub fn compile<C>(
     )?;
 
     resolve_program(
-        &types,
-        &mut state,
-        &mut modules,
+        &resolved_program.types,
+        &mut resolved_program.state,
+        &mut resolved_program.modules,
         &module_paths_in_order,
         &dependency_parser,
     )?;
@@ -295,16 +300,9 @@ fn boot_call_main(
 
     let script_app_tuple: Value;
     {
-        let mut game_assets = GameAssets::new(&mut resource_storage, Millis::new(0));
 
-        let mut script_context = ScriptContext {
-            game_assets: Some(GameAssetsWrapper::new(
-                &mut game_assets,
-                material_handle_struct_ref.clone(),
-                material_handle_rust_type_ref,
-            )),
-            render: None,
-        };
+
+
 
         script_app_tuple = util_execute_function(
             &externals,

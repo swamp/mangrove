@@ -9,8 +9,7 @@ use swamp_script_core::prelude::Value;
 use swamp_script_eval::prelude::ExecuteError;
 use swamp_script_eval::{util_execute_function, ExternalFunctions};
 use swamp_script_semantic::{
-    ResolvedInternalFunctionDefinitionRef, ResolvedModules, ResolvedProgramState,
-    ResolvedProgramTypes,
+    ResolvedInternalFunctionDefinitionRef, ResolvedModuleRef, ResolvedProgram,
 };
 
 pub fn logic_tick(mut script: LoReM<ScriptLogic>) {
@@ -27,6 +26,7 @@ pub struct ScriptLogic {
     gamepad_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
     external_functions: ExternalFunctions<ScriptLogicContext>,
     script_context: ScriptLogicContext,
+    resolved_program: ResolvedProgram,
 }
 
 impl ScriptLogic {
@@ -35,6 +35,7 @@ impl ScriptLogic {
         logic_fn: ResolvedInternalFunctionDefinitionRef,
         gamepad_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
         external_functions: ExternalFunctions<ScriptLogicContext>,
+        resolved_program: ResolvedProgram,
     ) -> Self {
         Self {
             logic_value_ref,
@@ -42,7 +43,24 @@ impl ScriptLogic {
             gamepad_changed_fn,
             external_functions,
             script_context: ScriptLogicContext {},
+            resolved_program,
         }
+    }
+
+    pub fn immutable_logic_value(&self) -> Value {
+        match &self.logic_value_ref {
+            Value::Reference(rc_refcell_value) => rc_refcell_value.borrow().clone(),
+            _ => panic!("value should be reference in logic"),
+        }
+    }
+
+    pub fn main_module(&self) -> &ResolvedModuleRef {
+        let root_module_path = ModulePath(vec!["main".to_string()]);
+
+        self.resolved_program
+            .modules
+            .get(&root_module_path)
+            .expect("main module should exist in logic")
     }
 
     pub fn tick(&mut self) -> Result<(), ExecuteError> {
@@ -58,28 +76,30 @@ impl ScriptLogic {
 }
 
 pub fn boot() -> Result<ScriptLogic, MangroveError> {
-    let resolved_types = ResolvedProgramTypes::new();
-    let mut state = ResolvedProgramState::new();
+    let mut resolved_program = ResolvedProgram::new();
     let mut external_functions = ExternalFunctions::<ScriptLogicContext>::new();
-    let mut modules = ResolvedModules::new();
 
     compile(
         "scripts/logic.swamp".as_ref(),
-        &resolved_types,
-        &mut state,
+        &mut resolved_program,
         &mut external_functions,
-        &mut modules,
     )?;
 
     let root_module_path = ModulePath(vec!["main".to_string()]);
-    let main_module = modules
-        .get(&root_module_path)
-        .expect("could not find main module");
+    let main_fn = {
+        let main_module = resolved_program
+            .modules
+            .get(&root_module_path)
+            .expect("could not find main module");
 
-    let main_fn = main_module
-        .namespace
-        .get_internal_function("main")
-        .expect("No main function");
+        let binding = main_module.borrow();
+        let function_ref = binding
+            .namespace
+            .get_internal_function("main")
+            .expect("No main function");
+
+        Rc::clone(function_ref) // Clone the Rc, not the inner value
+    };
 
     let mut script_context = ScriptLogicContext {};
 
@@ -103,6 +123,7 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
         logic_fn,
         gamepad_changed_fn,
         external_functions,
+        resolved_program,
     ))
 }
 

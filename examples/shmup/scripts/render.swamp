@@ -1,0 +1,35 @@
+/// Handles the rendering of the game
+struct Render {
+    player_ship_material: mangrove::render::MaterialHandle,
+}
+
+impl Render {
+    fn new(mut assets: mangrove::render::Assets) -> Render {
+        player_ship_material = assets.material_png('player/ship_16x16')
+
+        Render {
+            player_ship_material: player_ship_material,
+        }
+    }
+
+    fn render(self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
+        x = logic.x
+
+        print('logic.x: {x}')
+
+        print('gfx: {gfx}')
+
+        print('self: {self}')
+
+        for i in 0..1 {
+            player_ship_pos = (x + i * 32, 10 + (i % 6) * 30, 0)
+            sprite_size = (46, 30)
+
+            gfx.sprite(player_ship_pos, self.player_ship_material, sprite_size) // sprite_size should be optional in future versions
+        }
+    }
+}
+
+fn main(mut assets: mangrove::render::Assets) -> Render {
+    Render::new(assets)
+}
