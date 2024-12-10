@@ -2163,7 +2163,6 @@ dependencies = [
  "pest",
  "seq-map",
  "swamp",
- "swamp-advanced-game",
  "swamp-script",
  "swamp-script-core",
  "swamp-script-derive",
@@ -3430,8 +3429,6 @@ checksum = "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731"
 [[package]]
 name = "swamp"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0aac338ebb9db666a960b35e1296fcc178d4e4dee805606cd71c5da2dd34b46"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3462,8 +3459,6 @@ dependencies = [
 [[package]]
 name = "swamp-advanced-game"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8928590b3cceda5c74b8b5385f022899731f98f0a7952e39d85338c8bd26e4a"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3491,8 +3486,6 @@ dependencies = [
 [[package]]
 name = "swamp-boot-advanced-game"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81cad7dca35fdc732c6c4699581e75e1cb5d9d973085cddcf93a603c7f757eec"
 dependencies = [
  "int_math",
  "limnus",
@@ -3506,8 +3499,6 @@ dependencies = [
 [[package]]
 name = "swamp-boot-game"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a90d44ad75674ae3afd09d8d0005b205e00c820f8cc5c89bf48b2f3b3ede702"
 dependencies = [
  "int_math",
  "limnus",
@@ -3521,8 +3512,6 @@ dependencies = [
 [[package]]
 name = "swamp-font"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94bb6e229ce9dbfb4e4efd3850ee02b865bd7f08669cf7bb01accee07c3390aa"
 dependencies = [
  "bmf-parser",
  "int_math",
@@ -3536,8 +3525,6 @@ dependencies = [
 [[package]]
 name = "swamp-game"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58d0beb33df374588aec308ed51ff332ef64cfd24a9c14a24870016189b5f4a9"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3565,8 +3552,6 @@ dependencies = [
 [[package]]
 name = "swamp-game-assets"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9304f2ed885d3c2f7ab29700d9a193b55decb39b86fd94a24ce8e0a8d69618c0"
 dependencies = [
  "int_math",
  "limnus-asset-id",
@@ -3583,8 +3568,6 @@ dependencies = [
 [[package]]
 name = "swamp-game-audio"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6eba4578f2402ba4001dc454fbebd5fead891325e9a1a2cb54aef105dd830ea"
 dependencies = [
  "limnus-assets",
  "limnus-audio-mixer",
@@ -3594,8 +3577,6 @@ dependencies = [
 [[package]]
 name = "swamp-material"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2316d49a421f1303769d9f91e9ff8172e0f06a0eeb7a9b52971dd76cdc656bfe"
 dependencies = [
  "image",
  "limnus-app",
@@ -3613,8 +3594,6 @@ dependencies = [
 [[package]]
 name = "swamp-render"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ee5027aae07b48664b021ba984b1e76087654e92dc79e18fc332af8e2e22b64"
 dependencies = [
  "int_math",
  "monotonic-time-rs",
@@ -3624,8 +3603,6 @@ dependencies = [
 [[package]]
 name = "swamp-render-wgpu"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfe9ac17c1a59c6d47d6bfe36e89eef05fc72ebec913a6980415bae41fda1372"
 dependencies = [
  "bytemuck",
  "int_math",
@@ -3755,8 +3732,6 @@ dependencies = [
 [[package]]
 name = "swamp-wgpu"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcb7f679717296192a0b6560e4e7e0450a91f58c08f32c9f2b9ab6e8888600af"
 dependencies = [
  "wgpu",
 ]
@@ -3764,8 +3739,6 @@ dependencies = [
 [[package]]
 name = "swamp-wgpu-sprites"
 version = "0.0.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a13a4e83cfdf3fcedd7ada4b14371e34e727e919ddb61a998b96a2f884774d74"
 dependencies = [
  "bytemuck",
  "image",

@@ -5,17 +5,17 @@ use crate::script::{
 use crate::util::get_impl_func;
 use monotonic_time_rs::Millis;
 use std::cell::RefCell;
+use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
-    App, Assets, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Plugin, ReM, Render,
-    ResourceStorage, UVec2, UpdatePhase, Vec3,
+    App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef,
+    Plugin, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
 };
 use swamp_script::prelude::{Type, Variable};
 use swamp_script_core::prelude::Value;
 use swamp_script_eval::prelude::ExecuteError;
 use swamp_script_eval::{util_execute_function, ExternalFunctions};
 use swamp_script_semantic::prelude::*;
-use tracing::info;
 
 #[derive(Debug)]
 pub struct ScriptRenderContext {
@@ -48,6 +48,16 @@ impl RenderWrapper {
 
         render.draw_sprite(pos, size, material_ref);
     }
+
+    pub fn sprite_atlas_frame(&mut self, position: Vec3, frame: u16, atlas: &impl FrameLookup) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.sprite_atlas_frame(position, frame, atlas);
+    }
 }
 
 // I didn't want to change the implementation of GameAssets.
@@ -56,8 +66,27 @@ impl RenderWrapper {
 #[derive(Debug)]
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
+
     material_struct_type: ResolvedStructTypeRef,
     material_rust_type_ref: ResolvedRustTypeRef,
+
+    fixed_atlas_struct_type_ref: ResolvedStructTypeRef,
+    fixed_atlas_rust_type_ref: ResolvedRustTypeRef,
+}
+
+#[derive(Debug)]
+pub struct FixedAtlasWrapper {
+    pub fixed_atlas: FixedAtlas,
+}
+
+impl Display for FixedAtlasWrapper {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "fixed_atlas {:?} {:?}",
+            self.fixed_atlas.one_cell_size, self.fixed_atlas.texture_size
+        )
+    }
 }
 
 impl GameAssetsWrapper {
@@ -65,12 +94,16 @@ impl GameAssetsWrapper {
         game_assets: &mut GameAssets,
         material_struct_type: ResolvedStructTypeRef,
         material_rust_type_ref: ResolvedRustTypeRef,
+        fixed_atlas_struct_type_ref: ResolvedStructTypeRef,
+        fixed_atlas_rust_type_ref: ResolvedRustTypeRef,
     ) -> Self {
         let ptr = game_assets as *mut GameAssets;
         Self {
             game_assets: ptr as *mut GameAssets<'static>, // Coerce to 'static. is there a better way?
             material_struct_type,
             material_rust_type_ref,
+            fixed_atlas_struct_type_ref,
+            fixed_atlas_rust_type_ref,
         }
     }
 
@@ -87,6 +120,20 @@ impl GameAssetsWrapper {
         )
     }
 
+    fn fixed_atlas_handle(&self, fixed_atlas: FixedAtlas) -> Value {
+        let wrapper = FixedAtlasWrapper { fixed_atlas };
+        let fixed_atlas_ref = Value::RustValue(
+            self.fixed_atlas_rust_type_ref.clone(),
+            Rc::new(RefCell::new(Box::new(wrapper))),
+        );
+
+        Value::Struct(
+            self.fixed_atlas_struct_type_ref.clone(),
+            [fixed_atlas_ref].to_vec(),
+            ResolvedType::Struct(self.fixed_atlas_struct_type_ref.clone()),
+        )
+    }
+
     pub fn material_png(&self, name: &str) -> Value {
         // Safety: We assume the GameAssets pointer is still valid, since the GameAssetsWrapper is short-lived (only alive during a tick)
         let assets: &mut GameAssets;
@@ -97,13 +144,22 @@ impl GameAssetsWrapper {
 
         self.material_handle(material_ref)
     }
-}
 
-#[derive(LocalResource, Debug)]
-pub struct ScriptRenderTypes {
-    pub material_handle_struct_ref: ResolvedStructTypeRef,
-    assets_struct_value: Value,
-    gfx_struct_value: Value,
+    pub fn frame_fixed_grid_material_png(
+        &self,
+        name: &str,
+        grid_size: UVec2,
+        texture_size: UVec2,
+    ) -> Value {
+        // Safety: We assume the GameAssets pointer is still valid, since the GameAssetsWrapper is short-lived (only alive during a tick)
+        let assets: &mut GameAssets;
+        unsafe {
+            assets = &mut *self.game_assets;
+        }
+        let material_ref = assets.frame_fixed_grid_material_png(name, grid_size, texture_size);
+
+        self.fixed_atlas_handle(material_ref)
+    }
 }
 
 pub fn register_gfx_struct_value_with_members(
@@ -191,14 +247,13 @@ pub fn register_gfx_struct_value_with_members(
         "sprite",
         unique_id,
         &[
-            mut_self_parameter,
-            position_param,
-            material_handle,
+            mut_self_parameter.clone(),
+            position_param.clone(),
+            material_handle.clone(),
             size_param,
         ],
         types.int_type(),
     )?;
-
     externals.register_external_function(
         "sprite",
         unique_id,
@@ -220,6 +275,52 @@ pub fn register_gfx_struct_value_with_members(
         },
     )?;
 
+    let unique_id: ExternalFunctionId = state.allocate_external_function_id();
+
+    let frame = ResolvedParameter {
+        name: "frame".to_string(),
+        resolved_type: types.int_type(),
+        ast_parameter: Parameter {
+            variable: Variable {
+                name: "".to_string(),
+                is_mutable: false,
+            },
+            param_type: Type::Int,
+            is_mutable: false,
+            is_self: false,
+        },
+        is_mutable: false,
+    };
+    let _material_png_fn = namespace.util_add_member_external_function(
+        &assets_general_type,
+        "sprite_atlas_frame",
+        unique_id,
+        &[mut_self_parameter, position_param, material_handle, frame],
+        types.int_type(),
+    )?;
+    externals.register_external_function(
+        "sprite_atlas_frame",
+        unique_id,
+        move |params: &[Value], context| {
+            //let _self_value = &params[0]; // the Gfx struct is empty by design.
+            let position = vec3_like(&params[1])?;
+
+            let material_ref = params[2]
+                .downcast_hidden_rust::<FixedAtlasWrapper>()
+                .unwrap();
+
+            let frame = &params[3].expect_int()?;
+
+            context.render.as_mut().unwrap().sprite_atlas_frame(
+                position,
+                frame.abs() as u16,
+                &material_ref.as_ref().borrow().fixed_atlas,
+            );
+
+            Ok(Value::Unit)
+        },
+    )?;
+
     Ok(gfx_value_mut)
 }
 
@@ -229,6 +330,7 @@ pub fn register_asset_struct_value_with_members(
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     namespace: &mut ResolvedModuleNamespace,
     material_struct_type_ref: ResolvedStructTypeRef,
+    fixed_grid_struct_type_ref: ResolvedStructTypeRef,
 ) -> Result<Value, MangroveError> {
     let (assets_value, assets_type) = create_empty_struct_value_util(namespace, "Assets")?;
     let assets_value_mut = Value::Reference(Rc::new(RefCell::new(assets_value.clone())));
@@ -272,7 +374,7 @@ pub fn register_asset_struct_value_with_members(
         &assets_general_type,
         "material_png",
         unique_id,
-        &[mut_self_parameter, asset_name_parameter],
+        &[mut_self_parameter.clone(), asset_name_parameter.clone()],
         ResolvedType::Struct(material_struct_type_ref),
     )?;
 
@@ -288,6 +390,54 @@ pub fn register_asset_struct_value_with_members(
                 .as_mut()
                 .unwrap()
                 .material_png(asset_name))
+        },
+    )?;
+
+    let int_type = types.int_type();
+    let size_int_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
+    let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
+
+    let size_param = ResolvedParameter {
+        name: "size".to_string(),
+        resolved_type: ResolvedType::Tuple(size_int_tuple_type_ref),
+        ast_parameter: Parameter {
+            variable: Variable {
+                name: "".to_string(),
+                is_mutable: false,
+            },
+            param_type: Type::Int,
+            is_mutable: false,
+            is_self: false,
+        },
+        is_mutable: false,
+    };
+
+    let _material_png_fn = namespace.util_add_member_external_function(
+        &assets_general_type,
+        "frame_fixed_grid_material_png",
+        unique_id,
+        &[
+            mut_self_parameter,
+            asset_name_parameter,
+            size_param.clone(),
+            size_param,
+        ],
+        ResolvedType::Struct(fixed_grid_struct_type_ref),
+    )?;
+    externals.register_external_function(
+        "frame_fixed_grid_material_png",
+        unique_id,
+        move |params: &[Value], context| {
+            //let self_value = &params[0]; // Assets is, by design, an empty struct
+            let asset_name = &params[1].expect_string()?;
+            let grid_size = uvec2_like(&params[2])?;
+            let texture_size = uvec2_like(&params[3])?; // TODO: Remove this parameter
+
+            Ok(context
+                .game_assets
+                .as_mut()
+                .unwrap()
+                .frame_fixed_grid_material_png(asset_name, grid_size, texture_size))
         },
     )?;
 
@@ -358,24 +508,37 @@ pub fn create_render_module(
         Value,
         ResolvedStructTypeRef,
         ResolvedRustTypeRef,
+        ResolvedStructTypeRef,
+        ResolvedRustTypeRef,
     ),
     MangroveError,
 > {
-    let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
-        type_name: "MaterialHandle".to_string(),
-        number: 91,
-    });
-
     let mut mangrove_render_module = ResolvedModule::new(ModulePath(vec![
         "mangrove".to_string(),
         "render".to_string(),
     ]));
 
+    let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
+        type_name: "MaterialHandle".to_string(),
+        number: 91,
+    });
     let material_handle_struct_ref = mangrove_render_module.namespace.util_insert_struct_type(
         "MaterialHandle",
         &[(
             "hidden",
             ResolvedType::RustType(material_handle_rust_type_ref.clone()),
+        )],
+    )?;
+
+    let fixed_atlas_handle_rust_type_ref = Rc::new(ResolvedRustType {
+        type_name: "FixedAtlasHandle".to_string(),
+        number: 92,
+    });
+    let fixed_atlas_handle_struct_ref = mangrove_render_module.namespace.util_insert_struct_type(
+        "FixedAtlasHandle",
+        &[(
+            "hidden",
+            ResolvedType::RustType(fixed_atlas_handle_rust_type_ref.clone()),
         )],
     )?;
 
@@ -385,6 +548,7 @@ pub fn create_render_module(
         &mut externals,
         &mut mangrove_render_module.namespace,
         material_handle_struct_ref.clone(),
+        fixed_atlas_handle_struct_ref.clone(),
     )?;
 
     let gfx_struct_value = register_gfx_struct_value_with_members(
@@ -400,6 +564,8 @@ pub fn create_render_module(
         gfx_struct_value,
         material_handle_struct_ref,
         material_handle_rust_type_ref,
+        fixed_atlas_handle_struct_ref,
+        fixed_atlas_handle_rust_type_ref,
     ))
 }
 
@@ -416,6 +582,8 @@ pub fn boot(
         gfx_value,
         material_handle_struct_ref,
         material_handle_rust_type_ref,
+        fixed_atlas_struct_type_ref,
+        fixed_atlas_handle_rust_type_ref,
     ) = create_render_module(&mut resolved_program, &mut external_functions)?;
 
     let render_module_ref = Rc::new(RefCell::new(render_module));
@@ -450,6 +618,8 @@ pub fn boot(
             &mut game_assets,
             material_handle_struct_ref.clone(),
             material_handle_rust_type_ref,
+            fixed_atlas_struct_type_ref.clone(),
+            fixed_atlas_handle_rust_type_ref,
         )),
         render: None,
     };
