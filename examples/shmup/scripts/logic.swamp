@@ -1,25 +1,24 @@
 struct Logic {
     tick_count: Int, /// how many ticks have passed
-    direction: Int, /// which direction the bats are moving
-    x: Int, /// This is just to to move the bats back and forth
+    direction: Float, /// which direction the player ship
+    x: Float, /// the x position of the player ship
 }
 
 impl Logic {
     fn tick(mut self) {
+        self.x = self.x + self.direction
+
+
+
         self.tick_count = self.tick_count + 1
-        self.x = self.x + self.direction * 2
-
-        if self.x > 200 {
-            self.direction = -self.direction
-            self.x = 200
-        } else if self.x < 10 {
-            self.direction = -self.direction
-            self.x = 10
-        }
-
         if self.tick_count % 60 == 0 {
             print('tick: {self.tick_count}')
         }
+    }
+
+    fn gamepad_axis_changed(mut self, gamepad: Int, value: Float) { // axis: Axis,
+        // print('gamepad: {gamepad} value: {value}') //axis: {axis}
+        self.direction = value * 4.0
     }
 }
 
@@ -27,7 +26,7 @@ impl Logic {
 fn main() -> Logic {
     Logic {
         tick_count: 0,
-        direction: 1,
-        x: 0,
+        direction: 0.0,
+        x: 0.0,
     }
 }

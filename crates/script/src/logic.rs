@@ -1,8 +1,9 @@
 use crate::script::{compile, MangroveError};
 use crate::util::{get_impl_func, get_impl_func_optional};
+use limnus_gamepad::{Axis, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{App, LoReM, LocalResource, Plugin, UpdatePhase};
+use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, UpdatePhase};
 use swamp_advanced_game::ApplicationLogic;
 use swamp_script::prelude::ModulePath;
 use swamp_script_core::prelude::Value;
@@ -16,6 +17,12 @@ pub fn logic_tick(mut script: LoReM<ScriptLogic>) {
     script.tick().expect("script.tick() crashed");
 }
 
+pub fn input_tick(mut script: LoReM<ScriptLogic>, gamepad_messages: Msg<GamepadMessage>) {
+    for gamepad_message in gamepad_messages.iter_current() {
+        script.gamepad(gamepad_message);
+    }
+}
+
 #[derive(Debug)]
 pub struct ScriptLogicContext {}
 
@@ -23,7 +30,7 @@ pub struct ScriptLogicContext {}
 pub struct ScriptLogic {
     logic_value_ref: Value,
     logic_fn: ResolvedInternalFunctionDefinitionRef,
-    gamepad_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
+    gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
     external_functions: ExternalFunctions<ScriptLogicContext>,
     script_context: ScriptLogicContext,
     resolved_program: ResolvedProgram,
@@ -40,7 +47,7 @@ impl ScriptLogic {
         Self {
             logic_value_ref,
             logic_fn,
-            gamepad_changed_fn,
+            gamepad_axis_changed_fn: gamepad_changed_fn,
             external_functions,
             script_context: ScriptLogicContext {},
             resolved_program,
@@ -72,6 +79,50 @@ impl ScriptLogic {
         )?;
 
         Ok(())
+    }
+
+    fn execute(
+        &mut self,
+        fn_def: &ResolvedInternalFunctionDefinitionRef,
+        arguments: &[Value],
+    ) -> Result<(), ExecuteError> {
+        let mut complete_arguments = Vec::new();
+        complete_arguments.push(self.logic_value_ref.clone()); // push logic self first
+        for arg in arguments {
+            complete_arguments.push(arg.clone());
+        }
+
+        let _ = util_execute_function(
+            &self.external_functions,
+            fn_def,
+            &complete_arguments,
+            &mut self.script_context,
+        )?;
+
+        Ok(())
+    }
+
+    pub fn gamepad(&mut self, msg: &GamepadMessage) {
+        match msg {
+            GamepadMessage::Connected(_, _) => {}
+            GamepadMessage::Disconnected(_) => {}
+            GamepadMessage::Activated(_) => {}
+            GamepadMessage::ButtonChanged(_, _, _) => {}
+            GamepadMessage::AxisChanged(gamepad_id, axis, value) => {
+                if *axis != Axis::LeftStickX {
+                    return;
+                }
+                if let Some(found_fn) = &self.gamepad_axis_changed_fn {
+                    let gamepad_id_value = Value::Int(*gamepad_id as i32);
+                    let axis_value = Value::Float(Fp::from(*value));
+
+                    let fn_ref = found_fn.clone(); // Assuming found_fn can be cloned
+
+                    self.execute(&fn_ref, &[gamepad_id_value, axis_value])
+                        .expect("gamepad_axis_changed");
+                }
+            }
+        }
     }
 }
 
@@ -113,7 +164,7 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
     };
 
     let logic_fn = get_impl_func(&logic_struct_type_ref, "tick");
-    let gamepad_changed_fn = get_impl_func_optional(&logic_struct_type_ref, "gamepad_changed");
+    let gamepad_changed_fn = get_impl_func_optional(&logic_struct_type_ref, "gamepad_axis_changed");
 
     // Convert it to a mutable (reference), so it can be mutated in update ticks
     let logic_value_ref = Value::Reference(Rc::new(RefCell::new(logic_value)));
@@ -132,6 +183,7 @@ pub struct ScriptLogicPlugin;
 impl Plugin for ScriptLogicPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(UpdatePhase::Update, logic_tick);
+        app.add_system(UpdatePhase::Update, input_tick);
         let script_logic = boot().expect("logic boot should work");
         app.insert_local_resource(script_logic);
     }

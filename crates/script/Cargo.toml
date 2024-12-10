@@ -11,6 +11,7 @@ swamp = "0.0.13"
 swamp-advanced-game = "0.0.13"
 
 limnus-message = "0.0.12"
+limnus-gamepad = "0.0.12"
 
 # Swamp Script
 swamp-script = { path = "../../../script/crates/swamp-script" }

@@ -330,7 +330,7 @@ impl ScriptRender {
             render: Some(RenderWrapper::new(wgpu_render)),
         };
 
-        info!(render_value=?self.render_value_ref, "render()");
+        //info!(render_value=?self.render_value_ref, "render()");
 
         util_execute_function(
             &self.externals,
