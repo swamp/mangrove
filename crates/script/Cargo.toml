@@ -20,6 +20,7 @@ swamp-script-parser = { path = "../../../script/crates/parser" }
 swamp-script-semantic = { path = "../../../script/crates/semantic" }
 swamp-script-eval = { path = "../../../script/crates/eval" }
 swamp-script-core = { path = "../../../script/crates/core" }
+swamp-script-std = { path = "../../../script/crates/std" }
 swamp-script-derive = { path = "../../../script/crates/derive" }
 
 tracing = "0.1.41"

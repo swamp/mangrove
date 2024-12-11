@@ -2170,6 +2170,7 @@ dependencies = [
  "swamp-script-eval-loader",
  "swamp-script-parser",
  "swamp-script-semantic",
+ "swamp-script-std",
  "tracing",
 ]
 
@@ -3727,6 +3728,13 @@ dependencies = [
  "seq-map",
  "swamp-script-ast",
  "tracing",
+]
+
+[[package]]
+name = "swamp-script-std"
+version = "0.0.6"
+dependencies = [
+ "swamp-script-semantic",
 ]
 
 [[package]]

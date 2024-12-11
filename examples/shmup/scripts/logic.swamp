@@ -1,7 +1,13 @@
+struct Shot {
+    x: Float,
+    y: Float,
+}
+
 struct Logic {
     tick_count: Int, /// how many ticks have passed
     direction: Float, /// which direction the player ship
     x: Float, /// the x position of the player ship
+    shots: std::Sparse<Shot>,
 }
 
 impl Logic {
@@ -13,6 +19,14 @@ impl Logic {
         self.tick_count = self.tick_count + 1
         if self.tick_count % 60 == 0 {
             print('tick: {self.tick_count}')
+            self.shots.add(Shot { x: self.x, y: 0.0 })
+        }
+
+        for id, mut shot in self.shots {
+            shot.y = shot.y + 1.0
+            if shot.y > 10.0 {
+                self.shots.remove(id)
+            }
         }
     }
 
@@ -32,5 +46,6 @@ fn main() -> Logic {
         tick_count: 0,
         direction: 0.0,
         x: 0.0,
+        shots: Sparse<Shot>::new(),
     }
 }

@@ -29,6 +29,11 @@ impl Render {
         }
 
         gfx.sprite_atlas_frame(player_ship_pos, self.player_ship_material, ship_frame)
+
+        for shot in logic.shots {
+            shot_pos = (shot.x.floor(), shot.y.floor(), 0)
+            gfx.sprite_atlas_frame(shot_pos, self.player_ship_material, 1)
+        }
     }
 
 }

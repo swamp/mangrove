@@ -21,6 +21,7 @@ use swamp_script_eval::prelude::*;
 use swamp_script_eval_loader::resolve_program;
 use swamp_script_parser::{AstParser, Rule};
 use swamp_script_semantic::prelude::*;
+use swamp_script_std::create_std_module;
 use tracing::trace;
 
 fn resolve_swamp_file(path: &Path) -> Result<PathBuf, String> {
@@ -246,6 +247,10 @@ pub fn compile<C>(
 
     let main_module_ref = Rc::new(RefCell::new(main_module));
     resolved_program.modules.add_module(main_module_ref)?;
+
+    resolved_program
+        .modules
+        .add_module(Rc::new(RefCell::new(create_std_module())));
 
     let mut dependency_parser = DependencyParser::new();
     dependency_parser.add_ast_module(main_path.clone(), parsed_module);
