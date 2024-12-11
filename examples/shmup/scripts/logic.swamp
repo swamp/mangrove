@@ -3,11 +3,51 @@ struct Shot {
     y: Float,
 }
 
+struct Position {
+    x: Float,
+    y: Float,
+}
+
+impl Position {
+    fn new(x: Float, y: Float) -> Position {
+        Position { x: x, y: y }
+    }
+
+    fn add(mut self, other: Position) {
+        self.x = self.x + other.x
+        self.y = self.y + other.y
+    }
+}
+
+struct Size {
+    width: Float,
+    height: Float,
+}
+
+struct Rect {
+    pos: Position,
+    size: Size,
+}
+
+
+enum EnemyType {
+    Alan,
+    BonBon,
+    Lips,
+}
+
+struct Enemy {
+    rect: Rect,
+    direction: Float,
+    enemy: EnemyType,
+}
+
 struct Logic {
     tick_count: Int, /// how many ticks have passed
     direction: Float, /// which direction the player ship
     x: Float, /// the x position of the player ship
     shots: std::Sparse<Shot>,
+    enemies: std::Sparse<Enemy>,
 }
 
 impl Logic {
@@ -19,11 +59,21 @@ impl Logic {
         self.tick_count = self.tick_count + 1
         if self.tick_count % 60 == 0 {
             print('tick: {self.tick_count}')
+            rect = Rect { pos: Position { x: 10.0, y: 50.0 }, size: Size { width: 16.0, height: 16.0 } }
+            self.enemies.add(Enemy { rect: rect, enemy: EnemyType::Alan, direction: 1.0 })
         }
 
         if self.tick_count % 10 == 0 {
             self.shots.add(Shot { x: self.x + 4.0, y: 18.0 })
         }
+
+        for id, enemy in mut self.enemies {
+            enemy.rect.pos.x = enemy.rect.pos.x + enemy.direction
+            if enemy.rect.pos.x > 250.0 {
+                self.enemies.remove(id)
+            }
+        }
+
 
         for id, shot in mut self.shots {
             shot.y = shot.y + 3.0
@@ -50,5 +100,6 @@ fn main() -> Logic {
         direction: 0.0,
         x: 0.0,
         shots: Sparse<Shot>::new(),
+        enemies: Sparse<Enemy>::new(),
     }
 }

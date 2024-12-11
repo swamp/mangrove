@@ -2,6 +2,8 @@
 struct Render {
     player_ship_material: mangrove::render::FixedAtlasHandle,
     player_shot_material: mangrove::render::FixedAtlasHandle,
+    alan_material: mangrove::render::FixedAtlasHandle,
+    tick: Int,
 }
 
 impl Render {
@@ -13,12 +15,15 @@ impl Render {
 
         Render {
             player_ship_material: player_ship_material,
-            player_shot_material: assets.frame_fixed_grid_material_png('projectiles/player_beam', (8,16), (16*2, 16))
+            player_shot_material: assets.frame_fixed_grid_material_png('projectiles/player_beam', (8,16), (16*2, 16)),
+            alan_material: assets.frame_fixed_grid_material_png('enemies/alan_16x16', cell_size, (16*6, 16)),
+            tick: 0,
         }
     }
 
     /// Called by the mangrove engine every render tick
-    fn render(self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
+    fn render(mut self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
+        self.tick = self.tick + 1
         x = logic.x.floor()
 
         player_ship_pos = (x, 10, 0)
@@ -35,6 +40,14 @@ impl Render {
         for shot in logic.shots {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
             gfx.sprite_atlas_frame(shot_pos, self.player_shot_material, 1)
+        }
+
+        for enemy in logic.enemies {
+            enemy_pos = (enemy.rect.pos.x.floor(), enemy.rect.pos.y.floor(), 0)
+            match enemy.enemy {
+                Alan => gfx.sprite_atlas_frame(enemy_pos, self.alan_material, self.tick / 5 % 6),
+                _ => print('not handled enemy type: {enemy.enemy}'),
+            }
         }
     }
 

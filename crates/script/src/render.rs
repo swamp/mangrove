@@ -588,18 +588,18 @@ pub fn boot(
 
     let render_module_ref = Rc::new(RefCell::new(render_module));
     resolved_program.modules.add_module(render_module_ref)?;
-    resolved_program.modules.add_linked_module(
-        ModulePath(["logic".to_string()].to_vec()),
-        logic_main_module.clone(),
-    )?;
+    resolved_program
+        .modules
+        .add_module(logic_main_module.clone())?;
 
     compile(
         "scripts/render.swamp".as_ref(),
         &mut resolved_program,
         &mut external_functions,
+        "render",
     )?;
 
-    let root_module_path = ModulePath(vec!["main".to_string()]);
+    let root_module_path = ModulePath(vec!["render".to_string()]);
     let main_module = resolved_program
         .modules
         .get(&root_module_path)

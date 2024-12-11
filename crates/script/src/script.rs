@@ -171,8 +171,9 @@ fn prepare_main_module<C>(
     types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<C>,
+    module_name: &str,
 ) -> Result<ResolvedModule, SemanticError> {
-    let root_module_path = ModulePath(vec!["main".to_string()]);
+    let root_module_path = ModulePath(vec![module_name.to_string()]);
     let mut main_module = ResolvedModule::new(root_module_path.clone());
 
     let any_parameter = ResolvedParameter {
@@ -234,6 +235,7 @@ pub fn compile<C>(
     path: &Path,
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
+    module_name: &str,
 ) -> Result<(), MangroveError> {
     let parsed_module = parse_module(PathBuf::from(path))?;
 
@@ -241,6 +243,7 @@ pub fn compile<C>(
         &resolved_program.types,
         &mut resolved_program.state,
         externals,
+        module_name,
     )?;
 
     let main_path = main_module.module_path.clone();

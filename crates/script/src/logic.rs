@@ -65,12 +65,12 @@ impl ScriptLogic {
     }
 
     pub fn main_module(&self) -> &ResolvedModuleRef {
-        let root_module_path = ModulePath(vec!["main".to_string()]);
+        let root_module_path = ModulePath(vec!["logic".to_string()]);
 
         self.resolved_program
             .modules
             .get(&root_module_path)
-            .expect("main module should exist in logic")
+            .expect("logic module should exist in logic")
     }
 
     pub fn tick(&mut self) -> Result<(), ExecuteError> {
@@ -187,9 +187,10 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
         "scripts/logic.swamp".as_ref(),
         &mut resolved_program,
         &mut external_functions,
+        "logic",
     )?;
 
-    let root_module_path = ModulePath(vec!["main".to_string()]);
+    let root_module_path = ModulePath(vec!["logic".to_string()]);
     let main_fn = {
         let main_module = resolved_program
             .modules
