@@ -19,12 +19,15 @@ impl Logic {
         self.tick_count = self.tick_count + 1
         if self.tick_count % 60 == 0 {
             print('tick: {self.tick_count}')
-            self.shots.add(Shot { x: self.x, y: 0.0 })
         }
 
-        for id, mut shot in self.shots {
-            shot.y = shot.y + 1.0
-            if shot.y > 10.0 {
+        if self.tick_count % 10 == 0 {
+            self.shots.add(Shot { x: self.x + 4.0, y: 18.0 })
+        }
+
+        for id, shot in mut self.shots {
+            shot.y = shot.y + 3.0
+            if shot.y > 250.0 {
                 self.shots.remove(id)
             }
         }

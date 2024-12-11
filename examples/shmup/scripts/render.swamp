@@ -1,6 +1,7 @@
 /// Handles the rendering of the game
 struct Render {
     player_ship_material: mangrove::render::FixedAtlasHandle,
+    player_shot_material: mangrove::render::FixedAtlasHandle,
 }
 
 impl Render {
@@ -12,6 +13,7 @@ impl Render {
 
         Render {
             player_ship_material: player_ship_material,
+            player_shot_material: assets.frame_fixed_grid_material_png('projectiles/player_beam', (8,16), (16*2, 16))
         }
     }
 
@@ -32,7 +34,7 @@ impl Render {
 
         for shot in logic.shots {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
-            gfx.sprite_atlas_frame(shot_pos, self.player_ship_material, 1)
+            gfx.sprite_atlas_frame(shot_pos, self.player_shot_material, 1)
         }
     }
 

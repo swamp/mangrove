@@ -15,7 +15,7 @@ fn main() {
     App::new()
         .insert_resource(Window {
             title: "mangrove".to_string(),
-            requested_surface_size: UVec2::new(320 * 4, 240 * 4),
+            requested_surface_size: UVec2::new(320 * 6, 240 * 6),
             minimal_surface_size: UVec2::new(320, 240),
             fullscreen: false,
         })

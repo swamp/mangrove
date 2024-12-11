@@ -177,7 +177,7 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
     let mut resolved_program = ResolvedProgram::new();
     let mut external_functions = ExternalFunctions::<ScriptLogicContext>::new();
 
-    let (input_module, axis_enum_type) = input_module(&mut resolved_program.state)?;
+    let (input_module, _axis_enum_type) = input_module(&mut resolved_program.state)?;
     let input_module_ref = Rc::new(RefCell::new(input_module));
     resolved_program
         .modules
