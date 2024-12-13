@@ -91,17 +91,17 @@ impl Logic {
                 }
                 self.shots.remove(shot_id)
                 self.enemies.remove(enemy_id)
-                self.explosions.add(Explosion { pos: enemy.rect.pos, tick: 20, type: ExplosionType::Fire })
+                self.explosions.add(Explosion { pos: enemy.rect.pos, tick: 0, type: ExplosionType::Fire })
             }
         }
     }
 
     fn tick_explosions(mut self) {
         for explosion_id, explosion in mut self.explosions {
-            if explosion.tick == 0 {
+            if explosion.tick >= 30 {
                 self.explosions.remove(explosion_id)
             } else {
-                explosion.tick = explosion.tick - 1
+                explosion.tick += 1
             }
         }
     }
@@ -118,23 +118,23 @@ impl Logic {
     fn players_fire_cooldown(mut self) {
         for player in mut self.players {
             if player.fire_cooldown > 0 {
-                player.fire_cooldown = player.fire_cooldown - 1
+                player.fire_cooldown -= 1
             }
         }
     }
 
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
-        self.x = self.x + self.direction
+        self.x += self.direction
 
-        self.tick_count = self.tick_count + 1
+        self.tick_count += 1
         if self.tick_count % 30 == 0 {
             rect = Rect { pos: Position { x: 10.0, y: 50.0 }, size: Size { width: 16.0, height: 16.0 } }
             self.enemies.add(Enemy { rect: rect, enemy: EnemyType::Alan, direction: 1.0 })
         }
 
         for id, enemy in mut self.enemies {
-            enemy.rect.pos.x = enemy.rect.pos.x + enemy.direction
+            enemy.rect.pos.x += enemy.direction
             if enemy.rect.pos.x > 250.0 {
                 self.enemies.remove(id)
             }

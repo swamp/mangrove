@@ -25,7 +25,7 @@ impl Render {
 
     /// Called by the mangrove engine every render tick
     fn render(mut self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
-        self.tick = self.tick + 1
+        self.tick += 1
         x = logic.x.floor()
 
         player_ship_pos = (x, 10, 0)
@@ -53,8 +53,8 @@ impl Render {
         }
 
         for explosion in logic.explosions {
-            explosion_pos = (explosion.pos.x.floor(), explosion.pos.y.floor(), 0)
-            mut frame = explosion.tick / 2
+            explosion_pos = (explosion.pos.x.floor() + 4, explosion.pos.y.floor(), 0)
+            mut frame = explosion.tick / 3
             if frame > 5 {
                 frame = 5
             }
