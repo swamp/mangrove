@@ -1,13 +1,11 @@
-
-
 /// Handles the rendering of the game
 struct Render {
     /// The material reference for the flying bat sprite
-    flying_material_ref: mangrove::MaterialHandle,
+    flying_material_ref: mangrove::render::MaterialHandle,
 }
 
 impl Render {
-    fn new(mut assets: mangrove::Assets) -> Render {
+    fn new(mut assets: mangrove::render::Assets) -> Render {
         flying_material_ref = assets.material_png('flying_46x30')
 
         Render {
@@ -15,7 +13,7 @@ impl Render {
         }
     }
 
-    fn render(self, logic: Logic, mut gfx: mangrove::Gfx) {
+    fn render(mut self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
         x = logic.x
 
         for i in 0..20 {
@@ -27,22 +25,9 @@ impl Render {
     }
 }
 
-struct Audio {
-}
 
-impl Audio {
-    fn audio(self, logic: Logic)  {
-    }
-}
-
-
-fn main(mut assets: mangrove::Assets) -> ( Render, Audio) {
-
+fn main(mut assets: mangrove::render::Assets) -> Render {
     render = Render::new(assets)
 
-    audio = Audio {
-
-    }
-
-    ( render, audio)
+    render
 }
