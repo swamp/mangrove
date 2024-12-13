@@ -2139,7 +2139,7 @@ version = "0.0.3"
 dependencies = [
  "mangrove-save-detector",
  "mangrove-script",
- "swamp",
+ "swamp 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2150,7 +2150,7 @@ dependencies = [
  "mangrove-script",
  "message-channel",
  "notify",
- "swamp",
+ "swamp 0.0.14-alpha.1",
 ]
 
 [[package]]
@@ -2162,7 +2162,7 @@ dependencies = [
  "monotonic-time-rs",
  "pest",
  "seq-map",
- "swamp",
+ "swamp 0.0.14-alpha.1",
  "swamp-script",
  "tracing",
 ]
@@ -3437,16 +3437,48 @@ dependencies = [
  "limnus-system-runner",
  "limnus-wgpu-window",
  "monotonic-time-rs",
- "swamp-advanced-game",
- "swamp-boot-advanced-game",
- "swamp-boot-game",
- "swamp-font",
- "swamp-game",
- "swamp-game-assets",
- "swamp-game-audio",
- "swamp-material",
- "swamp-render",
- "swamp-render-wgpu",
+ "swamp-advanced-game 0.0.14-alpha.1",
+ "swamp-boot-advanced-game 0.0.14-alpha.1",
+ "swamp-boot-game 0.0.14-alpha.1",
+ "swamp-font 0.0.14-alpha.1",
+ "swamp-game 0.0.14-alpha.1",
+ "swamp-game-assets 0.0.14-alpha.1",
+ "swamp-game-audio 0.0.14-alpha.1",
+ "swamp-material 0.0.14-alpha.1",
+ "swamp-render 0.0.14-alpha.1",
+ "swamp-render-wgpu 0.0.14-alpha.1",
+ "tracing",
+]
+
+[[package]]
+name = "swamp"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3bc531a5c78058b5901f2223d655e09925f447f56fdc2bf751808baee1a8a9f"
+dependencies = [
+ "fixed32",
+ "int_math",
+ "limnus",
+ "limnus-app",
+ "limnus-assets",
+ "limnus-gamepad",
+ "limnus-local-resource",
+ "limnus-resource",
+ "limnus-screen",
+ "limnus-system-params",
+ "limnus-system-runner",
+ "limnus-wgpu-window",
+ "monotonic-time-rs",
+ "swamp-advanced-game 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-boot-advanced-game 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-boot-game 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-font 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-game 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-game-assets 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-game-audio 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-material 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
@@ -3469,11 +3501,40 @@ dependencies = [
  "limnus-system-runner",
  "limnus-wgpu-window",
  "monotonic-time-rs",
- "swamp-font",
- "swamp-game-assets",
- "swamp-game-audio",
- "swamp-render",
- "swamp-render-wgpu",
+ "swamp-font 0.0.14-alpha.1",
+ "swamp-game-assets 0.0.14-alpha.1",
+ "swamp-game-audio 0.0.14-alpha.1",
+ "swamp-render 0.0.14-alpha.1",
+ "swamp-render-wgpu 0.0.14-alpha.1",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-advanced-game"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b8a30c122221d289d57cf58d32354ea1fe6ddf0a11b197b77dfbc8795ed3d68"
+dependencies = [
+ "fixed32",
+ "int_math",
+ "limnus-app",
+ "limnus-assets",
+ "limnus-audio-mixer",
+ "limnus-basic-input",
+ "limnus-gamepad",
+ "limnus-local-resource",
+ "limnus-message",
+ "limnus-resource",
+ "limnus-screen",
+ "limnus-system-params",
+ "limnus-system-runner",
+ "limnus-wgpu-window",
+ "monotonic-time-rs",
+ "swamp-font 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-game-assets 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-game-audio 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
@@ -3483,10 +3544,25 @@ version = "0.0.14-alpha.1"
 dependencies = [
  "int_math",
  "limnus",
- "swamp-advanced-game",
- "swamp-font",
- "swamp-material",
- "swamp-render-wgpu",
+ "swamp-advanced-game 0.0.14-alpha.1",
+ "swamp-font 0.0.14-alpha.1",
+ "swamp-material 0.0.14-alpha.1",
+ "swamp-render-wgpu 0.0.14-alpha.1",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-boot-advanced-game"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22d4215fa0d5b1196c207326396b88ca4f9a8935fe9dcec2ccc0e03d6e928e47"
+dependencies = [
+ "int_math",
+ "limnus",
+ "swamp-advanced-game 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-font 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-material 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
@@ -3496,16 +3572,46 @@ version = "0.0.14-alpha.1"
 dependencies = [
  "int_math",
  "limnus",
- "swamp-font",
- "swamp-game",
- "swamp-material",
- "swamp-render-wgpu",
+ "swamp-font 0.0.14-alpha.1",
+ "swamp-game 0.0.14-alpha.1",
+ "swamp-material 0.0.14-alpha.1",
+ "swamp-render-wgpu 0.0.14-alpha.1",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-boot-game"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dc1d2f414fb6d38f436889845354c8d982eafdd67ff8bebe90c324ba32bfec0d"
+dependencies = [
+ "int_math",
+ "limnus",
+ "swamp-font 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-game 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-material 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
 [[package]]
 name = "swamp-font"
 version = "0.0.14-alpha.1"
+dependencies = [
+ "bmf-parser",
+ "int_math",
+ "limnus-app",
+ "limnus-asset-registry",
+ "limnus-assets",
+ "limnus-assets-loader",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-font"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f79091702a97be7c10832b4d88bfc54f4150ca25d256e97077f7dd60ea7b820"
 dependencies = [
  "bmf-parser",
  "int_math",
@@ -3535,11 +3641,40 @@ dependencies = [
  "limnus-system-runner",
  "limnus-wgpu-window",
  "monotonic-time-rs",
- "swamp-font",
- "swamp-game-assets",
- "swamp-game-audio",
- "swamp-render",
- "swamp-render-wgpu",
+ "swamp-font 0.0.14-alpha.1",
+ "swamp-game-assets 0.0.14-alpha.1",
+ "swamp-game-audio 0.0.14-alpha.1",
+ "swamp-render 0.0.14-alpha.1",
+ "swamp-render-wgpu 0.0.14-alpha.1",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-game"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2573933f59225d4b859d8ad92aa0f235d81332838194e11c3ba4a3945c11e5f"
+dependencies = [
+ "fixed32",
+ "int_math",
+ "limnus-app",
+ "limnus-assets",
+ "limnus-audio-mixer",
+ "limnus-basic-input",
+ "limnus-gamepad",
+ "limnus-local-resource",
+ "limnus-message",
+ "limnus-resource",
+ "limnus-screen",
+ "limnus-system-params",
+ "limnus-system-runner",
+ "limnus-wgpu-window",
+ "monotonic-time-rs",
+ "swamp-font 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-game-assets 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-game-audio 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
@@ -3554,14 +3689,43 @@ dependencies = [
  "limnus-audio-mixer",
  "limnus-resource",
  "monotonic-time-rs",
- "swamp-font",
- "swamp-render-wgpu",
+ "swamp-font 0.0.14-alpha.1",
+ "swamp-render-wgpu 0.0.14-alpha.1",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-game-assets"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c778e29e019b8d9d952cfaf512741046b67c5be3ab89fb8678f2d79bfa794cfa"
+dependencies = [
+ "int_math",
+ "limnus-asset-id",
+ "limnus-asset-registry",
+ "limnus-assets",
+ "limnus-audio-mixer",
+ "limnus-resource",
+ "monotonic-time-rs",
+ "swamp-font 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
 [[package]]
 name = "swamp-game-audio"
 version = "0.0.14-alpha.1"
+dependencies = [
+ "limnus-assets",
+ "limnus-audio-mixer",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-game-audio"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b053ed54aece538ed88a6a8c4516378656112fc45098bdbf4553340fcb73b7b4"
 dependencies = [
  "limnus-assets",
  "limnus-audio-mixer",
@@ -3580,14 +3744,44 @@ dependencies = [
  "limnus-assets-loader",
  "limnus-resource",
  "limnus-wgpu-window",
- "swamp-render-wgpu",
- "swamp-wgpu-sprites",
+ "swamp-render-wgpu 0.0.14-alpha.1",
+ "swamp-wgpu-sprites 0.0.14-alpha.1",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-material"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2959e140e80c6bae6206697b7df6dd7c4a837fa86c3b0ad5be5c46532a5c7b5"
+dependencies = [
+ "image",
+ "limnus-app",
+ "limnus-asset-id",
+ "limnus-asset-registry",
+ "limnus-assets",
+ "limnus-assets-loader",
+ "limnus-resource",
+ "limnus-wgpu-window",
+ "swamp-render-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-wgpu-sprites 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
 [[package]]
 name = "swamp-render"
 version = "0.0.14-alpha.1"
+dependencies = [
+ "int_math",
+ "monotonic-time-rs",
+ "tracing",
+]
+
+[[package]]
+name = "swamp-render"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9171cd19f9d1807d92da97e5dae5dc086c3492eed4895c80b753d7696661448"
 dependencies = [
  "int_math",
  "monotonic-time-rs",
@@ -3609,10 +3803,35 @@ dependencies = [
  "limnus-wgpu-math",
  "limnus-wgpu-window",
  "monotonic-time-rs",
- "swamp-font",
- "swamp-render",
- "swamp-wgpu",
- "swamp-wgpu-sprites",
+ "swamp-font 0.0.14-alpha.1",
+ "swamp-render 0.0.14-alpha.1",
+ "swamp-wgpu 0.0.14-alpha.1",
+ "swamp-wgpu-sprites 0.0.14-alpha.1",
+ "tracing",
+ "wgpu",
+]
+
+[[package]]
+name = "swamp-render-wgpu"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e8e668fc56feeeae7a3f6e28741b4581a366822e6a8f9cb4d31da979a11d846"
+dependencies = [
+ "bytemuck",
+ "int_math",
+ "limnus-app",
+ "limnus-assets",
+ "limnus-resource",
+ "limnus-screen",
+ "limnus-system-params",
+ "limnus-system-runner",
+ "limnus-wgpu-math",
+ "limnus-wgpu-window",
+ "monotonic-time-rs",
+ "swamp-font 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-render 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "swamp-wgpu-sprites 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
  "wgpu",
 ]
@@ -3732,13 +3951,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "swamp-wgpu"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c682ef56026eafaa0ff89fcad1560a97cceeec3d1d9a5c85d1cba6980839d8a0"
+dependencies = [
+ "wgpu",
+]
+
+[[package]]
 name = "swamp-wgpu-sprites"
 version = "0.0.14-alpha.1"
 dependencies = [
  "bytemuck",
  "image",
  "limnus-wgpu-math",
- "swamp-wgpu",
+ "swamp-wgpu 0.0.14-alpha.1",
+ "tracing",
+ "wgpu",
+]
+
+[[package]]
+name = "swamp-wgpu-sprites"
+version = "0.0.14-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3415c364d43b55bb2e478af98b6f42b451c100cf943188dddd716db95caa2626"
+dependencies = [
+ "bytemuck",
+ "image",
+ "limnus-wgpu-math",
+ "swamp-wgpu 0.0.14-alpha.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
  "wgpu",
 ]
