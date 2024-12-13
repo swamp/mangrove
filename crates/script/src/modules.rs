@@ -3,6 +3,7 @@ use swamp_script_semantic::ResolvedModules;
 
 #[derive(LocalResource, Debug)]
 pub struct ScriptModules {
+    #[allow(unused)]
     pub modules: ResolvedModules,
 }
 

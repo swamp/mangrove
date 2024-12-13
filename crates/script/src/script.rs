@@ -253,7 +253,7 @@ pub fn compile<C>(
 
     resolved_program
         .modules
-        .add_module(Rc::new(RefCell::new(create_std_module())));
+        .add_module(Rc::new(RefCell::new(create_std_module())))?;
 
     let mut dependency_parser = DependencyParser::new();
     dependency_parser.add_ast_module(main_path.clone(), parsed_module);
