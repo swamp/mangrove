@@ -29,6 +29,19 @@ struct Rect {
     size: Size,
 }
 
+impl Rect {
+    fn new(pos: Position, size: Size) -> Rect {
+        Rect { pos: pos, size: size }
+    }
+
+    fn intersects(self, other: Rect) -> Bool {
+        self.pos.x < other.pos.x + other.size.width &&
+        self.pos.x + self.size.width > other.pos.x &&
+        self.pos.y < other.pos.y + other.size.height &&
+        self.pos.y + self.size.height > other.pos.y
+    }
+}
+
 
 enum EnemyType {
     Alan,
@@ -42,23 +55,57 @@ struct Enemy {
     enemy: EnemyType,
 }
 
+enum ExplosionType {
+    Fire, // TODO: add more types
+}
+
+struct Explosion {
+    pos: Position,
+    tick: Int,
+    type: ExplosionType,
+}
+
 struct Logic {
     tick_count: Int, /// how many ticks have passed
     direction: Float, /// which direction the player ship
     x: Float, /// the x position of the player ship
     shots: std::Sparse<Shot>,
     enemies: std::Sparse<Enemy>,
+    explosions: std::Sparse<Explosion>,
 }
 
 impl Logic {
+
+    fn check_shots_vs_enemies(mut self) {
+        for shot_id, shot in mut self.shots {
+            for enemy_id, enemy in mut self.enemies {
+                shot_rect = Rect { pos: Position { x: shot.x, y: shot.y }, size: Size { width: 1.0, height: 2.0 } }
+                if !enemy.rect.intersects(shot_rect) {
+                    continue
+                }
+                self.shots.remove(shot_id)
+                self.enemies.remove(enemy_id)
+                self.explosions.add(Explosion { pos: enemy.rect.pos, tick: 20, type: ExplosionType::Fire })
+            }
+        }
+    }
+
+    fn tick_explosions(mut self) {
+        for explosion_id, explosion in mut self.explosions {
+            if explosion.tick == 0 {
+                self.explosions.remove(explosion_id)
+            } else {
+                explosion.tick = explosion.tick - 1
+            }
+        }
+    }
 
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.x = self.x + self.direction
 
         self.tick_count = self.tick_count + 1
-        if self.tick_count % 60 == 0 {
-            print('tick: {self.tick_count}')
+        if self.tick_count % 30 == 0 {
             rect = Rect { pos: Position { x: 10.0, y: 50.0 }, size: Size { width: 16.0, height: 16.0 } }
             self.enemies.add(Enemy { rect: rect, enemy: EnemyType::Alan, direction: 1.0 })
         }
@@ -74,14 +121,20 @@ impl Logic {
             }
         }
 
-
-        for id, shot in mut self.shots {
+        for shot_id, shot in mut self.shots {
             shot.y = shot.y + 3.0
             if shot.y > 250.0 {
-                self.shots.remove(id)
-            }
+                self.shots.remove(shot_id)
+            } 
+
         }
+
+        self.tick_explosions()
+
+        self.check_shots_vs_enemies()
     }
+
+
 
     /// Called by the mangrove engine when a gamepad axis changes
     fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) {
@@ -101,5 +154,6 @@ fn main() -> Logic {
         x: 0.0,
         shots: Sparse<Shot>::new(),
         enemies: Sparse<Enemy>::new(),
+        explosions: Sparse<Explosion>::new(),
     }
 }
