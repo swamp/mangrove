@@ -7,8 +7,12 @@ description = "Detects file changes and sends message to mangrove script plugin"
 repository = "https://github.com/swamp/mangrove"
 
 [dependencies]
-notify = "7.0.0"
-swamp = { path = "../../../swamp/crates/swamp" }
-limnus-message = "0.0.12"
-message-channel = "0.0.1"
 mangrove-script = { path = "../script", version = "0.0.2" }
+
+swamp = { path = "../../../swamp/crates/swamp", version = "0.0.14-alpha.1" }
+
+limnus-message = "0.0.12"
+
+message-channel = "0.0.1"
+
+notify = "7.0.0"

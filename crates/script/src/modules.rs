@@ -1,5 +1,5 @@
 use swamp::prelude::{App, LocalResource, Plugin};
-use swamp_script_semantic::ResolvedModules;
+use swamp_script::prelude::*;
 
 #[derive(LocalResource, Debug)]
 pub struct ScriptModules {

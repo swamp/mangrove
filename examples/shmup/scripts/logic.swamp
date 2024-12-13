@@ -78,6 +78,7 @@ struct Logic {
     enemies: std::Sparse<Enemy>,
     explosions: std::Sparse<Explosion>,
     players: [Int: Player],
+    cooldown_settings: [Int], // just to test arrays
 }
 
 impl Logic {
@@ -110,7 +111,7 @@ impl Logic {
         for player in mut self.players {
             if player.fire && player.fire_cooldown == 0 {
                 self.shots.add(Shot { x: self.x + 4.0, y: 18.0 })
-                player.fire_cooldown = 10
+                player.fire_cooldown = self.cooldown_settings[1]
             }
         }
     }
@@ -131,6 +132,21 @@ impl Logic {
         if self.tick_count % 30 == 0 {
             rect = Rect { pos: Position { x: 10.0, y: 50.0 }, size: Size { width: 16.0, height: 16.0 } }
             self.enemies.add(Enemy { rect: rect, enemy: EnemyType::Alan, direction: 1.0 })
+
+            // This is just to test for in maps
+            for player_id, player in self.players {
+                print('player {player_id} fire: {player.fire} cooldown: {player.fire_cooldown}')
+            }
+            for  player in self.players {
+                print('player {player}')
+            }
+
+            for cooldown in self.cooldown_settings {
+                print('cooldown: {cooldown}')
+            }
+            for index, cooldown in self.cooldown_settings {
+                print('cooldown: {index}: {cooldown}')
+            }
         }
 
         for id, enemy in mut self.enemies {
@@ -145,7 +161,6 @@ impl Logic {
             if shot.y > 250.0 {
                 self.shots.remove(shot_id)
             } 
-
         }
 
         self.tick_explosions()
@@ -164,7 +179,7 @@ impl Logic {
     fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) {
         match axis {
             LeftStickX => self.direction = value * 4.0,
-            _ => print('not handled axis: {axis} value: {value}'),
+            _ => {},
         }
     }
 
@@ -188,5 +203,6 @@ fn main() -> Logic {
         enemies: Sparse<Enemy>::new(),
         explosions: Sparse<Explosion>::new(),
         players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
+        cooldown_settings: [ 10, 20, 30 ],
     }
 }

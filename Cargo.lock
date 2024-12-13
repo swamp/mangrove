@@ -2164,13 +2164,6 @@ dependencies = [
  "seq-map",
  "swamp",
  "swamp-script",
- "swamp-script-core",
- "swamp-script-derive",
- "swamp-script-eval",
- "swamp-script-eval-loader",
- "swamp-script-parser",
- "swamp-script-semantic",
- "swamp-script-std",
  "tracing",
 ]
 
@@ -3429,7 +3422,7 @@ checksum = "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731"
 
 [[package]]
 name = "swamp"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3459,7 +3452,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-advanced-game"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3486,7 +3479,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-boot-advanced-game"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "int_math",
  "limnus",
@@ -3499,7 +3492,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-boot-game"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "int_math",
  "limnus",
@@ -3512,7 +3505,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-font"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "bmf-parser",
  "int_math",
@@ -3525,7 +3518,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-game"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3552,7 +3545,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-game-assets"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "int_math",
  "limnus-asset-id",
@@ -3568,7 +3561,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-game-audio"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "limnus-assets",
  "limnus-audio-mixer",
@@ -3577,7 +3570,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-material"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "image",
  "limnus-app",
@@ -3594,7 +3587,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-render"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "int_math",
  "monotonic-time-rs",
@@ -3603,7 +3596,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-render-wgpu"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "bytemuck",
  "int_math",
@@ -3626,20 +3619,22 @@ dependencies = [
 
 [[package]]
 name = "swamp-script"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
+ "swamp-script-core",
  "swamp-script-dep-loader",
  "swamp-script-eval",
  "swamp-script-eval-loader",
  "swamp-script-parser",
  "swamp-script-semantic",
+ "swamp-script-std",
 ]
 
 [[package]]
 name = "swamp-script-analyzer"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3649,7 +3644,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-ast"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3658,7 +3653,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-core"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3669,7 +3664,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-dep-loader"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "pest",
  "seq-map",
@@ -3679,17 +3674,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "swamp-script-derive"
-version = "0.0.2-a03"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "swamp-script-eval"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3700,7 +3686,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval-loader"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3710,7 +3696,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-parser"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "fixed32",
  "pest",
@@ -3722,7 +3708,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-semantic"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3733,21 +3719,21 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-std"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "swamp-script-semantic",
 ]
 
 [[package]]
 name = "swamp-wgpu"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "wgpu",
 ]
 
 [[package]]
 name = "swamp-wgpu-sprites"
-version = "0.0.13"
+version = "0.0.14-alpha.1"
 dependencies = [
  "bytemuck",
  "image",

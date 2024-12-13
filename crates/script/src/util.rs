@@ -1,5 +1,4 @@
-use swamp_script::prelude::IdentifierName;
-use swamp_script_semantic::{ResolvedInternalFunctionDefinitionRef, ResolvedStructTypeRef};
+use swamp_script::prelude::*;
 
 pub fn get_impl_func(
     struct_type_ref: &ResolvedStructTypeRef,

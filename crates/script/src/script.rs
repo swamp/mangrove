@@ -10,18 +10,12 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::{fs, io};
 use swamp::prelude::{UVec2, Vec3};
+use swamp_script::prelude::*;
 use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ModulePath, Parameter,
     ParseModule, ResolveError, Type, Variable,
 };
-use swamp_script::ScriptResolveError;
-use swamp_script_core::prelude::Value;
-use swamp_script_core::value::ValueError;
-use swamp_script_eval::prelude::*;
-use swamp_script_eval_loader::resolve_program;
-use swamp_script_parser::{AstParser, Rule};
-use swamp_script_semantic::prelude::*;
-use swamp_script_std::create_std_module;
+
 use tracing::trace;
 
 fn resolve_swamp_file(path: &Path) -> Result<PathBuf, String> {

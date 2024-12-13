@@ -12,11 +12,8 @@ use swamp::prelude::{
     App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Msg,
     Plugin, ReAll, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
 };
-use swamp_script::prelude::{Type, Variable};
-use swamp_script_core::prelude::Value;
-use swamp_script_eval::prelude::ExecuteError;
-use swamp_script_eval::{util_execute_function, ExternalFunctions};
-use swamp_script_semantic::prelude::*;
+use swamp_script::prelude::*;
+
 use tracing::error;
 
 #[derive(Debug)]

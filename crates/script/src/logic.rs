@@ -5,11 +5,8 @@ use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, Ga
 use std::cell::RefCell;
 use std::rc::Rc;
 use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, UpdatePhase};
-use swamp_script::prelude::{ModulePath, ResolveError};
-use swamp_script_core::prelude::*;
-use swamp_script_eval::prelude::ExecuteError;
-use swamp_script_eval::{util_execute_function, ExternalFunctions};
-use swamp_script_semantic::prelude::*;
+use swamp_script::prelude::*;
+
 use tracing::error;
 
 pub fn logic_tick(mut script: LoReM<ScriptLogic>) {
