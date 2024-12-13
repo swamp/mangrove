@@ -2,6 +2,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/mangrove", "crates/save-detector",
+    "crates/mangrove",
+    "crates/save-detector",
     "crates/script",
 ]
