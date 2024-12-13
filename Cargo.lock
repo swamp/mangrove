@@ -2135,7 +2135,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-engine"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "mangrove-save-detector",
  "mangrove-script",
@@ -2144,7 +2144,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-save-detector"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "limnus-message",
  "mangrove-script",
@@ -2155,7 +2155,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-script"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "limnus-gamepad",
  "limnus-message",
