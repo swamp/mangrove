@@ -54,7 +54,7 @@ impl Render {
 
         for explosion in logic.explosions {
             explosion_pos = (explosion.pos.x.floor(), explosion.pos.y.floor(), 0)
-            frame = explosion.tick / 2
+            mut frame = explosion.tick / 2
             if frame > 5 {
                 frame = 5
             }

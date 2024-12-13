@@ -43,6 +43,11 @@ impl Rect {
 }
 
 
+struct Player {
+    fire: Bool,
+    fire_cooldown: Int,
+}
+
 enum EnemyType {
     Alan,
     BonBon,
@@ -72,6 +77,7 @@ struct Logic {
     shots: std::Sparse<Shot>,
     enemies: std::Sparse<Enemy>,
     explosions: std::Sparse<Explosion>,
+    players: [Int: Player],
 }
 
 impl Logic {
@@ -100,6 +106,23 @@ impl Logic {
         }
     }
 
+    fn check_player_input(mut self) {
+        for player in mut self.players {
+            if player.fire && player.fire_cooldown == 0 {
+                self.shots.add(Shot { x: self.x + 4.0, y: 18.0 })
+                player.fire_cooldown = 10
+            }
+        }
+    }
+
+    fn players_fire_cooldown(mut self) {
+        for player in mut self.players {
+            if player.fire_cooldown > 0 {
+                player.fire_cooldown = player.fire_cooldown - 1
+            }
+        }
+    }
+
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.x = self.x + self.direction
@@ -108,10 +131,6 @@ impl Logic {
         if self.tick_count % 30 == 0 {
             rect = Rect { pos: Position { x: 10.0, y: 50.0 }, size: Size { width: 16.0, height: 16.0 } }
             self.enemies.add(Enemy { rect: rect, enemy: EnemyType::Alan, direction: 1.0 })
-        }
-
-        if self.tick_count % 10 == 0 {
-            self.shots.add(Shot { x: self.x + 4.0, y: 18.0 })
         }
 
         for id, enemy in mut self.enemies {
@@ -130,17 +149,30 @@ impl Logic {
         }
 
         self.tick_explosions()
-
         self.check_shots_vs_enemies()
+        self.check_player_input()
+        self.players_fire_cooldown()
     }
 
 
+
+    fn set_player_input_fire(mut self, gamepad: Int, fire: Bool) {
+        self.players[gamepad].fire = fire
+    }
 
     /// Called by the mangrove engine when a gamepad axis changes
     fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) {
         match axis {
             LeftStickX => self.direction = value * 4.0,
             _ => print('not handled axis: {axis} value: {value}'),
+        }
+    }
+
+    /// Called by the mangrove engine when a gamepad button changes
+    fn gamepad_button_changed(mut self, gamepad: Int, button: input::Button, value: Float) {
+        match button {
+            South => self.set_player_input_fire(gamepad, value > 0.5),
+            _ => print('not handled button: {button} value: {value}'),
         }
     }
 
@@ -155,5 +187,6 @@ fn main() -> Logic {
         shots: Sparse<Shot>::new(),
         enemies: Sparse<Enemy>::new(),
         explosions: Sparse<Explosion>::new(),
+        players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
     }
 }
