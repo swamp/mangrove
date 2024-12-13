@@ -1,5 +1,6 @@
 use crate::script::{compile, MangroveError};
 use crate::util::{get_impl_func, get_impl_func_optional};
+use crate::ScriptMessage;
 use limnus_gamepad::{Axis, AxisValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -9,6 +10,7 @@ use swamp_script_core::prelude::*;
 use swamp_script_eval::prelude::ExecuteError;
 use swamp_script_eval::{util_execute_function, ExternalFunctions};
 use swamp_script_semantic::prelude::*;
+use tracing::error;
 
 pub fn logic_tick(mut script: LoReM<ScriptLogic>) {
     script.tick().expect("script.tick() crashed");
@@ -234,13 +236,33 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
     ))
 }
 
+pub fn detect_reload_tick(
+    script_messages: Msg<ScriptMessage>,
+    mut script_logic: LoReM<ScriptLogic>,
+) {
+    for msg in script_messages.iter_previous() {
+        match msg {
+            ScriptMessage::Reload => match boot() {
+                Ok(new_logic) => *script_logic = new_logic,
+                Err(mangrove_error) => {
+                    eprintln!("script logic failed: {}", mangrove_error);
+                    error!(error=?mangrove_error, "script logic compile failed");
+                }
+            },
+        }
+    }
+}
+
 pub struct ScriptLogicPlugin;
 
 impl Plugin for ScriptLogicPlugin {
     fn build(&self, app: &mut App) {
+        app.add_system(UpdatePhase::Update, detect_reload_tick);
         app.add_system(UpdatePhase::Update, logic_tick);
         app.add_system(UpdatePhase::Update, input_tick);
+
         let script_logic = boot().expect("logic boot should work");
+
         app.insert_local_resource(script_logic);
     }
 }

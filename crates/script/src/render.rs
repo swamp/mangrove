@@ -3,19 +3,21 @@ use crate::script::{
     compile, create_empty_struct_value_util, uvec2_like, vec3_like, MangroveError,
 };
 use crate::util::get_impl_func;
+use crate::ScriptMessage;
 use monotonic_time_rs::Millis;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
-    App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef,
-    Plugin, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
+    App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Msg,
+    Plugin, ReAll, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
 };
 use swamp_script::prelude::{Type, Variable};
 use swamp_script_core::prelude::Value;
 use swamp_script_eval::prelude::ExecuteError;
 use swamp_script_eval::{util_execute_function, ExternalFunctions};
 use swamp_script_semantic::prelude::*;
+use tracing::error;
 
 #[derive(Debug)]
 pub struct ScriptRenderContext {
@@ -662,20 +664,39 @@ pub fn render_tick(
         .expect("script.render() crashed");
 }
 
+pub fn detect_reload_tick(
+    script_messages: Msg<ScriptMessage>,
+    mut script_render: LoReM<ScriptRender>,
+    script_logic: LoRe<ScriptLogic>, // it is important that reload is done in correct order, so the new logic is here
+    mut all_resources: ReAll,
+) {
+    for msg in script_messages.iter_previous() {
+        match msg {
+            ScriptMessage::Reload => match boot(&mut all_resources, &script_logic.main_module()) {
+                Ok(new_render) => *script_render = new_render,
+                Err(mangrove_error) => {
+                    eprintln!("script render failed: {}", mangrove_error);
+                    error!(error=?mangrove_error, "script render failed");
+                }
+            },
+        }
+    }
+}
+
 pub struct ScriptRenderPlugin;
 
 impl Plugin for ScriptRenderPlugin {
     fn build(&self, app: &mut App) {
-        // Get the module in its own scope
         let script_logic_module = {
             let logic = app.local_resources().fetch::<ScriptLogic>();
-            logic.main_module().clone() // Assuming we can clone the module
-        }; // immutable borrow is dropped here
+            logic.main_module().clone()
+        };
 
         let script_render =
             boot(app.resources_mut(), &script_logic_module).expect("could not boot script render");
 
         app.insert_local_resource(script_render);
+        app.add_system(UpdatePhase::Update, detect_reload_tick);
         app.add_system(UpdatePhase::Update, render_tick);
     }
 }

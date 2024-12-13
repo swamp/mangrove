@@ -28,11 +28,7 @@ use swamp::prelude::*;
 
 
 
-// TODO: Should be moved to swamp engine
 
-*/
-
-/*
 
 pub fn detect_reload_tick(
     script_messages: Msg<ScriptMessage>,
