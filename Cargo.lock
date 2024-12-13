@@ -3652,6 +3652,7 @@ name = "swamp-script-ast"
 version = "0.0.6"
 dependencies = [
  "fixed32",
+ "seq-fmt",
  "seq-map",
 ]
 
