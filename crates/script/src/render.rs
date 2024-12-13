@@ -411,10 +411,13 @@ pub fn register_asset_struct_value_with_members(
         is_mutable: false,
     };
 
+    let frame_fixed_grid_material_id: ExternalFunctionId = state.allocate_external_function_id();
+
+
     let _material_png_fn = namespace.util_add_member_external_function(
         &assets_general_type,
         "frame_fixed_grid_material_png",
-        unique_id,
+        frame_fixed_grid_material_id,
         &[
             mut_self_parameter,
             asset_name_parameter,
@@ -425,7 +428,7 @@ pub fn register_asset_struct_value_with_members(
     )?;
     externals.register_external_function(
         "frame_fixed_grid_material_png",
-        unique_id,
+        frame_fixed_grid_material_id,
         move |params: &[Value], context| {
             //let self_value = &params[0]; // Assets is, by design, an empty struct
             let asset_name = &params[1].expect_string()?;
