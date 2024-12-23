@@ -368,7 +368,6 @@ pub fn register_asset_struct_value_with_members(
         is_mutable: None,
     };
 
-
     /*
         let _material_png_fn = namespace.util_add_member_external_function(
             &assets_general_type,
@@ -573,14 +572,8 @@ pub fn boot(
     ) = create_render_module(&mut resolved_program, &mut external_functions)?;
 
     let render_module_ref = Rc::new(RefCell::new(render_module));
-    resolved_program.modules.add(
-        &["mangrove".to_string(), "render".to_string()],
-        render_module_ref,
-    );
-    resolved_program.modules.add(
-        &["mangrove".to_string(), "render".to_string()],
-        logic_main_module.clone(),
-    );
+    resolved_program.modules.add(render_module_ref);
+    resolved_program.modules.add(logic_main_module.clone());
 
     {
         let source_map = resource_storage.fetch_mut::<SourceMapResource>();

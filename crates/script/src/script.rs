@@ -118,7 +118,7 @@ pub fn create_empty_struct_type(
     name: &str,
     type_number: TypeNumber,
 ) -> Result<ResolvedStructTypeRef, ResolveError> {
-    namespace.add_generated_struct(name, &[("hidden", ResolvedType::Any)], type_number)
+    Ok(namespace.add_generated_struct(name, &[("hidden", ResolvedType::Any)], type_number)?)
 }
 
 pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
@@ -260,15 +260,12 @@ pub fn compile<C>(
     let main_path = module_path;
 
     let main_module_ref = Rc::new(RefCell::new(main_module));
-    resolved_program.modules.add(main_path, main_module_ref);
+    resolved_program.modules.add(main_module_ref);
 
-    /*
-    TODO:
     resolved_program
         .modules
-        .add(Rc::new(RefCell::new(create_std_module())))?;
+        .add(Rc::new(RefCell::new(create_std_module())));
 
-     */
 
     let mut dependency_parser = DependencyParser::new();
     dependency_parser.add_ast_module(Vec::from(main_path.clone()), parsed_module);
