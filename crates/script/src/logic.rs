@@ -1,12 +1,13 @@
 use crate::script::{compile, MangroveError};
 use crate::util::{get_impl_func, get_impl_func_optional};
-use crate::ScriptMessage;
+use crate::{ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, UpdatePhase};
+use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, ReM, UpdatePhase};
 use swamp_script::prelude::*;
 
+use crate::err::{show_mangrove_error, show_parse_error};
 use tracing::error;
 
 pub fn logic_tick(mut script: LoReM<ScriptLogic>) {
@@ -31,6 +32,7 @@ pub struct ScriptLogic {
     external_functions: ExternalFunctions<ScriptLogicContext>,
     script_context: ScriptLogicContext,
     resolved_program: ResolvedProgram,
+    source_map_lookup: Box<dyn SourceMapLookup>,
     //axis_enum_type: ResolvedEnumTypeRef,
     input_module: ResolvedModuleRef,
 }
@@ -45,6 +47,7 @@ impl ScriptLogic {
         resolved_program: ResolvedProgram,
         //axis_enum_type: ResolvedEnumTypeRef,
         input_module: ResolvedModuleRef,
+        source_map_lookup: Box<dyn SourceMapLookup>,
     ) -> Self {
         Self {
             logic_value_ref,
@@ -55,6 +58,7 @@ impl ScriptLogic {
             script_context: ScriptLogicContext {},
             resolved_program,
             //axis_enum_type,
+            source_map_lookup,
             input_module,
         }
     }
@@ -66,8 +70,8 @@ impl ScriptLogic {
         }
     }
 
-    pub fn main_module(&self) -> &ResolvedModuleRef {
-        let root_module_path = ModulePath(vec!["logic".to_string()]);
+    pub fn main_module(&self) -> ResolvedModuleRef {
+        let root_module_path = &["logic".to_string()].to_vec();
 
         self.resolved_program
             .modules
@@ -80,6 +84,7 @@ impl ScriptLogic {
             &self.external_functions,
             &self.logic_fn,
             &[self.logic_value_ref.clone()],
+            &*self.source_map_lookup,
             &mut self.script_context,
         )?;
 
@@ -101,6 +106,7 @@ impl ScriptLogic {
             &self.external_functions,
             fn_def,
             &complete_arguments,
+            &*self.source_map_lookup,
             &mut self.script_context,
         )?;
 
@@ -133,8 +139,10 @@ impl ScriptLogic {
 
             let variant = input_module_ref
                 .namespace
+                .borrow()
                 .get_enum_variant_type_str("Axis", axis_str)
-                .expect("axis");
+                .expect("axis")
+                .clone();
 
             Value::EnumVariantSimple(variant.clone())
         };
@@ -175,8 +183,10 @@ impl ScriptLogic {
 
             let variant = input_module_ref
                 .namespace
+                .borrow()
                 .get_enum_variant_type_str("Button", button_str)
-                .expect("button name failed");
+                .expect("button name failed")
+                .clone();
 
             Value::EnumVariantSimple(variant.clone())
         };
@@ -199,34 +209,59 @@ impl ScriptLogic {
 pub fn input_module(
     resolve_state: &mut ResolvedProgramState,
 ) -> Result<(ResolvedModule, ResolvedEnumTypeRef, ResolvedEnumTypeRef), ResolveError> {
-    let mut module = ResolvedModule::new(ModulePath(vec!["input".to_string()]));
+    let module = ResolvedModule::new(&["input".to_string()]);
 
     let axis_enum_type_ref = {
         let axis_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
+
+        let parent = ResolvedEnumType {
+            name: ResolvedLocalTypeIdentifier(ResolvedNode {
+                span: Default::default(),
+            }),
+            module_path: ResolvedModulePath(vec![]),
+            number: axis_enum_type_id,
+        };
+        let parent_ref = Rc::new(parent);
+
         let axis_enum_type_ref = module
             .namespace
-            .create_enum_type(&LocalTypeIdentifier::from_str("Axis"), axis_enum_type_id)?;
+            .borrow_mut()
+            .add_enum_type("Axis", parent_ref)?;
 
-        let names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
-        for name in names {
+        let variant_names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
+        for variant_name in variant_names {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
             let variant = ResolvedEnumVariantType::new(
                 axis_enum_type_ref.clone(),
-                LocalTypeIdentifier::from_str(name),
+                ResolvedLocalTypeIdentifier(ResolvedNode {
+                    span: Default::default(),
+                }),
                 ResolvedEnumVariantContainerType::Nothing,
                 variant_type_id,
             );
-            module.namespace.add_enum_variant(variant)?;
+            module
+                .namespace
+                .borrow_mut()
+                .add_enum_variant("Axis", variant_name, variant)?;
         }
         axis_enum_type_ref
     };
 
     let button_enum_type_ref = {
         let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
-        let button_enum_type_ref = module.namespace.create_enum_type(
-            &LocalTypeIdentifier::from_str("Button"),
-            button_enum_type_id,
-        )?;
+                                                                   // let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
+        let parent = ResolvedEnumType {
+            name: ResolvedLocalTypeIdentifier(ResolvedNode {
+                span: Default::default(),
+            }),
+            module_path: ResolvedModulePath(vec![]),
+            number: button_enum_type_id,
+        };
+        let parent_ref = Rc::new(parent);
+        let button_enum_type_ref = module
+            .namespace
+            .borrow_mut()
+            .add_enum_type("Button", parent_ref)?;
 
         let button_names = [
             "South",
@@ -248,15 +283,22 @@ pub fn input_module(
             "DPadRight",
         ];
 
-        for button_name in button_names {
+        for button_variant_name in button_names {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
-            let variant = ResolvedEnumVariantType::new(
-                button_enum_type_ref.clone(),
-                LocalTypeIdentifier::from_str(button_name),
-                ResolvedEnumVariantContainerType::Nothing,
-                variant_type_id,
-            );
-            module.namespace.add_enum_variant(variant)?;
+            let variant = ResolvedEnumVariantType {
+                owner: button_enum_type_ref.clone(),
+                data: ResolvedEnumVariantContainerType::Nothing,
+                name: ResolvedLocalTypeIdentifier(ResolvedNode {
+                    span: Default::default(),
+                }),
+                number: variant_type_id,
+            };
+
+            module.namespace.borrow_mut().add_enum_variant(
+                "Button",
+                button_variant_name,
+                variant,
+            )?;
         }
         button_enum_type_ref
     };
@@ -264,7 +306,7 @@ pub fn input_module(
     Ok((module, axis_enum_type_ref, button_enum_type_ref))
 }
 
-pub fn boot() -> Result<ScriptLogic, MangroveError> {
+pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveError> {
     let mut resolved_program = ResolvedProgram::new();
     let mut external_functions = ExternalFunctions::<ScriptLogicContext>::new();
 
@@ -273,35 +315,50 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
     let input_module_ref = Rc::new(RefCell::new(input_module));
     resolved_program
         .modules
-        .add_module(input_module_ref.clone())?;
+        .add(&["input".to_string()], input_module_ref.clone());
+
+    let base_path = source_map.base_path().to_path_buf();
 
     compile(
-        "scripts/logic.swamp".as_ref(),
+        base_path.as_path(),
+        "logic.swamp".as_ref(),
+        &["logic".to_string()],
         &mut resolved_program,
         &mut external_functions,
+        &mut source_map.wrapper.source_map,
         "logic",
     )?;
 
-    let root_module_path = ModulePath(vec!["logic".to_string()]);
+    let root_module_path = &["logic".to_string()];
     let main_fn = {
         let main_module = resolved_program
             .modules
-            .get(&root_module_path)
+            .get(root_module_path)
             .expect("could not find main module");
 
         let binding = main_module.borrow();
         let function_ref = binding
             .namespace
+            .borrow()
             .get_internal_function("main")
-            .expect("No main function");
+            .expect("No main function")
+            .clone();
 
-        Rc::clone(function_ref) // Clone the Rc, not the inner value
+        Rc::clone(&function_ref) // Clone the Rc, not the inner value
     };
 
     let mut script_context = ScriptLogicContext {};
 
-    let logic_value =
-        util_execute_function(&external_functions, &main_fn, &[], &mut script_context)?;
+    let source_map = SourceMap::new("logic/".as_ref());
+    let wrapper = SourceMapWrapper { source_map };
+
+    let logic_value = util_execute_function(
+        &external_functions,
+        &main_fn,
+        &[],
+        &wrapper,
+        &mut script_context,
+    )?;
 
     let logic_struct_type_ref = if let Value::Struct(struct_type_ref, _, _) = &logic_value {
         struct_type_ref
@@ -327,16 +384,18 @@ pub fn boot() -> Result<ScriptLogic, MangroveError> {
         resolved_program,
         // axis_enum_type,
         input_module_ref.clone(),
+        Box::new(wrapper),
     ))
 }
 
 pub fn detect_reload_tick(
     script_messages: Msg<ScriptMessage>,
     mut script_logic: LoReM<ScriptLogic>,
+    mut source_map_resource: ReM<SourceMapResource>,
 ) {
     for msg in script_messages.iter_previous() {
         match msg {
-            ScriptMessage::Reload => match boot() {
+            ScriptMessage::Reload => match boot(&mut source_map_resource) {
                 Ok(new_logic) => *script_logic = new_logic,
                 Err(mangrove_error) => {
                     eprintln!("script logic failed: {}", mangrove_error);
@@ -355,8 +414,16 @@ impl Plugin for ScriptLogicPlugin {
         app.add_system(UpdatePhase::Update, logic_tick);
         app.add_system(UpdatePhase::Update, input_tick);
 
-        let script_logic = boot().expect("logic boot should work");
+        let source_map = app.resources_mut().fetch_mut::<SourceMapResource>();
 
-        app.insert_local_resource(script_logic);
+        let script_logic_result = boot(source_map);
+        if let Ok(script_logic) = script_logic_result {
+            app.insert_local_resource(script_logic);
+        } else {
+            show_mangrove_error(
+                script_logic_result.err().unwrap(),
+                &source_map.wrapper.source_map,
+            );
+        }
     }
 }

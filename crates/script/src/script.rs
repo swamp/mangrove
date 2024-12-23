@@ -6,9 +6,9 @@ use seq_map::SeqMapError;
 use std::cell::RefCell;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
+use std::io;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::{fs, io};
 use swamp::prelude::{UVec2, Vec3};
 use swamp_script::prelude::*;
 use swamp_script::prelude::{
@@ -42,7 +42,7 @@ fn resolve_swamp_file(path: &Path) -> Result<PathBuf, String> {
 #[derive(Debug)]
 pub enum MangroveError {
     IoError(std::io::Error),
-    ParseError(pest::error::Error<Rule>), // TODO: pest should not leak through here
+    DecoratedParseError(DecoratedParseErr),
     ExecuteError(ExecuteError),
     Other(String),
     ScriptResolveError(ScriptResolveError),
@@ -101,9 +101,9 @@ impl From<DepLoaderError> for MangroveError {
     }
 }
 
-impl From<pest::error::Error<Rule>> for MangroveError {
-    fn from(value: pest::error::Error<Rule>) -> Self {
-        Self::ParseError(value)
+impl From<DecoratedParseErr> for MangroveError {
+    fn from(value: DecoratedParseErr) -> Self {
+        Self::DecoratedParseError(value)
     }
 }
 
@@ -116,8 +116,9 @@ impl From<String> for MangroveError {
 pub fn create_empty_struct_type(
     namespace: &mut ResolvedModuleNamespace,
     name: &str,
-) -> Result<ResolvedStructTypeRef, SemanticError> {
-    namespace.util_insert_struct_type(name, &[("hidden", ResolvedType::Any)])
+    type_number: TypeNumber,
+) -> Result<ResolvedStructTypeRef, ResolveError> {
+    namespace.add_generated_struct(name, &[("hidden", ResolvedType::Any)], type_number)
 }
 
 pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
@@ -131,8 +132,9 @@ pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
 pub fn create_empty_struct_value_util(
     mut namespace: &mut ResolvedModuleNamespace,
     name: &str,
-) -> Result<(Value, ResolvedStructTypeRef), SemanticError> {
-    let struct_type = create_empty_struct_type(&mut namespace, name)?;
+    type_number: TypeNumber,
+) -> Result<(Value, ResolvedStructTypeRef), ResolveError> {
+    let struct_type = create_empty_struct_type(&mut namespace, name, type_number)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
 }
 
@@ -164,74 +166,89 @@ pub fn uvec2_like(v: &Value) -> Result<UVec2, ValueError> {
 fn prepare_main_module<C>(
     types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
-    externals: &mut ExternalFunctions<C>,
+externals: &mut ExternalFunctions<C>,
     module_name: &str,
-) -> Result<ResolvedModule, SemanticError> {
-    let root_module_path = ModulePath(vec![module_name.to_string()]);
-    let mut main_module = ResolvedModule::new(root_module_path.clone());
+) -> Result<ResolvedModule, ResolveError> {
+    let root_module_path = &[module_name.to_string()].to_vec();
+    let mut main_module = ResolvedModule::new(root_module_path);
+    /*
 
-    let any_parameter = ResolvedParameter {
-        name: "data".to_string(),
-        resolved_type: ResolvedType::Any,
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "data".to_string(),
-                is_mutable: false,
+        let any_parameter = ResolvedParameter {
+            name: Default::default(),
+            resolved_type: ResolvedType::Any,
+            is_mutable: None,
+        };
+
+        let print_id = state.allocate_external_function_id();
+
+        let print_external = ResolvedExternalFunctionDefinition {
+            name: Default::default(),
+            signature: ResolvedFunctionSignature {
+                first_parameter_is_self: false,
+                parameters: [any_parameter].to_vec(),
+                return_type: types.unit_type(),
             },
-            param_type: Type::Any,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
-    };
+            id: print_id,
+        };
 
-    let print_id = state.allocate_external_function_id();
-
-    main_module.namespace.util_add_external_function(
-        "print",
-        print_id,
-        &[any_parameter],
-        types.unit_type(),
-    )?;
-
-    externals
-        .register_external_function("print", print_id, move |args: &[Value], _| {
-            if let Some(value) = args.first() {
-                let display_value = value.convert_to_string_if_needed();
-                println!("{}", display_value);
-                Ok(Value::Unit)
-            } else {
-                Err("print requires at least one argument".to_string())?
-            }
-        })
-        .expect("should work to register");
-
+        main_module
+            .namespace
+            .borrow_mut()
+            .add_external_function_declaration("print", print_external.into())?;
+        externals
+            .register_external_function("print", print_id, move |args: &[Value], context| {
+                if let Some(value) = args.first() {
+                    let display_value = value.convert_to_string_if_needed(context.source_map);
+                    println!("{}", display_value);
+                    Ok(Value::Unit)
+                } else {
+                    Err("print requires at least one argument".to_string())?
+                }
+            })
+            .expect("should work to register");
+    */
     Ok(main_module)
 }
 
-fn parse_module(path: PathBuf) -> Result<ParseModule, MangroveError> {
-    let parser = AstParser::new();
+#[derive(Debug)]
+pub struct DecoratedParseErr {
+    pub span: Span,
+    pub specific: SpecificError,
+}
 
-    let path_buf = resolve_swamp_file(Path::new(&path))?;
+fn parse_module(relative_path: &str, source_map: &mut SourceMap) -> Result<ParseModule, MangroveError> {
+    let parser = AstParser {};
 
-    let main_swamp = fs::read_to_string(&path_buf)?;
+    //let path_buf = resolve_swamp_file(Path::new(&path))?;
 
-    let ast_module = parser.parse_script(&main_swamp)?;
+    let (file_id, main_swamp) =  source_map.read_file_relative(relative_path)?;
+
+    let ast_module = parser.parse_module(&main_swamp).map_err(|parse_err| MangroveError::DecoratedParseError(DecoratedParseErr {
+        span: Span {
+            file_id,
+            offset: parse_err.span.offset,
+            length: parse_err.span.length,
+        },
+        specific: SpecificError::ExpectingTypeIdentifier,
+    }))?;
 
     trace!("ast_program:\n{:#?}", ast_module);
 
-    let parse_module = ParseModule { ast_module };
+    let parse_module = ParseModule { file_id, ast_module };
 
     Ok(parse_module)
 }
 
 pub fn compile<C>(
-    path: &Path,
+    base_path: &Path,
+    relative_path: &str,
+    module_path: &[String],
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
+    mut source_map: &mut SourceMap,
     module_name: &str,
 ) -> Result<(), MangroveError> {
-    let parsed_module = parse_module(PathBuf::from(path))?;
+    let parsed_module = parse_module(relative_path, &mut source_map)?;
 
     let main_module = prepare_main_module(
         &resolved_program.types,
@@ -240,28 +257,34 @@ pub fn compile<C>(
         module_name,
     )?;
 
-    let main_path = main_module.module_path.clone();
+    let main_path = module_path;
 
     let main_module_ref = Rc::new(RefCell::new(main_module));
-    resolved_program.modules.add_module(main_module_ref)?;
+    resolved_program.modules.add(main_path, main_module_ref);
 
+    /*
+    TODO:
     resolved_program
         .modules
-        .add_module(Rc::new(RefCell::new(create_std_module())))?;
+        .add(Rc::new(RefCell::new(create_std_module())))?;
+
+     */
 
     let mut dependency_parser = DependencyParser::new();
-    dependency_parser.add_ast_module(main_path.clone(), parsed_module);
+    dependency_parser.add_ast_module(Vec::from(main_path.clone()), parsed_module);
 
     let module_paths_in_order = parse_dependant_modules_and_resolve(
-        path.to_owned(),
-        main_path.clone(),
+        base_path.to_owned(),
+        Vec::from(main_path),
         &mut dependency_parser,
+        &mut source_map,
     )?;
 
     resolve_program(
         &resolved_program.types,
         &mut resolved_program.state,
         &mut resolved_program.modules,
+        source_map,
         &module_paths_in_order,
         &dependency_parser,
     )?;

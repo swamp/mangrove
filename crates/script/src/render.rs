@@ -3,17 +3,17 @@ use crate::script::{
     compile, create_empty_struct_value_util, uvec2_like, vec3_like, MangroveError,
 };
 use crate::util::get_impl_func;
-use crate::ScriptMessage;
+use crate::{ScriptMessage, SourceMapResource};
 use monotonic_time_rs::Millis;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
     App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Msg,
-    Plugin, ReAll, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
+    Plugin, Re, ReAll, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
 };
+use swamp_script::prelude::Rule::program;
 use swamp_script::prelude::*;
-
 use tracing::error;
 
 #[derive(Debug)]
@@ -167,92 +167,69 @@ pub fn register_gfx_struct_value_with_members(
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     namespace: &mut ResolvedModuleNamespace,
 ) -> Result<Value, MangroveError> {
-    let (gfx_value, gfx_struct_type) = create_empty_struct_value_util(namespace, "Gfx")?;
-    let gfx_value_mut = Value::Reference(Rc::new(RefCell::new(gfx_value.clone())));
+    let gfx_type_number = state.allocate_number();
+    let (gfx_value, gfx_struct_type) =
+        create_empty_struct_value_util(namespace, "Gfx", gfx_type_number)?;
+    let mut gfx_value_mut = Value::Reference(Rc::new(RefCell::new(gfx_value.clone())));
     let assets_general_type = ResolvedType::Struct(gfx_struct_type.clone());
 
     let mut_self_parameter = ResolvedParameter {
-        name: "self".to_string(),
+        name: ResolvedNode::default(),
         resolved_type: assets_general_type.clone(),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "self".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Int,
-            is_mutable: true,
-            is_self: true,
-        },
-        is_mutable: true,
+        is_mutable: Some(ResolvedNode::default()),
     };
 
     let string_type = types.string_type();
     let material_handle = ResolvedParameter {
-        name: "material_handle".to_string(),
+        name: Default::default(), // material handle
         resolved_type: string_type,
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Any,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
+        is_mutable: None,
     };
 
     let int_type = types.int_type();
     let tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
     let tuple_type_ref = Rc::new(tuple_type);
 
+    //position
     let position_param = ResolvedParameter {
-        name: "position".to_string(),
+        name: Default::default(),
         resolved_type: ResolvedType::Tuple(tuple_type_ref),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Any,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
+        is_mutable: None,
     };
 
     let size_int_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
     let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
 
+    // size
     let size_param = ResolvedParameter {
-        name: "size".to_string(),
+        name: Default::default(),
         resolved_type: ResolvedType::Tuple(size_int_tuple_type_ref),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Int,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
+        is_mutable: None,
     };
 
     let unique_id: ExternalFunctionId = state.allocate_external_function_id();
 
-    let _material_png_fn = namespace.util_add_member_external_function(
-        &assets_general_type,
+    let sprite_fn = ResolvedExternalFunctionDefinition {
+        name: Default::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: true,
+            parameters: (&[
+                mut_self_parameter.clone(),
+                position_param.clone(),
+                material_handle.clone(),
+                size_param,
+            ])
+                .to_vec(),
+            return_type: types.int_type(),
+        },
+        id: unique_id,
+    };
+
+    let _material_png_fn = gfx_struct_type.borrow_mut().add_external_member_function(
         "sprite",
-        unique_id,
-        &[
-            mut_self_parameter.clone(),
-            position_param.clone(),
-            material_handle.clone(),
-            size_param,
-        ],
-        types.int_type(),
+        ResolvedExternalFunctionDefinitionRef::from(sprite_fn),
     )?;
+
     externals.register_external_function(
         "sprite",
         unique_id,
@@ -276,27 +253,27 @@ pub fn register_gfx_struct_value_with_members(
 
     let unique_id: ExternalFunctionId = state.allocate_external_function_id();
 
+    // frame
     let frame = ResolvedParameter {
-        name: "frame".to_string(),
+        name: Default::default(),
         resolved_type: types.int_type(),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Int,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
+        is_mutable: None,
     };
-    let _material_png_fn = namespace.util_add_member_external_function(
-        &assets_general_type,
-        "sprite_atlas_frame",
-        unique_id,
-        &[mut_self_parameter, position_param, material_handle, frame],
-        types.int_type(),
-    )?;
+
+    let material_png_fn_def = ResolvedExternalFunctionDefinition {
+        name: Default::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: true,
+            parameters: (&[mut_self_parameter, position_param, material_handle, frame]).to_vec(),
+            return_type: types.int_type(),
+        },
+        id: unique_id,
+    };
+
+    let _material_png_fn = gfx_struct_type
+        .borrow_mut()
+        .add_external_member_function("sprite_atlas_frame", material_png_fn_def.into())?;
+
     externals.register_external_function(
         "sprite_atlas_frame",
         unique_id,
@@ -331,51 +308,40 @@ pub fn register_asset_struct_value_with_members(
     material_struct_type_ref: ResolvedStructTypeRef,
     fixed_grid_struct_type_ref: ResolvedStructTypeRef,
 ) -> Result<Value, MangroveError> {
-    let (assets_value, assets_type) = create_empty_struct_value_util(namespace, "Assets")?;
+    let assets_type_number = state.allocate_number();
+    let (assets_value, assets_type) =
+        create_empty_struct_value_util(namespace, "Assets", assets_type_number)?;
     let assets_value_mut = Value::Reference(Rc::new(RefCell::new(assets_value.clone())));
 
     let assets_general_type = ResolvedType::Struct(assets_type.clone());
 
     let mut_self_parameter = ResolvedParameter {
-        name: "self".to_string(),
+        name: Default::default(),
         resolved_type: assets_general_type.clone(),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "self".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Int,
-            is_mutable: true,
-            is_self: true,
-        },
-        is_mutable: true,
+        is_mutable: Some(Default::default()),
     };
 
     let string_type = types.string_type();
     let asset_name_parameter = ResolvedParameter {
-        name: "asset_name".to_string(),
+        name: Default::default(),
         resolved_type: string_type,
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::String,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
+        is_mutable: None,
     };
 
     let unique_id: ExternalFunctionId = state.allocate_external_function_id();
+    let material_png_def = ResolvedExternalFunctionDefinition {
+        name: Default::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: false,
+            parameters: (&[mut_self_parameter.clone(), asset_name_parameter.clone()]).to_vec(),
+            return_type: ResolvedType::Struct(material_struct_type_ref),
+        },
+        id: unique_id,
+    };
 
-    let _material_png_fn = namespace.util_add_member_external_function(
-        &assets_general_type,
-        "material_png",
-        unique_id,
-        &[mut_self_parameter.clone(), asset_name_parameter.clone()],
-        ResolvedType::Struct(material_struct_type_ref),
-    )?;
+    let _material_png_fn = assets_type
+        .borrow_mut()
+        .add_external_member_function("material_png", material_png_def.into())?;
 
     externals.register_external_function(
         "material_png",
@@ -397,38 +363,43 @@ pub fn register_asset_struct_value_with_members(
     let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
 
     let size_param = ResolvedParameter {
-        name: "size".to_string(),
+        name: Default::default(),
         resolved_type: ResolvedType::Tuple(size_int_tuple_type_ref),
-        ast_parameter: Parameter {
-            variable: Variable {
-                name: "".to_string(),
-                is_mutable: false,
-            },
-            param_type: Type::Int,
-            is_mutable: false,
-            is_self: false,
-        },
-        is_mutable: false,
+        is_mutable: None,
     };
 
-    let frame_fixed_grid_material_id: ExternalFunctionId = state.allocate_external_function_id();
 
+    /*
+        let _material_png_fn = namespace.util_add_member_external_function(
+            &assets_general_type,
 
-    let _material_png_fn = namespace.util_add_member_external_function(
-        &assets_general_type,
+        )?;
+    */
+
+    let frame_fixed_grid_material_png_def = ResolvedExternalFunctionDefinition {
+        name: Default::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: false,
+            parameters: (&[
+                mut_self_parameter,
+                asset_name_parameter,
+                size_param.clone(),
+                size_param,
+            ])
+                .to_vec(),
+            return_type: ResolvedType::Struct(fixed_grid_struct_type_ref),
+        },
+        id: unique_id,
+    };
+
+    let _frame_fixed_grid_material_png_fn = assets_type.borrow_mut().add_external_member_function(
         "frame_fixed_grid_material_png",
-        frame_fixed_grid_material_id,
-        &[
-            mut_self_parameter,
-            asset_name_parameter,
-            size_param.clone(),
-            size_param,
-        ],
-        ResolvedType::Struct(fixed_grid_struct_type_ref),
+        frame_fixed_grid_material_png_def.into(),
     )?;
+
     externals.register_external_function(
         "frame_fixed_grid_material_png",
-        frame_fixed_grid_material_id,
+        unique_id,
         move |params: &[Value], context| {
             //let self_value = &params[0]; // Assets is, by design, an empty struct
             let asset_name = &params[1].expect_string()?;
@@ -476,6 +447,7 @@ impl ScriptRender {
         &mut self,
         wgpu_render: &mut Render,
         logic_value_ref: &Value,
+        source_map: &SourceMapResource,
     ) -> Result<(), ExecuteError> {
         let mut script_context = ScriptRenderContext {
             game_assets: None,
@@ -493,6 +465,7 @@ impl ScriptRender {
                 self.gfx_struct_value.clone(),
             ]
             .to_vec(),
+            &source_map.wrapper,
             &mut script_context,
         )?;
 
@@ -515,40 +488,51 @@ pub fn create_render_module(
     ),
     MangroveError,
 > {
-    let mut mangrove_render_module = ResolvedModule::new(ModulePath(vec![
-        "mangrove".to_string(),
-        "render".to_string(),
-    ]));
+    let mut mangrove_render_module =
+        ResolvedModule::new(&["mangrove".to_string(), "render".to_string()]);
 
     let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
         type_name: "MaterialHandle".to_string(),
         number: 91,
     });
-    let material_handle_struct_ref = mangrove_render_module.namespace.util_insert_struct_type(
-        "MaterialHandle",
-        &[(
-            "hidden",
-            ResolvedType::RustType(material_handle_rust_type_ref.clone()),
-        )],
-    )?;
+
+    let material_handle_struct_id = resolved_program.state.allocate_number();
+    let material_handle_struct_ref = mangrove_render_module
+        .namespace
+        .borrow_mut()
+        .add_generated_struct(
+            "MaterialHandle",
+            &[(
+                "hidden",
+                ResolvedType::RustType(material_handle_rust_type_ref.clone()),
+            )],
+            material_handle_struct_id,
+        )?;
 
     let fixed_atlas_handle_rust_type_ref = Rc::new(ResolvedRustType {
         type_name: "FixedAtlasHandle".to_string(),
         number: 92,
     });
-    let fixed_atlas_handle_struct_ref = mangrove_render_module.namespace.util_insert_struct_type(
-        "FixedAtlasHandle",
-        &[(
-            "hidden",
-            ResolvedType::RustType(fixed_atlas_handle_rust_type_ref.clone()),
-        )],
-    )?;
+
+    let fixed_atlas_handle_struct_id = resolved_program.state.allocate_number();
+
+    let fixed_atlas_handle_struct_ref = mangrove_render_module
+        .namespace
+        .borrow_mut()
+        .add_generated_struct(
+            "FixedAtlasHandle",
+            &[(
+                "hidden",
+                ResolvedType::RustType(fixed_atlas_handle_rust_type_ref.clone()),
+            )],
+            fixed_atlas_handle_struct_id,
+        )?;
 
     let assets_struct_value = register_asset_struct_value_with_members(
         &resolved_program.types,
         &mut resolved_program.state,
         &mut externals,
-        &mut mangrove_render_module.namespace,
+        &mut mangrove_render_module.namespace.borrow_mut(),
         material_handle_struct_ref.clone(),
         fixed_atlas_handle_struct_ref.clone(),
     )?;
@@ -557,7 +541,7 @@ pub fn create_render_module(
         &resolved_program.types,
         &mut resolved_program.state,
         &mut externals,
-        &mut mangrove_render_module.namespace,
+        &mut mangrove_render_module.namespace.borrow_mut(),
     )?;
 
     Ok((
@@ -589,27 +573,38 @@ pub fn boot(
     ) = create_render_module(&mut resolved_program, &mut external_functions)?;
 
     let render_module_ref = Rc::new(RefCell::new(render_module));
-    resolved_program.modules.add_module(render_module_ref)?;
-    resolved_program
-        .modules
-        .add_module(logic_main_module.clone())?;
+    resolved_program.modules.add(
+        &["mangrove".to_string(), "render".to_string()],
+        render_module_ref,
+    );
+    resolved_program.modules.add(
+        &["mangrove".to_string(), "render".to_string()],
+        logic_main_module.clone(),
+    );
 
-    compile(
-        "scripts/render.swamp".as_ref(),
-        &mut resolved_program,
-        &mut external_functions,
-        "render",
-    )?;
+    {
+        let source_map = resource_storage.fetch_mut::<SourceMapResource>();
+        let base_path = { source_map.base_path().to_path_buf() };
+        compile(
+            base_path.as_path(),
+            "render.swamp".as_ref(),
+            &["render".to_string()],
+            &mut resolved_program,
+            &mut external_functions,
+            &mut source_map.wrapper.source_map,
+            "render",
+        )?;
+    }
 
-    let root_module_path = ModulePath(vec!["render".to_string()]);
+    let root_module_path = &["render".to_string()].to_vec();
     let main_module = resolved_program
         .modules
         .get(&root_module_path)
         .expect("could not find main module");
 
     let binding = main_module.borrow();
-    let main_fn = binding
-        .namespace
+    let namespace_binding = binding.namespace.borrow_mut();
+    let main_fn = namespace_binding
         .get_internal_function("main")
         .expect("No main function");
 
@@ -626,10 +621,12 @@ pub fn boot(
         render: None,
     };
 
+    let source_map = resource_storage.fetch_mut::<SourceMapResource>();
     let render_struct_value = util_execute_function(
         &external_functions,
         &main_fn,
         &[assets_value],
+        &source_map.wrapper,
         &mut script_context,
     )?;
 
@@ -658,9 +655,14 @@ pub fn render_tick(
     mut script: LoReM<ScriptRender>,
     logic: LoRe<ScriptLogic>,
     mut wgpu_render: ReM<Render>,
+    source_map: Re<SourceMapResource>,
 ) {
     script
-        .render(&mut wgpu_render, &logic.immutable_logic_value())
+        .render(
+            &mut wgpu_render,
+            &logic.immutable_logic_value(),
+            &*source_map,
+        )
         .expect("script.render() crashed");
 }
 
@@ -687,13 +689,14 @@ pub struct ScriptRenderPlugin;
 
 impl Plugin for ScriptRenderPlugin {
     fn build(&self, app: &mut App) {
-        let script_logic_module = {
-            let logic = app.local_resources().fetch::<ScriptLogic>();
-            logic.main_module().clone()
-        };
+        let script_render = {
+            let script_logic_module = {
+                let logic = app.local_resources().fetch::<ScriptLogic>();
+                logic.main_module().clone()
+            };
 
-        let script_render =
-            boot(app.resources_mut(), &script_logic_module).expect("could not boot script render");
+            boot(app.resources_mut(), &script_logic_module).expect("could not boot script render")
+        };
 
         app.insert_local_resource(script_render);
         app.add_system(UpdatePhase::Update, detect_reload_tick);

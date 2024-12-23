@@ -6,6 +6,7 @@
 use mangrove_save_detector::SaveDetectorPlugin;
 use mangrove_script::logic::ScriptLogicPlugin;
 use mangrove_script::render::ScriptRenderPlugin;
+use mangrove_script::source_map::SourceMapPlugin;
 use mangrove_script::temp::FlushRenderPlugin;
 use mangrove_script::ScriptPlugin;
 use swamp::prelude::SwampDefaultPlugins;
@@ -22,6 +23,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(SwampDefaultPlugins)
         .add_plugins(FlushRenderPlugin)
+        .add_plugins(SourceMapPlugin)
         .add_plugins(ScriptPlugin)
         .add_plugins(ScriptLogicPlugin)
         .add_plugins(ScriptRenderPlugin)

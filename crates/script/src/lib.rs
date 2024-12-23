@@ -3,19 +3,34 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use limnus_message::prelude::Message;
-use swamp::prelude::{App, Plugin};
+use std::path::Path;
+use swamp::prelude::{App, LocalResource, Plugin, Resource};
+use swamp_script::prelude::SourceMapWrapper;
 
 mod audio;
 pub mod logic;
 mod modules;
 pub mod render;
 mod script;
+pub mod source_map;
 pub mod temp;
 mod util;
+mod err;
 
 #[derive(Message, Debug)]
 pub enum ScriptMessage {
     Reload,
+}
+
+#[derive(Resource, Debug)]
+pub struct SourceMapResource {
+    pub wrapper: SourceMapWrapper,
+}
+
+impl SourceMapResource {
+    pub fn base_path(&self) -> &Path {
+        self.wrapper.source_map.base_path()
+    }
 }
 
 /*
