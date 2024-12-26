@@ -890,6 +890,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 
 [[package]]
+name = "eira"
+version = "0.0.1"
+dependencies = [
+ "yansi",
+]
+
+[[package]]
 name = "either"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3652,6 +3659,7 @@ dependencies = [
  "swamp-script-ast",
  "swamp-script-core",
  "swamp-script-dep-loader",
+ "swamp-script-error-report",
  "swamp-script-eval",
  "swamp-script-eval-loader",
  "swamp-script-parser",
@@ -3696,6 +3704,16 @@ dependencies = [
  "swamp-script-parser",
  "swamp-script-source-map",
  "tracing",
+]
+
+[[package]]
+name = "swamp-script-error-report"
+version = "0.0.7"
+dependencies = [
+ "eira",
+ "swamp-script-analyzer",
+ "swamp-script-semantic",
+ "swamp-script-source-map",
 ]
 
 [[package]]
@@ -4895,6 +4913,12 @@ name = "xml-rs"
 version = "0.8.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af310deaae937e48a26602b730250b4949e125f468f11e6990be3e5304ddd96f"
+
+[[package]]
+name = "yansi"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 
 [[package]]
 name = "zerocopy"

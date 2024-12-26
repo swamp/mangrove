@@ -7,7 +7,7 @@ use std::rc::Rc;
 use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
 use swamp_script::prelude::*;
 
-use crate::err::{show_mangrove_error, show_parse_error};
+use crate::err::{show_mangrove_error};
 use tracing::error;
 
 pub fn logic_tick(mut script: LoReM<ScriptLogic>, source_map: Re<SourceMapResource>) {
