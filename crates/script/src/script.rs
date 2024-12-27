@@ -197,9 +197,8 @@ fn prepare_main_module<C>(
     externals
         .register_external_function("print", print_id, move |args: &[Value], context| {
             if let Some(value) = args.first() {
-                //let display_value = value.convert_to_string_if_needed(context.source_map);
-                //println!("{}", display_value);
-                println!("print");
+                let display_value = value.convert_to_string_if_needed();
+                println!("{}", display_value);
                 Ok(Value::Unit)
             } else {
                 Err("print requires at least one argument".to_string())?
