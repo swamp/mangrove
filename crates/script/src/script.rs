@@ -166,47 +166,47 @@ pub fn uvec2_like(v: &Value) -> Result<UVec2, ValueError> {
 fn prepare_main_module<C>(
     types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
-externals: &mut ExternalFunctions<C>,
+    externals: &mut ExternalFunctions<C>,
     module_name: &str,
 ) -> Result<ResolvedModule, ResolveError> {
     let root_module_path = &[module_name.to_string()].to_vec();
     let mut main_module = ResolvedModule::new(root_module_path);
-    /*
 
-        let any_parameter = ResolvedParameter {
-            name: Default::default(),
-            resolved_type: ResolvedType::Any,
-            is_mutable: None,
-        };
+    let any_parameter = ResolvedParameter {
+        name: Default::default(),
+        resolved_type: ResolvedType::Any,
+        is_mutable: None,
+    };
 
-        let print_id = state.allocate_external_function_id();
+    let print_id = state.allocate_external_function_id();
 
-        let print_external = ResolvedExternalFunctionDefinition {
-            name: Default::default(),
-            signature: ResolvedFunctionSignature {
-                first_parameter_is_self: false,
-                parameters: [any_parameter].to_vec(),
-                return_type: types.unit_type(),
-            },
-            id: print_id,
-        };
+    let print_external = ResolvedExternalFunctionDefinition {
+        name: Default::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: false,
+            parameters: [any_parameter].to_vec(),
+            return_type: types.unit_type(),
+        },
+        id: print_id,
+    };
 
-        main_module
-            .namespace
-            .borrow_mut()
-            .add_external_function_declaration("print", print_external.into())?;
-        externals
-            .register_external_function("print", print_id, move |args: &[Value], context| {
-                if let Some(value) = args.first() {
-                    let display_value = value.convert_to_string_if_needed(context.source_map);
-                    println!("{}", display_value);
-                    Ok(Value::Unit)
-                } else {
-                    Err("print requires at least one argument".to_string())?
-                }
-            })
-            .expect("should work to register");
-    */
+    main_module
+        .namespace
+        .borrow_mut()
+        .add_external_function_declaration("print", print_external.into())?;
+    externals
+        .register_external_function("print", print_id, move |args: &[Value], context| {
+            if let Some(value) = args.first() {
+                //let display_value = value.convert_to_string_if_needed(context.source_map);
+                //println!("{}", display_value);
+                println!("print");
+                Ok(Value::Unit)
+            } else {
+                Err("print requires at least one argument".to_string())?
+            }
+        })
+        .expect("should work to register");
+
     Ok(main_module)
 }
 
@@ -216,25 +216,33 @@ pub struct DecoratedParseErr {
     pub specific: SpecificError,
 }
 
-fn parse_module(relative_path: &str, source_map: &mut SourceMap) -> Result<ParseModule, MangroveError> {
+fn parse_module(
+    relative_path: &str,
+    source_map: &mut SourceMap,
+) -> Result<ParseModule, MangroveError> {
     let parser = AstParser {};
 
     //let path_buf = resolve_swamp_file(Path::new(&path))?;
 
-    let (file_id, main_swamp) =  source_map.read_file_relative(relative_path)?;
+    let (file_id, main_swamp) = source_map.read_file_relative(relative_path)?;
 
-    let ast_module = parser.parse_module(&main_swamp).map_err(|parse_err| MangroveError::DecoratedParseError(DecoratedParseErr {
-        span: Span {
-            file_id,
-            offset: parse_err.span.offset,
-            length: parse_err.span.length,
-        },
-        specific: SpecificError::ExpectingTypeIdentifier,
-    }))?;
+    let ast_module = parser.parse_module(&main_swamp).map_err(|parse_err| {
+        MangroveError::DecoratedParseError(DecoratedParseErr {
+            span: Span {
+                file_id,
+                offset: parse_err.span.offset,
+                length: parse_err.span.length,
+            },
+            specific: SpecificError::ExpectingTypeIdentifier,
+        })
+    })?;
 
     trace!("ast_program:\n{:#?}", ast_module);
 
-    let parse_module = ParseModule { file_id, ast_module };
+    let parse_module = ParseModule {
+        file_id,
+        ast_module,
+    };
 
     Ok(parse_module)
 }
@@ -265,7 +273,6 @@ pub fn compile<C>(
     resolved_program
         .modules
         .add(Rc::new(RefCell::new(create_std_module())));
-
 
     let mut dependency_parser = DependencyParser::new();
     dependency_parser.add_ast_module(Vec::from(main_path.clone()), parsed_module);

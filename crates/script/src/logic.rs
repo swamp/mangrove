@@ -226,7 +226,8 @@ impl ScriptLogic {
 pub fn input_module(
     resolve_state: &mut ResolvedProgramState,
 ) -> Result<(ResolvedModule, ResolvedEnumTypeRef, ResolvedEnumTypeRef), ResolveError> {
-    let module = ResolvedModule::new(&["input".to_string()]);
+    let module_path = ["input".to_string()];
+    let module = ResolvedModule::new(&module_path);
 
     let axis_enum_type_ref = {
         let axis_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
@@ -235,7 +236,8 @@ pub fn input_module(
             name: ResolvedLocalTypeIdentifier(ResolvedNode {
                 span: Default::default(),
             }),
-            module_path: ResolvedModulePath(vec![]),
+            assigned_name: "Axis".to_string(),
+            module_path: Vec::from(module_path.clone()),
             number: axis_enum_type_id,
         };
         let parent_ref = Rc::new(parent);
@@ -243,7 +245,7 @@ pub fn input_module(
         let axis_enum_type_ref = module
             .namespace
             .borrow_mut()
-            .add_enum_type("Axis", parent_ref)?;
+            .add_enum_type(parent_ref)?;
 
         let variant_names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
         for variant_name in variant_names {
@@ -253,6 +255,7 @@ pub fn input_module(
                 ResolvedLocalTypeIdentifier(ResolvedNode {
                     span: Default::default(),
                 }),
+                variant_name,
                 ResolvedEnumVariantContainerType::Nothing,
                 variant_type_id,
             );
@@ -271,14 +274,15 @@ pub fn input_module(
             name: ResolvedLocalTypeIdentifier(ResolvedNode {
                 span: Default::default(),
             }),
-            module_path: ResolvedModulePath(vec![]),
+            assigned_name: "Button".to_string(),
+            module_path: Vec::from(module_path.clone()),
             number: button_enum_type_id,
         };
         let parent_ref = Rc::new(parent);
         let button_enum_type_ref = module
             .namespace
             .borrow_mut()
-            .add_enum_type("Button", parent_ref)?;
+            .add_enum_type(parent_ref)?;
 
         let button_names = [
             "South",
@@ -308,6 +312,7 @@ pub fn input_module(
                 name: ResolvedLocalTypeIdentifier(ResolvedNode {
                     span: Default::default(),
                 }),
+                assigned_name: button_variant_name.to_string(),
                 number: variant_type_id,
             };
 
