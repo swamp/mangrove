@@ -73,7 +73,7 @@ struct Explosion {
 struct Logic {
     tick_count: Int, /// how many ticks have passed
     direction: Float, /// which direction the player ship
-    x: Float, /// the x position of the player ship
+    pos: Position, /// the position of the player ship
     shots: std::Sparse<Shot>,
     enemies: std::Sparse<Enemy>,
     explosions: std::Sparse<Explosion>,
@@ -99,19 +99,23 @@ impl Logic {
 
     fn tick_explosions(mut self) {
         for explosion_id, explosion in mut self.explosions {
-            if explosion.tick >= 30 {
+            // This is just to show that the scope is not needed for if statements
+            // But it is strongly recommended with '{' '}' for easier reading
+            if explosion.tick >= 30 
                 self.explosions.remove(explosion_id)
-            } else {
+             else 
                 explosion.tick += 1
-            }
         }
     }
 
     fn check_player_input(mut self) {
         for player in mut self.players {
             if player.fire && player.fire_cooldown == 0 {
-                self.shots.add(Shot { x: self.x + 4.0, y: 18.0 })
-                player.fire_cooldown = self.cooldown_settings[1]
+                self.shots.add(Shot {
+                    x: self.pos.x + 4.0, 
+                    y: self.pos.y,
+                })
+                player.fire_cooldown = self.cooldown_settings[ 1 ]
             }
         }
     }
@@ -126,39 +130,37 @@ impl Logic {
 
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
-        self.x += self.direction
+        self.pos.y += self.direction
 
         self.tick_count += 1
         if self.tick_count % 30 == 0 {
-            rect = Rect { pos: Position { x: 10.0, y: 50.0 }, size: Size { width: 16.0, height: 16.0 } }
-            self.enemies.add(Enemy { rect: rect, enemy: EnemyType::Alan, direction: 1.0 })
+            rect = Rect { 
+                pos: Position { x: 220.0, y: 50.0 }, 
+                size: Size { width: 16.0, height: 16.0 } 
+            }
+            
+            self.enemies.add(Enemy {
+                rect: rect, 
+                enemy: EnemyType::Alan, 
+                direction: -1.2 
+            })
 
             // This is just to test for in maps
             for player_id, player in self.players {
                 print('player {player_id} fire: {player.fire} cooldown: {player.fire_cooldown}')
             }
-            for  player in self.players {
-                print('player {player}')
-            }
-
-            for cooldown in self.cooldown_settings {
-                print('cooldown: {cooldown}')
-            }
-            for index, cooldown in self.cooldown_settings {
-                print('cooldown: {index}: {cooldown}')
-            }
         }
 
         for id, enemy in mut self.enemies {
             enemy.rect.pos.x += enemy.direction
-            if enemy.rect.pos.x > 250.0 {
+            if enemy.rect.pos.x < -10.0 {
                 self.enemies.remove(id)
             }
         }
 
         for shot_id, shot in mut self.shots {
-            shot.y = shot.y + 3.0
-            if shot.y > 250.0 {
+            shot.x = shot.x + 3.0
+            if shot.x > 250.0 {
                 self.shots.remove(shot_id)
             } 
         }
@@ -169,8 +171,6 @@ impl Logic {
         self.players_fire_cooldown()
     }
 
-
-
     fn set_player_input_fire(mut self, gamepad: Int, fire: Bool) {
         self.players[gamepad].fire = fire
     }
@@ -178,7 +178,7 @@ impl Logic {
     /// Called by the mangrove engine when a gamepad axis changes
     fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) {
         match axis {
-            LeftStickX => self.direction = value * 4.0,
+            LeftStickY => self.direction = value * 4.0,
             _ => {},
         }
     }
@@ -198,7 +198,7 @@ fn main() -> Logic {
     Logic {
         tick_count: 0,
         direction: 0.0,
-        x: 0.0,
+        pos: Position::new(10.0, 160.0),
         shots: Sparse<Shot>::new(),
         enemies: Sparse<Enemy>::new(),
         explosions: Sparse<Explosion>::new(),

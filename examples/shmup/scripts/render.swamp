@@ -26,9 +26,9 @@ impl Render {
     /// Called by the mangrove engine every render tick
     fn render(mut self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
         self.tick += 1
-        x = logic.x.floor()
+        y = logic.pos.y.floor()
 
-        player_ship_pos = (x, 10, 0)
+        player_ship_pos = (0, y, 0)
         sprite_size = (16, 16)
 
         ship_frame = match logic.direction.sign() {
