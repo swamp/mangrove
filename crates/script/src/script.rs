@@ -7,37 +7,16 @@ use std::cell::RefCell;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::rc::Rc;
 use swamp::prelude::{UVec2, Vec3};
 use swamp_script::prelude::*;
 use swamp_script::prelude::{
-    parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ModulePath, Parameter,
-    ParseModule, ResolveError, Type, Variable,
+    parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
+    ResolveError,
 };
 
 use tracing::trace;
-
-fn resolve_swamp_file(path: &Path) -> Result<PathBuf, String> {
-    if !path.exists() {
-        return Err(format!("Path does not exist: {}", path.display()));
-    }
-
-    if path.is_dir() {
-        let main_file = path.join("main.swamp");
-        if !main_file.exists() {
-            return Err(format!(
-                "No main.swamp found in directory: {}",
-                path.display()
-            ));
-        }
-        Ok(main_file)
-    } else if path.extension().and_then(|ext| ext.to_str()) == Some("swamp") {
-        Ok(path.to_path_buf())
-    } else {
-        Err(format!("Not a .swamp file: {}", path.display()))
-    }
-}
 
 #[derive(Debug)]
 pub enum MangroveError {
@@ -166,7 +145,7 @@ fn prepare_main_module<C>(
     module_name: &str,
 ) -> Result<ResolvedModule, ResolveError> {
     let root_module_path = &[module_name.to_string()].to_vec();
-    let mut main_module = ResolvedModule::new(root_module_path);
+    let main_module = ResolvedModule::new(root_module_path);
 
     let any_parameter = ResolvedParameter {
         name: Default::default(),
@@ -191,7 +170,7 @@ fn prepare_main_module<C>(
         .borrow_mut()
         .add_external_function_declaration("print", print_external.into())?;
     externals
-        .register_external_function("print", print_id, move |args: &[Value], context| {
+        .register_external_function("print", print_id, move |args: &[Value], _context| {
             if let Some(value) = args.first() {
                 let display_value = value.convert_to_string_if_needed();
                 println!("{}", display_value);
@@ -270,7 +249,7 @@ pub fn compile<C>(
         .add(Rc::new(RefCell::new(create_std_module())));
 
     let mut dependency_parser = DependencyParser::new();
-    dependency_parser.add_ast_module(Vec::from(main_path.clone()), parsed_module);
+    dependency_parser.add_ast_module(Vec::from(main_path), parsed_module);
 
     let module_paths_in_order = parse_dependant_modules_and_resolve(
         base_path.to_owned(),

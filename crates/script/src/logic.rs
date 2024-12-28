@@ -4,23 +4,19 @@ use crate::{ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
+use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, ReM, UpdatePhase};
 use swamp_script::prelude::*;
 
 use crate::err::show_mangrove_error;
 use tracing::error;
 
-pub fn logic_tick(mut script: LoReM<ScriptLogic>, source_map: Re<SourceMapResource>) {
-    script.tick(&source_map).expect("script.tick() crashed");
+pub fn logic_tick(mut script: LoReM<ScriptLogic>) {
+    script.tick().expect("script.tick() crashed");
 }
 
-pub fn input_tick(
-    mut script: LoReM<ScriptLogic>,
-    gamepad_messages: Msg<GamepadMessage>,
-    source_map: Re<SourceMapResource>,
-) {
+pub fn input_tick(mut script: LoReM<ScriptLogic>, gamepad_messages: Msg<GamepadMessage>) {
     for gamepad_message in gamepad_messages.iter_current() {
-        script.gamepad(&source_map, gamepad_message);
+        script.gamepad(gamepad_message);
     }
 }
 
@@ -78,12 +74,11 @@ impl ScriptLogic {
             .expect("logic module should exist in logic")
     }
 
-    pub fn tick(&mut self, source_map: &SourceMapResource) -> Result<(), ExecuteError> {
+    pub fn tick(&mut self) -> Result<(), ExecuteError> {
         let _ = util_execute_function(
             &self.external_functions,
             &self.logic_fn,
             &[self.logic_value_ref.clone()],
-            &source_map.wrapper,
             &mut self.script_context,
         )?;
 
@@ -92,7 +87,6 @@ impl ScriptLogic {
 
     fn execute(
         &mut self,
-        source_map: &SourceMapResource,
         fn_def: &ResolvedInternalFunctionDefinitionRef,
         arguments: &[Value],
     ) -> Result<(), ExecuteError> {
@@ -106,34 +100,27 @@ impl ScriptLogic {
             &self.external_functions,
             fn_def,
             &complete_arguments,
-            &source_map.wrapper,
             &mut self.script_context,
         )?;
 
         Ok(())
     }
 
-    pub fn gamepad(&mut self, source_map: &SourceMapResource, msg: &GamepadMessage) {
+    pub fn gamepad(&mut self, msg: &GamepadMessage) {
         match msg {
             GamepadMessage::Connected(_, _) => {}
             GamepadMessage::Disconnected(_) => {}
             GamepadMessage::Activated(_) => {}
             GamepadMessage::ButtonChanged(gamepad_id, button, value) => {
-                self.button_changed(&source_map, gamepad_id, button, value)
+                self.button_changed(gamepad_id, button, value)
             }
             GamepadMessage::AxisChanged(gamepad_id, axis, value) => {
-                self.axis_changed(&source_map, gamepad_id, axis, value)
+                self.axis_changed(gamepad_id, axis, value)
             }
         }
     }
 
-    fn axis_changed(
-        &mut self,
-        source_map_resource: &SourceMapResource,
-        gamepad_id: &GamePadId,
-        axis: &Axis,
-        value: &AxisValueType,
-    ) {
+    fn axis_changed(&mut self, gamepad_id: &GamePadId, axis: &Axis, value: &AxisValueType) {
         let script_axis_value = {
             let input_module_ref = self.input_module.borrow();
             let axis_str = match axis {
@@ -159,22 +146,12 @@ impl ScriptLogic {
 
             let fn_ref = found_fn.clone();
 
-            self.execute(
-                source_map_resource,
-                &fn_ref,
-                &[gamepad_id_value, script_axis_value, axis_value],
-            )
-            .expect("gamepad_axis_changed");
+            self.execute(&fn_ref, &[gamepad_id_value, script_axis_value, axis_value])
+                .expect("gamepad_axis_changed");
         }
     }
 
-    fn button_changed(
-        &mut self,
-        source_map_resource: &SourceMapResource,
-        gamepad_id: &GamePadId,
-        button: &Button,
-        value: &ButtonValueType,
-    ) {
+    fn button_changed(&mut self, gamepad_id: &GamePadId, button: &Button, value: &ButtonValueType) {
         let script_button_value = {
             let input_module_ref = self.input_module.borrow();
             let button_str = match button {
@@ -214,7 +191,6 @@ impl ScriptLogic {
             let fn_ref = found_fn.clone();
 
             self.execute(
-                &source_map_resource,
                 &fn_ref,
                 &[gamepad_id_value, script_button_value, button_value],
             )
@@ -363,13 +339,8 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
 
     let mut script_context = ScriptLogicContext {};
 
-    let logic_value = util_execute_function(
-        &external_functions,
-        &main_fn,
-        &[],
-        &source_map.wrapper,
-        &mut script_context,
-    )?;
+    let logic_value =
+        util_execute_function(&external_functions, &main_fn, &[], &mut script_context)?;
 
     let logic_struct_type_ref = if let Value::Struct(struct_type_ref, _) = &logic_value {
         struct_type_ref

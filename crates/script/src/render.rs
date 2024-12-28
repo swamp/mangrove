@@ -10,9 +10,8 @@ use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
     App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Msg,
-    Plugin, Re, ReAll, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
+    Plugin, ReAll, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
 };
-use swamp_script::prelude::Rule::program;
 use swamp_script::prelude::*;
 use tracing::error;
 
@@ -168,7 +167,7 @@ pub fn register_gfx_struct_value_with_members(
     let gfx_type_number = state.allocate_number();
     let (gfx_value, gfx_struct_type) =
         create_empty_struct_value_util(namespace, "Gfx", gfx_type_number)?;
-    let mut gfx_value_mut = Value::Reference(Rc::new(RefCell::new(gfx_value.clone())));
+    let gfx_value_mut = Value::Reference(Rc::new(RefCell::new(gfx_value.clone())));
     let assets_general_type = ResolvedType::Struct(gfx_struct_type.clone());
 
     let mut_self_parameter = ResolvedParameter {
@@ -444,7 +443,6 @@ impl ScriptRender {
         &mut self,
         wgpu_render: &mut Render,
         logic_value_ref: &Value,
-        source_map: &SourceMapResource,
     ) -> Result<(), ExecuteError> {
         let mut script_context = ScriptRenderContext {
             game_assets: None,
@@ -462,7 +460,6 @@ impl ScriptRender {
                 self.gfx_struct_value.clone(),
             ]
             .to_vec(),
-            &source_map.wrapper,
             &mut script_context,
         )?;
 
@@ -485,7 +482,7 @@ pub fn create_render_module(
     ),
     MangroveError,
 > {
-    let mut mangrove_render_module =
+    let mangrove_render_module =
         ResolvedModule::new(&["mangrove".to_string(), "render".to_string()]);
 
     let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
@@ -612,12 +609,10 @@ pub fn boot(
         render: None,
     };
 
-    let source_map = resource_storage.fetch_mut::<SourceMapResource>();
     let render_struct_value = util_execute_function(
         &external_functions,
         &main_fn,
         &[assets_value],
-        &source_map.wrapper,
         &mut script_context,
     )?;
 
@@ -646,14 +641,9 @@ pub fn render_tick(
     mut script: LoReM<ScriptRender>,
     logic: LoRe<ScriptLogic>,
     mut wgpu_render: ReM<Render>,
-    source_map: Re<SourceMapResource>,
 ) {
     script
-        .render(
-            &mut wgpu_render,
-            &logic.immutable_logic_value(),
-            &*source_map,
-        )
+        .render(&mut wgpu_render, &logic.immutable_logic_value())
         .expect("script.render() crashed");
 }
 

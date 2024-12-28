@@ -2,10 +2,10 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
+use crate::source_map::SourceMapWrapper;
 use limnus_message::prelude::Message;
 use std::path::Path;
-use swamp::prelude::{App, LocalResource, Plugin, Resource};
-use swamp_script::prelude::SourceMapWrapper;
+use swamp::prelude::{App, Plugin, Resource};
 
 mod audio;
 mod err;
