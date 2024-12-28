@@ -7,7 +7,7 @@ use std::rc::Rc;
 use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
 use swamp_script::prelude::*;
 
-use crate::err::{show_mangrove_error};
+use crate::err::show_mangrove_error;
 use tracing::error;
 
 pub fn logic_tick(mut script: LoReM<ScriptLogic>, source_map: Re<SourceMapResource>) {
@@ -242,10 +242,7 @@ pub fn input_module(
         };
         let parent_ref = Rc::new(parent);
 
-        let axis_enum_type_ref = module
-            .namespace
-            .borrow_mut()
-            .add_enum_type(parent_ref)?;
+        let axis_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent_ref)?;
 
         let variant_names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
         for variant_name in variant_names {
@@ -279,10 +276,7 @@ pub fn input_module(
             number: button_enum_type_id,
         };
         let parent_ref = Rc::new(parent);
-        let button_enum_type_ref = module
-            .namespace
-            .borrow_mut()
-            .add_enum_type(parent_ref)?;
+        let button_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent_ref)?;
 
         let button_names = [
             "South",
@@ -377,7 +371,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
         &mut script_context,
     )?;
 
-    let logic_struct_type_ref = if let Value::Struct(struct_type_ref, _, _) = &logic_value {
+    let logic_struct_type_ref = if let Value::Struct(struct_type_ref, _) = &logic_value {
         struct_type_ref
     } else {
         return Err(MangroveError::Other("needs to be logic struct".to_string()));

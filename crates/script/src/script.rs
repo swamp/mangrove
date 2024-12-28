@@ -122,11 +122,7 @@ pub fn create_empty_struct_type(
 }
 
 pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
-    Value::Struct(
-        struct_type.clone(),
-        [].to_vec(),
-        ResolvedType::Struct(struct_type.clone()),
-    )
+    Value::Struct(struct_type.clone(), [].to_vec())
 }
 
 pub fn create_empty_struct_value_util(

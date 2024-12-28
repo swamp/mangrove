@@ -8,6 +8,7 @@ use swamp::prelude::{App, LocalResource, Plugin, Resource};
 use swamp_script::prelude::SourceMapWrapper;
 
 mod audio;
+mod err;
 pub mod logic;
 mod modules;
 pub mod render;
@@ -15,7 +16,6 @@ mod script;
 pub mod source_map;
 pub mod temp;
 mod util;
-mod err;
 
 #[derive(Message, Debug)]
 pub enum ScriptMessage {

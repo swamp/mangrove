@@ -115,7 +115,6 @@ impl GameAssetsWrapper {
         Value::Struct(
             self.material_struct_type.clone(),
             [material_ref_value].to_vec(),
-            ResolvedType::Struct(self.material_struct_type.clone()),
         )
     }
 
@@ -129,7 +128,6 @@ impl GameAssetsWrapper {
         Value::Struct(
             self.fixed_atlas_struct_type_ref.clone(),
             [fixed_atlas_ref].to_vec(),
-            ResolvedType::Struct(self.fixed_atlas_struct_type_ref.clone()),
         )
     }
 
@@ -624,7 +622,7 @@ pub fn boot(
     )?;
 
     let render_struct_type_ref =
-        if let Value::Struct(struct_type_ref, _, _) = render_struct_value.clone() {
+        if let Value::Struct(struct_type_ref, _) = render_struct_value.clone() {
             struct_type_ref
         } else {
             return Err(MangroveError::Other("needs to be logic struct".to_string()));
