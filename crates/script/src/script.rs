@@ -116,9 +116,9 @@ pub fn create_empty_struct_value_util(
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
     match v {
         Value::Tuple(_, fields) => {
-            let x = fields[0].expect_int()?;
-            let y = fields[1].expect_int()?;
-            let z = fields[2].expect_int()?;
+            let x = fields[0].borrow().expect_int()?;
+            let y = fields[1].borrow().expect_int()?;
+            let z = fields[2].borrow().expect_int()?;
 
             Ok(Vec3::new(x as i16, y as i16, z as i16))
         }
@@ -129,8 +129,8 @@ pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
 pub fn uvec2_like(v: &Value) -> Result<UVec2, ValueError> {
     match v {
         Value::Tuple(_, fields) => {
-            let width = fields[0].expect_int()?;
-            let height = fields[1].expect_int()?;
+            let width = fields[0].borrow().expect_int()?;
+            let height = fields[1].borrow().expect_int()?;
 
             Ok(UVec2::new(width as u16, height as u16))
         }
@@ -170,15 +170,19 @@ fn prepare_main_module<C>(
         .borrow_mut()
         .add_external_function_declaration("print", print_external.into())?;
     externals
-        .register_external_function("print", print_id, move |args: &[Value], _context| {
-            if let Some(value) = args.first() {
-                let display_value = value.convert_to_string_if_needed();
-                println!("{}", display_value);
-                Ok(Value::Unit)
-            } else {
-                Err("print requires at least one argument".to_string())?
-            }
-        })
+        .register_external_function(
+            "print",
+            print_id,
+            move |args: &[VariableValue], _context| {
+                if let Some(value) = args.first() {
+                    let display_value = value.convert_to_string_if_needed();
+                    println!("{}", display_value);
+                    Ok(Value::Unit)
+                } else {
+                    Err("print requires at least one argument".to_string())?
+                }
+            },
+        )
         .expect("should work to register");
 
     Ok(main_module)

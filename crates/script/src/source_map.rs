@@ -1,6 +1,6 @@
 use crate::SourceMapResource;
 use swamp::prelude::{App, Plugin};
-use swamp_script::prelude::{ResolvedNode, SourceMap, SourceMapLookup};
+use swamp_script::prelude::{ResolvedNode, SourceMap, SourceMapLookup, Span};
 
 pub struct SourceMapPlugin;
 
@@ -16,6 +16,11 @@ impl SourceMapLookup for SourceMapWrapper {
             resolved_node.span.offset as usize,
             resolved_node.span.length as usize,
         )
+    }
+
+    fn get_text_span(&self, span: &Span) -> &str {
+        self.source_map
+            .get_span_source(span.file_id, span.offset as usize, span.length as usize)
     }
 }
 

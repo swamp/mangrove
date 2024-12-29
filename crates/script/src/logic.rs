@@ -4,14 +4,16 @@ use crate::{ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, ReM, UpdatePhase};
+use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
 use swamp_script::prelude::*;
 
 use crate::err::show_mangrove_error;
 use tracing::error;
 
-pub fn logic_tick(mut script: LoReM<ScriptLogic>) {
-    script.tick().expect("script.tick() crashed");
+pub fn logic_tick(mut script: LoReM<ScriptLogic>, source_map: Re<SourceMapResource>) {
+    let lookup: &dyn SourceMapLookup = &source_map.wrapper;
+
+    script.tick(Some(lookup)).expect("script.tick() crashed");
 }
 
 pub fn input_tick(mut script: LoReM<ScriptLogic>, gamepad_messages: Msg<GamepadMessage>) {
@@ -25,7 +27,7 @@ pub struct ScriptLogicContext {}
 
 #[derive(LocalResource, Debug)]
 pub struct ScriptLogic {
-    logic_value_ref: Value,
+    logic_value_ref: ValueRef,
     logic_fn: ResolvedInternalFunctionDefinitionRef,
     gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
     gamepad_button_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
@@ -37,7 +39,7 @@ pub struct ScriptLogic {
 
 impl ScriptLogic {
     pub fn new(
-        logic_value_ref: Value,
+        logic_value_ref: ValueRef,
         logic_fn: ResolvedInternalFunctionDefinitionRef,
         gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
         gamepad_button_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
@@ -59,10 +61,7 @@ impl ScriptLogic {
     }
 
     pub fn immutable_logic_value(&self) -> Value {
-        match &self.logic_value_ref {
-            Value::Reference(rc_refcell_value) => rc_refcell_value.borrow().clone(),
-            _ => panic!("value should be reference in logic"),
-        }
+        self.logic_value_ref.borrow().clone()
     }
 
     pub fn main_module(&self) -> ResolvedModuleRef {
@@ -74,12 +73,18 @@ impl ScriptLogic {
             .expect("logic module should exist in logic")
     }
 
-    pub fn tick(&mut self) -> Result<(), ExecuteError> {
+    pub fn tick(
+        &mut self,
+        debug_source_map: Option<&dyn SourceMapLookup>,
+    ) -> Result<(), ExecuteError> {
+        let variable_value_ref =
+            VariableValue::Reference(ValueReference(self.logic_value_ref.clone()));
         let _ = util_execute_function(
             &self.external_functions,
             &self.logic_fn,
-            &[self.logic_value_ref.clone()],
+            &[variable_value_ref],
             &mut self.script_context,
+            debug_source_map,
         )?;
 
         Ok(())
@@ -91,9 +96,11 @@ impl ScriptLogic {
         arguments: &[Value],
     ) -> Result<(), ExecuteError> {
         let mut complete_arguments = Vec::new();
-        complete_arguments.push(self.logic_value_ref.clone()); // push logic self first
+        complete_arguments.push(VariableValue::Reference(ValueReference(
+            self.logic_value_ref.clone(),
+        ))); // push logic self first
         for arg in arguments {
-            complete_arguments.push(arg.clone());
+            complete_arguments.push(VariableValue::Value(arg.clone()));
         }
 
         let _ = util_execute_function(
@@ -101,6 +108,7 @@ impl ScriptLogic {
             fn_def,
             &complete_arguments,
             &mut self.script_context,
+            None,
         )?;
 
         Ok(())
@@ -339,8 +347,13 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
 
     let mut script_context = ScriptLogicContext {};
 
-    let logic_value =
-        util_execute_function(&external_functions, &main_fn, &[], &mut script_context)?;
+    let logic_value = util_execute_function(
+        &external_functions,
+        &main_fn,
+        &[],
+        &mut script_context,
+        None,
+    )?;
 
     let logic_struct_type_ref = if let Value::Struct(struct_type_ref, _) = &logic_value {
         struct_type_ref
@@ -355,7 +368,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
         get_impl_func_optional(&logic_struct_type_ref, "gamepad_button_changed");
 
     // Convert it to a mutable (reference), so it can be mutated in update ticks
-    let logic_value_ref = Value::Reference(Rc::new(RefCell::new(logic_value)));
+    let logic_value_ref = Rc::new(RefCell::new(logic_value));
 
     Ok(ScriptLogic::new(
         logic_value_ref,

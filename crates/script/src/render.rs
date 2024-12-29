@@ -106,10 +106,10 @@ impl GameAssetsWrapper {
     }
 
     fn material_handle(&self, material_ref: MaterialRef) -> Value {
-        let material_ref_value = Value::RustValue(
+        let material_ref_value = Rc::new(RefCell::new(Value::RustValue(
             self.material_rust_type_ref.clone(),
             Rc::new(RefCell::new(Box::new(material_ref))),
-        );
+        )));
 
         Value::Struct(
             self.material_struct_type.clone(),
@@ -119,14 +119,14 @@ impl GameAssetsWrapper {
 
     fn fixed_atlas_handle(&self, fixed_atlas: FixedAtlas) -> Value {
         let wrapper = FixedAtlasWrapper { fixed_atlas };
-        let fixed_atlas_ref = Value::RustValue(
+        let fixed_atlas_ref = Rc::new(RefCell::new(Value::RustValue(
             self.fixed_atlas_rust_type_ref.clone(),
             Rc::new(RefCell::new(Box::new(wrapper))),
-        );
+        )));
 
         Value::Struct(
             self.fixed_atlas_struct_type_ref.clone(),
-            [fixed_atlas_ref].to_vec(),
+            [fixed_atlas_ref.into()].to_vec(),
         )
     }
 
@@ -163,11 +163,11 @@ pub fn register_gfx_struct_value_with_members(
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     namespace: &mut ResolvedModuleNamespace,
-) -> Result<Value, MangroveError> {
+) -> Result<ValueRef, MangroveError> {
     let gfx_type_number = state.allocate_number();
     let (gfx_value, gfx_struct_type) =
         create_empty_struct_value_util(namespace, "Gfx", gfx_type_number)?;
-    let gfx_value_mut = Value::Reference(Rc::new(RefCell::new(gfx_value.clone())));
+    let gfx_value_mut = Rc::new(RefCell::new(gfx_value.clone()));
     let assets_general_type = ResolvedType::Struct(gfx_struct_type.clone());
 
     let mut_self_parameter = ResolvedParameter {
@@ -230,7 +230,8 @@ pub fn register_gfx_struct_value_with_members(
     externals.register_external_function(
         "sprite",
         unique_id,
-        move |params: &[Value], context| {
+        move |mem_val: &[VariableValue], context| {
+            let params = convert_to_values(mem_val).unwrap();
             //let _self_value = &params[0]; // the Gfx struct is empty by design.
             let position = vec3_like(&params[1])?;
 
@@ -274,8 +275,10 @@ pub fn register_gfx_struct_value_with_members(
     externals.register_external_function(
         "sprite_atlas_frame",
         unique_id,
-        move |params: &[Value], context| {
+        move |mem_values: &[VariableValue], context| {
             //let _self_value = &params[0]; // the Gfx struct is empty by design.
+            let params = convert_to_values(mem_values)
+                .expect("external function should be given values and no references");
             let position = vec3_like(&params[1])?;
 
             let material_ref = params[2]
@@ -304,11 +307,12 @@ pub fn register_asset_struct_value_with_members(
     namespace: &mut ResolvedModuleNamespace,
     material_struct_type_ref: ResolvedStructTypeRef,
     fixed_grid_struct_type_ref: ResolvedStructTypeRef,
-) -> Result<Value, MangroveError> {
+) -> Result<VariableValue, MangroveError> {
     let assets_type_number = state.allocate_number();
     let (assets_value, assets_type) =
         create_empty_struct_value_util(namespace, "Assets", assets_type_number)?;
-    let assets_value_mut = Value::Reference(Rc::new(RefCell::new(assets_value.clone())));
+    let assets_value_mut =
+        VariableValue::Reference(ValueReference(Rc::new(RefCell::new(assets_value.clone()))));
 
     let assets_general_type = ResolvedType::Struct(assets_type.clone());
 
@@ -343,8 +347,10 @@ pub fn register_asset_struct_value_with_members(
     externals.register_external_function(
         "material_png",
         unique_id,
-        move |params: &[Value], context| {
+        move |mem_values: &[VariableValue], context| {
             //let self_value = &params[0]; // Assets is, by design, an empty struct
+            let params = convert_to_values(mem_values)
+                .expect("should only be passed values to material png function");
             let asset_name = &params[1].expect_string()?;
 
             Ok(context
@@ -396,7 +402,9 @@ pub fn register_asset_struct_value_with_members(
     externals.register_external_function(
         "frame_fixed_grid_material_png",
         unique_id,
-        move |params: &[Value], context| {
+        move |mem_values: &[VariableValue], context| {
+            let params = convert_to_values(mem_values)
+                .expect("should work to get only values to gfx functions");
             //let self_value = &params[0]; // Assets is, by design, an empty struct
             let asset_name = &params[1].expect_string()?;
             let grid_size = uvec2_like(&params[2])?;
@@ -415,26 +423,26 @@ pub fn register_asset_struct_value_with_members(
 
 #[derive(LocalResource, Debug)]
 pub struct ScriptRender {
-    render_value_ref: Value,
+    render_value_ref: ValueRef,
     render_fn: ResolvedInternalFunctionDefinitionRef,
     externals: ExternalFunctions<ScriptRenderContext>,
-    gfx_struct_value: Value,
+    gfx_struct_ref: ValueRef,
 }
 
 impl ScriptRender {
     pub fn new(
         //resource_storage: &mut ResourceStorage,
-        render_value_ref: Value,
+        render_value_ref: ValueRef,
         render_struct_type_ref: ResolvedStructTypeRef,
         externals: ExternalFunctions<ScriptRenderContext>,
-        gfx_struct_value: Value,
+        gfx_struct_ref: ValueRef,
     ) -> Result<Self, MangroveError> {
         let render_fn = get_impl_func(&render_struct_type_ref, "render");
 
         Ok(Self {
             render_fn,
             render_value_ref,
-            gfx_struct_value,
+            gfx_struct_ref,
             externals,
         })
     }
@@ -451,16 +459,19 @@ impl ScriptRender {
 
         //info!(render_value=?self.render_value_ref, "render()");
 
+        let self_mut_ref = VariableValue::Reference(ValueReference(self.render_value_ref.clone()));
+
         util_execute_function(
             &self.externals,
             &self.render_fn,
             &[
-                self.render_value_ref.clone(),
-                logic_value_ref.clone(),
-                self.gfx_struct_value.clone(),
+                self_mut_ref, //   self.render_value_ref.clone()
+                VariableValue::Value(logic_value_ref.clone()),
+                VariableValue::Reference(ValueReference(self.gfx_struct_ref.clone())),
             ]
             .to_vec(),
             &mut script_context,
+            None,
         )?;
 
         Ok(())
@@ -473,8 +484,8 @@ pub fn create_render_module(
 ) -> Result<
     (
         ResolvedModule,
-        Value,
-        Value,
+        VariableValue,
+        ValueRef,
         ResolvedStructTypeRef,
         ResolvedRustTypeRef,
         ResolvedStructTypeRef,
@@ -614,6 +625,7 @@ pub fn boot(
         &main_fn,
         &[assets_value],
         &mut script_context,
+        None,
     )?;
 
     let render_struct_type_ref =
@@ -626,8 +638,7 @@ pub fn boot(
     // let render_fn = get_impl_func(&render_struct_type_ref, "render");
 
     // Convert it to a mutable (reference), so it can be mutated in update ticks
-    let render_struct_value_mutable_ref =
-        Value::Reference(Rc::new(RefCell::new(render_struct_value)));
+    let render_struct_value_mutable_ref = Rc::new(RefCell::new(render_struct_value));
 
     ScriptRender::new(
         render_struct_value_mutable_ref.clone(),
