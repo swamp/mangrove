@@ -111,10 +111,12 @@ impl Logic {
     fn check_player_input(mut self) {
         for player in mut self.players {
             if player.fire && player.fire_cooldown == 0 {
+                print('add shot')
                 self.shots.add(Shot {
                     x: self.pos.x + 4.0, 
                     y: self.pos.y,
                 })
+                print('change player fire_cooldown')
                 player.fire_cooldown = self.cooldown_settings[ 1 ]
             }
         }
@@ -128,11 +130,18 @@ impl Logic {
         }
     }
 
+    // This is not normally how you structure the code
+    // it is just to test mut arguments
+    fn move_in_y_with_direction(mut position: Position, direction: Float) {
+        position.y += direction
+    }
+
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
-        self.pos.y += self.direction
-
         self.tick_count += 1
+
+        Logic::move_in_y_with_direction(mut self.pos, self.direction)
+
         if self.tick_count % 30 == 0 {
             rect = Rect { 
                 pos: Position { x: 220.0, y: 50.0 }, 
@@ -152,7 +161,7 @@ impl Logic {
         }
 
         for id, enemy in mut self.enemies {
-            enemy.rect.pos.x += enemy.direction
+             enemy.rect.pos.x += enemy.direction
             if enemy.rect.pos.x < -10.0 {
                 self.enemies.remove(id)
             }
