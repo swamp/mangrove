@@ -329,7 +329,7 @@ pub fn register_asset_struct_value_with_members(
         is_mutable: None,
     };
 
-    let unique_id: ExternalFunctionId = state.allocate_external_function_id();
+    let material_png_function_id: ExternalFunctionId = state.allocate_external_function_id();
     let material_png_def = ResolvedExternalFunctionDefinition {
         name: Default::default(),
         signature: ResolvedFunctionSignature {
@@ -337,7 +337,7 @@ pub fn register_asset_struct_value_with_members(
             parameters: (&[mut_self_parameter.clone(), asset_name_parameter.clone()]).to_vec(),
             return_type: ResolvedType::Struct(material_struct_type_ref),
         },
-        id: unique_id,
+        id: material_png_function_id,
     };
 
     let _material_png_fn = assets_type
@@ -346,7 +346,7 @@ pub fn register_asset_struct_value_with_members(
 
     externals.register_external_function(
         "material_png",
-        unique_id,
+        material_png_function_id,
         move |mem_values: &[VariableValue], context| {
             //let self_value = &params[0]; // Assets is, by design, an empty struct
             let params = convert_to_values(mem_values)
@@ -378,6 +378,9 @@ pub fn register_asset_struct_value_with_members(
         )?;
     */
 
+    let frame_fixed_grid_material_png_function_id: ExternalFunctionId =
+        state.allocate_external_function_id();
+
     let frame_fixed_grid_material_png_def = ResolvedExternalFunctionDefinition {
         name: Default::default(),
         signature: ResolvedFunctionSignature {
@@ -391,7 +394,7 @@ pub fn register_asset_struct_value_with_members(
                 .to_vec(),
             return_type: ResolvedType::Struct(fixed_grid_struct_type_ref),
         },
-        id: unique_id,
+        id: frame_fixed_grid_material_png_function_id,
     };
 
     let _frame_fixed_grid_material_png_fn = assets_type.borrow_mut().add_external_member_function(
@@ -401,7 +404,7 @@ pub fn register_asset_struct_value_with_members(
 
     externals.register_external_function(
         "frame_fixed_grid_material_png",
-        unique_id,
+        frame_fixed_grid_material_png_function_id,
         move |mem_values: &[VariableValue], context| {
             let params = convert_to_values(mem_values)
                 .expect("should work to get only values to gfx functions");
