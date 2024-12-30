@@ -1,3 +1,13 @@
 fn some_utility_function(i: Int) -> Int {
     i * 2
 }
+
+struct Something {
+    a: Int,
+}
+
+impl Something {
+    fn new(a: Int) -> Something {
+        Something { a: a }
+    }
+}

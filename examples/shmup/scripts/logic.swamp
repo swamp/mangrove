@@ -117,12 +117,10 @@ impl Logic {
     fn check_player_input(mut self) {
         for player in mut self.players {
             if player.fire && player.fire_cooldown == 0 {
-                print('add shot')
                 self.shots.add(Shot {
                     x: self.pos.x + 4.0, 
                     y: self.pos.y,
                 })
-                print('change player fire_cooldown')
                 player.fire_cooldown = self.cooldown_settings[ 1 ]
             }
         }
@@ -146,6 +144,7 @@ impl Logic {
     fn tick(mut self) {
         self.tick_count += 1
 
+        z = gameplay::Something::new(5)
         a = gameplay::some_utility_function(5)
 
         Logic::move_in_y_with_direction(mut self.pos, self.direction)
