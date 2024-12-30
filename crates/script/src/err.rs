@@ -4,7 +4,7 @@ use swamp_script::prelude::{show_error, SourceMap};
 pub fn show_mangrove_error(err: MangroveError, source_map: &SourceMap) {
     match err {
         MangroveError::IoError(_) => todo!(),
-        MangroveError::DecoratedParseError(decorated_parse_error) => {
+        MangroveError::DecoratedParseError(_decorated_parse_error) => {
             //  show_error(&decorated_parse_error, source_map)
         }
         MangroveError::ExecuteError(_) => todo!(),
