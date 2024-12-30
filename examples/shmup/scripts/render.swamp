@@ -7,6 +7,8 @@ struct Render {
     tick: Int,
 }
 
+
+
 impl Render {
 
     fn new(mut assets: mangrove::render::Assets) -> Render {
@@ -26,9 +28,9 @@ impl Render {
     /// Called by the mangrove engine every render tick
     fn render(mut self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
         self.tick += 1
-        y = logic.pos.y.floor()
+        x, y = logic.pos.floor()
 
-        player_ship_pos = (0, y, 0)
+        player_ship_pos = (x, y, 0)
         sprite_size = (16, 16)
 
         ship_frame = match logic.direction.sign() {

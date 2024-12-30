@@ -17,6 +17,10 @@ impl Position {
         self.x = self.x + other.x
         self.y = self.y + other.y
     }
+
+    fn floor(self) -> (Int, Int) {
+        (self.x.floor(), self.y.floor())
+    }
 }
 
 struct Size {
@@ -207,7 +211,7 @@ fn main() -> Logic {
     Logic {
         tick_count: 0,
         direction: 0.0,
-        pos: Position::new(10.0, 160.0),
+        pos: Position::new(20.0, 80.0),
         shots: Sparse<Shot>::new(),
         enemies: Sparse<Enemy>::new(),
         explosions: Sparse<Explosion>::new(),
