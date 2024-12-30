@@ -98,7 +98,7 @@ dependencies = [
  "ndk-context",
  "ndk-sys 0.6.0+11769913",
  "num_enum",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -524,7 +524,7 @@ dependencies = [
  "polling",
  "rustix",
  "slab",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -892,6 +892,8 @@ checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 [[package]]
 name = "eira"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4dca5a371898b3fe674254d4f7839cb5c11bcdfeca6b7bbfb5953d6cbebf0207"
 dependencies = [
  "yansi",
 ]
@@ -1345,7 +1347,7 @@ checksum = "c151a2a5ef800297b4e79efa4f4bec035c5f51d5ae587287c9b952bdf734cacd"
 dependencies = [
  "log",
  "presser",
- "thiserror",
+ "thiserror 1.0.69",
  "windows 0.58.0",
 ]
 
@@ -1567,7 +1569,7 @@ dependencies = [
  "combine",
  "jni-sys",
  "log",
- "thiserror",
+ "thiserror 1.0.69",
  "walkdir",
  "windows-sys 0.45.0",
 ]
@@ -2142,7 +2144,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-engine"
-version = "0.0.4-alpha.1"
+version = "0.0.4-alpha.2"
 dependencies = [
  "mangrove-save-detector",
  "mangrove-script",
@@ -2151,7 +2153,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-save-detector"
-version = "0.0.4-alpha.1"
+version = "0.0.4-alpha.2"
 dependencies = [
  "limnus-message",
  "mangrove-script",
@@ -2162,7 +2164,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-script"
-version = "0.0.4-alpha.1"
+version = "0.0.4-alpha.2"
 dependencies = [
  "limnus-gamepad",
  "limnus-message",
@@ -2285,7 +2287,7 @@ dependencies = [
  "rustc-hash",
  "spirv",
  "termcolor",
- "thiserror",
+ "thiserror 1.0.69",
  "unicode-xid",
 ]
 
@@ -2300,7 +2302,7 @@ dependencies = [
  "log",
  "ndk-sys 0.5.0+25.2.9519653",
  "num_enum",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2316,7 +2318,7 @@ dependencies = [
  "num_enum",
  "raw-window-handle 0.5.2",
  "raw-window-handle 0.6.2",
- "thiserror",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2809,20 +2811,20 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
 name = "pest"
-version = "2.7.14"
+version = "2.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "879952a81a83930934cbf1786752d6dedc3b1f29e8f8fb2ad1d0a36f377cf442"
+checksum = "8b7cafe60d6cf8e62e1b9b2ea516a089c008945bb5a275416789e7db0bc199dc"
 dependencies = [
  "memchr",
- "thiserror",
+ "thiserror 2.0.9",
  "ucd-trie",
 ]
 
 [[package]]
 name = "pest_derive"
-version = "2.7.14"
+version = "2.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d214365f632b123a47fd913301e14c946c61d1c183ee245fa76eb752e59a02dd"
+checksum = "816518421cfc6887a0d62bf441b6ffb4536fcc926395a69e1a85852d4363f57e"
 dependencies = [
  "pest",
  "pest_generator",
@@ -2830,9 +2832,9 @@ dependencies = [
 
 [[package]]
 name = "pest_generator"
-version = "2.7.14"
+version = "2.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb55586734301717aea2ac313f50b2eb8f60d2fc3dc01d190eefa2e625f60c4e"
+checksum = "7d1396fd3a870fc7838768d171b4616d5c91f6cc25e377b673d714567d99377b"
 dependencies = [
  "pest",
  "pest_meta",
@@ -2843,9 +2845,9 @@ dependencies = [
 
 [[package]]
 name = "pest_meta"
-version = "2.7.14"
+version = "2.7.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b75da2a70cf4d9cb76833c990ac9cd3923c9a8905a8929789ce347c84564d03d"
+checksum = "e1e58089ea25d717bfd31fb534e4f3afcc2cc569c70de3e239778991ea3b7dea"
 dependencies = [
  "once_cell",
  "pest",
@@ -3080,7 +3082,7 @@ dependencies = [
  "rand_chacha",
  "simd_helpers",
  "system-deps",
- "thiserror",
+ "thiserror 1.0.69",
  "v_frame",
  "wasm-bindgen",
 ]
@@ -3379,7 +3381,7 @@ dependencies = [
  "log",
  "memmap2",
  "rustix",
- "thiserror",
+ "thiserror 1.0.69",
  "wayland-backend",
  "wayland-client",
  "wayland-csd-frame",
@@ -3654,6 +3656,8 @@ dependencies = [
 [[package]]
 name = "swamp-script"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c71c7c53f324128e7087d645970f81b06fe3149fc2739b72dc4ee32cb9156ec5"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3671,6 +3675,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-analyzer"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fbba8bbd96772c4f0a72d8de8d0de7fa3728173b29a6d2e568769a053398b3f"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3682,10 +3688,14 @@ dependencies = [
 [[package]]
 name = "swamp-script-ast"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "741f4c0420354fd66077775bbebb080c6c03a85510b5af38ffc0c752749b095a"
 
 [[package]]
 name = "swamp-script-core"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a6d87a46dd7d3e524fc97471da5bd9ade69ce2961b985deb80d528e144f7c4a"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3697,6 +3707,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-dep-loader"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b10b286c861a091a6fd26119666de2f9b0799a2157a797b7e291e91ce5366fd3"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3708,6 +3720,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-error-report"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6fc7d8cd6b217230056e8aca278d61eb3b74ba4524cae315646633f55919b6f"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
@@ -3718,6 +3732,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-eval"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31387221f28d83557abf1b9faa7cded295fd99c3bfef3ebbd636941aa3ed7fb9"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3730,6 +3746,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-eval-loader"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "074562588f9402de672099c28b47532670d2630b854965e0a2e50089de4fecaa"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3742,6 +3760,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-parser"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7541741507b3c755bd0f188901c76ead89fc22ddfb7f70a738644fd4a1ab349"
 dependencies = [
  "pest",
  "pest_derive",
@@ -3752,6 +3772,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-semantic"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "68a696e2a90625355336f62ea301bb102e7e3d65dcc09f4e96c6745f23812ff1"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3760,6 +3782,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-source-map"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1c9df7416d75451a89826389f455368666e843ec0cea21dcc5977062adbc412"
 dependencies = [
  "pathdiff",
  "seq-map",
@@ -3770,6 +3794,8 @@ dependencies = [
 [[package]]
 name = "swamp-script-std"
 version = "0.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce1325bad1478e12d555b54dc08ed5132d8d33d59716426377858f163120c155"
 dependencies = [
  "swamp-script-semantic",
 ]
@@ -3864,7 +3890,16 @@ version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6aaf5339b578ea85b50e080feb250a3e8ae8cfcdff9a461c9ec2904bc923f52"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 1.0.69",
+]
+
+[[package]]
+name = "thiserror"
+version = "2.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f072643fd0190df67a8bab670c20ef5d8737177d6ac6b2e9a236cb096206b2cc"
+dependencies = [
+ "thiserror-impl 2.0.9",
 ]
 
 [[package]]
@@ -3872,6 +3907,17 @@ name = "thiserror-impl"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b50fa271071aae2e6ee85f842e2e28ba8cd2c5fb67f11fcb1fd70b276f9e7d4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4388,7 +4434,7 @@ dependencies = [
  "raw-window-handle 0.6.2",
  "rustc-hash",
  "smallvec",
- "thiserror",
+ "thiserror 1.0.69",
  "wgpu-hal",
  "wgpu-types",
 ]
@@ -4430,7 +4476,7 @@ dependencies = [
  "renderdoc-sys",
  "rustc-hash",
  "smallvec",
- "thiserror",
+ "thiserror 1.0.69",
  "wasm-bindgen",
  "web-sys",
  "wgpu-types",
