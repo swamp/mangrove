@@ -85,6 +85,7 @@ struct Logic {
     explosions: std::Sparse<Explosion>,
     players: [Int: Player],
     cooldown_settings: [Int], // just to test arrays
+    cooldown: Int?,
 }
 
 impl Logic {
@@ -122,6 +123,7 @@ impl Logic {
                     y: self.pos.y,
                 })
                 player.fire_cooldown = self.cooldown_settings[ 1 ]
+                self.cooldown = player.fire_cooldown
             }
         }
     }
@@ -130,6 +132,8 @@ impl Logic {
         for player in mut self.players {
             if player.fire_cooldown > 0 {
                 player.fire_cooldown -= 1
+            } else {
+                self.cooldown = none
             }
         }
     }
@@ -145,9 +149,19 @@ impl Logic {
         self.tick_count += 1
 
         z = gameplay::Something::new(5)
+        //print('z.a: {z.a}')
         a = gameplay::some_utility_function(5)
 
         Logic::move_in_y_with_direction(mut self.pos, self.direction)
+
+        if current_cooldown = self.cooldown? {
+            print('cooldown is some: {current_cooldown} {self.cooldown}')
+        }
+
+        cooldown = self.cooldown
+        if cooldown? {
+            print('shadow cooldown is some: {cooldown} {self.cooldown}')
+        }
 
         if self.tick_count % 30 == 0 {
             rect = Rect { 
@@ -163,7 +177,7 @@ impl Logic {
 
             // This is just to test for in maps
             for player_id, player in self.players {
-                print('player {player_id} fire: {player.fire} cooldown: {player.fire_cooldown}')
+                print('player {player_id} fire: {player.fire} cooldown: {player.fire_cooldown} {self.cooldown}')
             }
         }
 
@@ -220,5 +234,6 @@ fn main() -> Logic {
         explosions: Sparse<Explosion>::new(),
         players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
         cooldown_settings: [ 10, 20, 30 ],
+        cooldown: none,
     }
 }
