@@ -891,7 +891,7 @@ checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 
 [[package]]
 name = "eira"
-version = "0.0.1"
+version = "0.0.8"
 dependencies = [
  "yansi",
 ]
@@ -3653,7 +3653,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3670,7 +3670,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-analyzer"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3681,11 +3681,11 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-ast"
-version = "0.0.7"
+version = "0.0.8"
 
 [[package]]
 name = "swamp-script-core"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3696,9 +3696,8 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-dep-loader"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
- "pest",
  "seq-map",
  "swamp-script-ast",
  "swamp-script-parser",
@@ -3708,7 +3707,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-error-report"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
@@ -3718,7 +3717,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3730,7 +3729,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval-loader"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3742,7 +3741,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-parser"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "pest",
  "pest_derive",
@@ -3752,17 +3751,15 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-semantic"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "fixed32",
- "seq-fmt",
  "seq-map",
- "tracing",
 ]
 
 [[package]]
 name = "swamp-script-source-map"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "pathdiff",
  "seq-map",
@@ -3772,7 +3769,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-std"
-version = "0.0.7"
+version = "0.0.8"
 dependencies = [
  "swamp-script-semantic",
 ]
