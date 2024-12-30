@@ -1,0 +1,3 @@
+fn some_utility_function(i: Int) -> Int {
+    i * 2
+}

@@ -3737,6 +3737,7 @@ dependencies = [
  "swamp-script-dep-loader",
  "swamp-script-semantic",
  "swamp-script-source-map",
+ "tracing",
 ]
 
 [[package]]

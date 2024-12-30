@@ -1,3 +1,5 @@
+use gameplay
+
 struct Shot {
     x: Float,
     y: Float,
@@ -143,6 +145,8 @@ impl Logic {
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.tick_count += 1
+
+        a = gameplay::some_utility_function(5)
 
         Logic::move_in_y_with_direction(mut self.pos, self.direction)
 

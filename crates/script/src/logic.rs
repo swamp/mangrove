@@ -10,10 +10,10 @@ use swamp_script::prelude::*;
 use crate::err::show_mangrove_error;
 use tracing::error;
 
-pub fn logic_tick(mut script: LoReM<ScriptLogic>, source_map: Re<SourceMapResource>) {
-    let lookup: &dyn SourceMapLookup = &source_map.wrapper;
-
-    script.tick(Some(lookup)).expect("script.tick() crashed");
+pub fn logic_tick(mut script: LoReM<ScriptLogic>, _source_map: Re<SourceMapResource>) {
+    //let lookup: &dyn SourceMapLookup = &source_map.wrapper;
+    //Some(lookup)
+    script.tick(None).expect("script.tick() crashed");
 }
 
 pub fn input_tick(mut script: LoReM<ScriptLogic>, gamepad_messages: Msg<GamepadMessage>) {
