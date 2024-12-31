@@ -143,6 +143,12 @@ impl Logic {
 
     // This is not normally how you structure the code
     // it is just to test mut arguments
+    fn change_cooldown_setting(mut settings: Int, v: Int) {
+        settings = v
+    }
+
+    // This is not normally how you structure the code
+    // it is just to test mut arguments
     fn move_in_y_with_direction(mut position: Position, direction: Float) {
         position.y += direction
     }
@@ -205,6 +211,7 @@ impl Logic {
 
     fn set_player_input_fire(mut self, player_id: Int, fire: Bool) {
         self.players[player_id].fire = fire
+        Logic::change_cooldown_setting(mut self.cooldown_settings[ 1 ], 20)
     }
 
     /// Called by the mangrove engine when a gamepad axis changes
