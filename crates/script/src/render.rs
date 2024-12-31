@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
+ * Licensed under the MIT License. See LICENSE in the project root for license information.
+ */
+
 use crate::logic::ScriptLogic;
 use crate::script::{
     compile, create_empty_struct_value_util, sprite_params, uvec2_like, vec3_like, MangroveError,
@@ -343,6 +348,22 @@ pub fn register_gfx_struct_value_with_members(
         index: 2,
     };
     defined_fields.insert("rotate".to_string(), rotate_field)?;
+
+    let color_tuple_type = ResolvedType::Tuple(
+        ResolvedTupleType(Vec::from([
+            types.float_type(),
+            types.float_type(),
+            types.float_type(),
+            types.float_type(),
+        ]))
+        .into(),
+    );
+    let color_field = ResolvedAnonymousStructFieldType {
+        identifier: ResolvedFieldName(Default::default()),
+        field_type: color_tuple_type.clone(),
+        index: 3,
+    };
+    defined_fields.insert("color".to_string(), color_field)?;
 
     let sprite_params_type = ResolvedStructType {
         name: Default::default(),

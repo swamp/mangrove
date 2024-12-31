@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
+ * Licensed under the MIT License. See LICENSE in the project root for license information.
+ */
+
 use crate::SourceMapResource;
 use swamp::prelude::{App, Plugin};
 use swamp_script::prelude::{ResolvedNode, SourceMap, SourceMapLookup, Span};

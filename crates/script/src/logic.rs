@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
+ * Licensed under the MIT License. See LICENSE in the project root for license information.
+ */
+
 use crate::script::{compile, MangroveError};
 use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ScriptMessage, SourceMapResource};

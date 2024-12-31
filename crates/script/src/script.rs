@@ -9,7 +9,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::io;
 use std::path::Path;
 use std::rc::Rc;
-use swamp::prelude::{Rotation, SpriteParams, UVec2, Vec3};
+use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec3};
 use swamp_script::prelude::*;
 use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
@@ -127,6 +127,7 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
                 _ => return Err(ValueError::TypeError("wrong rotation".to_string())),
             },
             pivot: None,
+            color: color_like(&fields[3].borrow())?,
         })
     } else {
         Err(ValueError::TypeError("not a sprite param".to_string()))
@@ -141,6 +142,20 @@ pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
             let z = fields[2].borrow().expect_int()?;
 
             Ok(Vec3::new(x as i16, y as i16, z as i16))
+        }
+        _ => Err(ValueError::TypeError("not a vec3".to_string())),
+    }
+}
+
+pub fn color_like(v: &Value) -> Result<Color, ValueError> {
+    match v {
+        Value::Tuple(_, fields) => {
+            let r = fields[0].borrow().expect_float()?;
+            let g = fields[1].borrow().expect_float()?;
+            let b = fields[2].borrow().expect_float()?;
+            let a = fields[3].borrow().expect_float()?;
+
+            Ok(Color::from_f32(r.into(), g.into(), b.into(), a.into()))
         }
         _ => Err(ValueError::TypeError("not a vec3".to_string())),
     }
