@@ -9,13 +9,12 @@ use std::fmt::{Debug, Display, Formatter};
 use std::io;
 use std::path::Path;
 use std::rc::Rc;
-use swamp::prelude::{UVec2, Vec3};
+use swamp::prelude::{Rotation, SpriteParams, UVec2, Vec3};
 use swamp_script::prelude::*;
 use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
     ResolveError,
 };
-
 use tracing::trace;
 
 #[derive(Debug)]
@@ -111,6 +110,27 @@ pub fn create_empty_struct_value_util(
 ) -> Result<(Value, ResolvedStructTypeRef), ResolveError> {
     let struct_type = create_empty_struct_type(&mut namespace, name, type_number)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
+}
+
+pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, ValueError> {
+    if let Value::Struct(_struct_type_ref, fields) = sprite_params_struct {
+        Ok(SpriteParams {
+            dest_size: None,
+            source: None,
+            flip_x: fields[0].borrow().as_bool()?,
+            flip_y: fields[1].borrow().as_bool()?,
+            rotation: match fields[2].borrow().expect_int()? % 4 {
+                0 => Rotation::Degrees0,
+                1 => Rotation::Degrees90,
+                2 => Rotation::Degrees180,
+                3 => Rotation::Degrees270,
+                _ => return Err(ValueError::TypeError("wrong rotation".to_string())),
+            },
+            pivot: None,
+        })
+    } else {
+        Err(ValueError::TypeError("not a sprite param".to_string()))
+    }
 }
 
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {

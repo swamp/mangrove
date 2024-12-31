@@ -8,6 +8,6 @@ struct Something {
 
 impl Something {
     fn new(a: Int) -> Something {
-        Something { a: a }
+        Something { a: a + 3 }
     }
 }

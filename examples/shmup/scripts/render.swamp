@@ -34,16 +34,29 @@ impl Render {
         sprite_size = (16, 16)
 
         ship_frame = match logic.direction.sign() {
-            1.0 => 2,
-            -1.0 => 0,
+            1.0 => 0,
+            -1.0 => 2,
             _ => 1,
         }
 
-        gfx.sprite_atlas_frame(player_ship_pos, self.player_ship_material, ship_frame)
+        sprite_params = mangrove::render::SpriteParams {
+            flip_x: false,
+            flip_y: false,
+            rotate: 3,
+        }
+
+        gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, sprite_params)
 
         for shot in logic.shots {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
-            gfx.sprite_atlas_frame(shot_pos, self.player_shot_material, 1)
+
+        shot_params = mangrove::render::SpriteParams {
+            flip_x: false,
+            flip_y: false,
+            rotate: 3,
+        }
+
+            gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, shot_params)
         }
 
         for enemy in logic.enemies {

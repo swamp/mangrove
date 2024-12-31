@@ -1,6 +1,6 @@
 use crate::logic::ScriptLogic;
 use crate::script::{
-    compile, create_empty_struct_value_util, uvec2_like, vec3_like, MangroveError,
+    compile, create_empty_struct_value_util, sprite_params, uvec2_like, vec3_like, MangroveError,
 };
 use crate::util::get_impl_func;
 use crate::{ScriptMessage, SourceMapResource};
@@ -10,7 +10,7 @@ use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
     App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Msg,
-    Plugin, ReAll, ReM, Render, ResourceStorage, UVec2, UpdatePhase, Vec3,
+    Plugin, ReAll, ReM, Render, ResourceStorage, SpriteParams, UVec2, UpdatePhase, Vec3,
 };
 use swamp_script::prelude::*;
 use tracing::error;
@@ -55,6 +55,22 @@ impl RenderWrapper {
         }
 
         render.sprite_atlas_frame(position, frame, atlas);
+    }
+
+    pub fn sprite_atlas_frame_ex(
+        &mut self,
+        position: Vec3,
+        frame: u16,
+        atlas: &impl FrameLookup,
+        params: SpriteParams,
+    ) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.sprite_atlas_frame_ex(position, frame, atlas, params);
     }
 }
 
@@ -204,8 +220,8 @@ pub fn register_gfx_struct_value_with_members(
         is_mutable: None,
     };
 
-    let unique_id: ExternalFunctionId = state.allocate_external_function_id();
-
+    // sprite() ---------------------------
+    let sprite_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
     let sprite_fn = ResolvedExternalFunctionDefinition {
         name: Default::default(),
         signature: ResolvedFunctionSignature {
@@ -219,17 +235,17 @@ pub fn register_gfx_struct_value_with_members(
                 .to_vec(),
             return_type: types.int_type(),
         },
-        id: unique_id,
+        id: sprite_external_fn_id,
     };
 
-    let _material_png_fn = gfx_struct_type.borrow_mut().add_external_member_function(
+    let _sprite_fn = gfx_struct_type.borrow_mut().add_external_member_function(
         "sprite",
         ResolvedExternalFunctionDefinitionRef::from(sprite_fn),
     )?;
 
     externals.register_external_function(
         "sprite",
-        unique_id,
+        sprite_external_fn_id,
         move |mem_val: &[VariableValue], context| {
             let params = convert_to_values(mem_val).unwrap();
             //let _self_value = &params[0]; // the Gfx struct is empty by design.
@@ -249,8 +265,6 @@ pub fn register_gfx_struct_value_with_members(
         },
     )?;
 
-    let unique_id: ExternalFunctionId = state.allocate_external_function_id();
-
     // frame
     let frame = ResolvedParameter {
         name: Default::default(),
@@ -258,25 +272,32 @@ pub fn register_gfx_struct_value_with_members(
         is_mutable: None,
     };
 
-    let material_png_fn_def = ResolvedExternalFunctionDefinition {
+    // sprite_atlas_frame ---------------------------
+    let sprite_atlas_frame_external_fn_id: ExternalFunctionId =
+        state.allocate_external_function_id();
+    let sprite_atlas_frame_fn = ResolvedExternalFunctionDefinition {
         name: Default::default(),
         signature: ResolvedFunctionSignature {
             first_parameter_is_self: true,
-            parameters: (&[mut_self_parameter, position_param, material_handle, frame]).to_vec(),
+            parameters: (&[
+                mut_self_parameter.clone(),
+                position_param.clone(),
+                material_handle.clone(),
+                frame.clone(),
+            ])
+                .to_vec(),
             return_type: types.int_type(),
         },
-        id: unique_id,
+        id: sprite_atlas_frame_external_fn_id,
     };
-
-    let _material_png_fn = gfx_struct_type
+    gfx_struct_type
         .borrow_mut()
-        .add_external_member_function("sprite_atlas_frame", material_png_fn_def.into())?;
+        .add_external_member_function("sprite_atlas_frame", sprite_atlas_frame_fn.into())?;
 
     externals.register_external_function(
         "sprite_atlas_frame",
-        unique_id,
+        sprite_atlas_frame_external_fn_id,
         move |mem_values: &[VariableValue], context| {
-            //let _self_value = &params[0]; // the Gfx struct is empty by design.
             let params = convert_to_values(mem_values)
                 .expect("external function should be given values and no references");
             let position = vec3_like(&params[1])?;
@@ -291,6 +312,97 @@ pub fn register_gfx_struct_value_with_members(
                 position,
                 frame.abs() as u16,
                 &material_ref.as_ref().borrow().fixed_atlas,
+            );
+
+            Ok(Value::Unit)
+        },
+    )?;
+
+    // sprite_atlas_frame_ex ---------------------------
+
+    // Props
+    let sprite_props_type_id = state.allocate_number();
+    let mut defined_fields = SeqMap::new();
+    let flip_x_field = ResolvedAnonymousStructFieldType {
+        identifier: ResolvedFieldName(Default::default()),
+        field_type: types.bool_type(),
+        index: 0,
+    };
+    defined_fields.insert("flip_x".to_string(), flip_x_field)?;
+
+    let flip_y_field = ResolvedAnonymousStructFieldType {
+        identifier: ResolvedFieldName(Default::default()),
+        field_type: types.bool_type(),
+        index: 1,
+    };
+    defined_fields.insert("flip_y".to_string(), flip_y_field)?;
+
+    let rotate_field = ResolvedAnonymousStructFieldType {
+        identifier: ResolvedFieldName(Default::default()),
+        field_type: types.int_type(),
+        index: 2,
+    };
+    defined_fields.insert("rotate".to_string(), rotate_field)?;
+
+    let sprite_params_type = ResolvedStructType {
+        name: Default::default(),
+        assigned_name: "SpriteParams".to_string(),
+        anon_struct_type: ResolvedAnonymousStructType { defined_fields },
+        number: sprite_props_type_id,
+        functions: Default::default(),
+    };
+    let sprite_params_type_ref = namespace.add_struct(sprite_params_type)?;
+    //--- props
+
+    let sprite_props_parameter = ResolvedParameter {
+        name: Default::default(),
+        resolved_type: ResolvedType::Struct(sprite_params_type_ref),
+        is_mutable: None,
+    };
+
+    let sprite_atlas_frame_ex_external_fn_id: ExternalFunctionId =
+        state.allocate_external_function_id();
+    let sprite_atlas_frame_ex_fn = ResolvedExternalFunctionDefinition {
+        name: Default::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: true,
+            parameters: (&[
+                mut_self_parameter,
+                position_param,
+                material_handle,
+                frame,
+                sprite_props_parameter,
+            ])
+                .to_vec(),
+            return_type: types.int_type(),
+        },
+        id: sprite_atlas_frame_ex_external_fn_id,
+    };
+    gfx_struct_type
+        .borrow_mut()
+        .add_external_member_function("sprite_atlas_frame_ex", sprite_atlas_frame_ex_fn.into())?;
+
+    externals.register_external_function(
+        "sprite_atlas_frame_ex",
+        sprite_atlas_frame_ex_external_fn_id,
+        move |mem_values: &[VariableValue], context| {
+            let params = convert_to_values(mem_values)
+                .expect("external function should be given values and no references");
+            let position = vec3_like(&params[1])?;
+
+            let material_ref = params[2]
+                .downcast_hidden_rust::<FixedAtlasWrapper>()
+                .unwrap();
+
+            let frame = &params[3].expect_int()?;
+
+            let props = sprite_params(&params[4])?;
+
+            context.render.as_mut().unwrap().sprite_atlas_frame_ex(
+                position,
+                frame.abs() as u16,
+                &material_ref.as_ref().borrow().fixed_atlas,
+                props,
             );
 
             Ok(Value::Unit)

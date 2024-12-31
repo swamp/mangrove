@@ -1,4 +1,7 @@
-use gameplay
+use gameplay { 
+    some_utility_function, 
+    Something,
+}
 
 struct Shot {
     x: Float,
@@ -119,8 +122,8 @@ impl Logic {
         for player in mut self.players {
             if player.fire && player.fire_cooldown == 0 {
                 self.shots.add(Shot {
-                    x: self.pos.x + 4.0, 
-                    y: self.pos.y,
+                    x: self.pos.x + 12.0, 
+                    y: self.pos.y + 4.0,
                 })
                 player.fire_cooldown = self.cooldown_settings[ 1 ]
                 self.cooldown = player.fire_cooldown
@@ -148,9 +151,8 @@ impl Logic {
     fn tick(mut self) {
         self.tick_count += 1
 
-        z = gameplay::Something::new(5)
-        //print('z.a: {z.a}')
-        a = gameplay::some_utility_function(5)
+        z = Something::new(5)
+        a = some_utility_function(5)
 
         Logic::move_in_y_with_direction(mut self.pos, self.direction)
 
@@ -201,22 +203,22 @@ impl Logic {
         self.players_fire_cooldown()
     }
 
-    fn set_player_input_fire(mut self, gamepad: Int, fire: Bool) {
-        self.players[gamepad].fire = fire
+    fn set_player_input_fire(mut self, player_id: Int, fire: Bool) {
+        self.players[player_id].fire = fire
     }
 
     /// Called by the mangrove engine when a gamepad axis changes
-    fn gamepad_axis_changed(mut self, gamepad: Int, axis: input::Axis, value: Float) {
+    fn gamepad_axis_changed(mut self, player_id: Int, axis: input::Axis, value: Float) {
         match axis {
-            LeftStickY => self.direction = value * 4.0,
+            LeftStickY => self.direction = value * 1.1,
             _ => {},
         }
     }
 
     /// Called by the mangrove engine when a gamepad button changes
-    fn gamepad_button_changed(mut self, gamepad: Int, button: input::Button, value: Float) {
+    fn gamepad_button_changed(mut self, player_id: Int, button: input::Button, value: Float) {
         match button {
-            South => self.set_player_input_fire(gamepad, value > 0.5),
+            South => self.set_player_input_fire(player_id, value > 0.5),
             _ => print('not handled button: {button} value: {value}'),
         }
     }
@@ -233,7 +235,7 @@ fn main() -> Logic {
         enemies: Sparse<Enemy>::new(),
         explosions: Sparse<Explosion>::new(),
         players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
-        cooldown_settings: [ 10, 20, 30 ],
+        cooldown_settings: [ 10, 15, 30 ],
         cooldown: none,
     }
 }
