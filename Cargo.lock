@@ -891,7 +891,9 @@ checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 
 [[package]]
 name = "eira"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caafda60a3831d5fe6b13aa7baa88e95518a96de8639fb19e7c32550bda63b31"
 dependencies = [
  "yansi",
 ]
@@ -3434,7 +3436,9 @@ checksum = "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731"
 
 [[package]]
 name = "swamp"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e74f6c16067e99713a2267d1a1122a94ea4c76f6add65222ca0465787334066"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3464,7 +3468,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-advanced-game"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6afdcb5a02dc6ba1f7c73363504f33182688e21f38d9ec61fc5bd65a43b6c4e"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3491,7 +3497,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-boot-advanced-game"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03a5ecb6f7f3a47ce193fdacf923068144c9ecd15d00af5c17b3435dce782c57"
 dependencies = [
  "int_math",
  "limnus",
@@ -3504,7 +3512,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-boot-game"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18e96360044453614cbeadb04a2577751312b69d63af1a70144a3b5ff870d811"
 dependencies = [
  "int_math",
  "limnus",
@@ -3517,7 +3527,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-font"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c88421590b0a075a9ec6467ca9b4e472ce90dbc1906d6952ba1a61197212628"
 dependencies = [
  "bmf-parser",
  "int_math",
@@ -3530,7 +3542,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-game"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9da596b8f0ba95d602da91327bc6f0a00f214e34f09b6cf6c819d829cb1dcaa"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3557,7 +3571,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-game-assets"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5bc3fe6d4d1d80b73c8899d7c7f9315613ff39c0ec641019903535e5189ff9fe"
 dependencies = [
  "int_math",
  "limnus-asset-id",
@@ -3573,7 +3589,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-game-audio"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2536faa183325d9630f451478ee0c7db8a4784dd525b3fbd518dff54e83f30c7"
 dependencies = [
  "limnus-assets",
  "limnus-audio-mixer",
@@ -3582,7 +3600,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-material"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f0848c8f0cfa41ed9ece36b099d434a20842ae33c38799d4e0b299a256eefab"
 dependencies = [
  "image",
  "limnus-app",
@@ -3599,7 +3619,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-render"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1f7b4248ea50b98b298116e4785e489430f2f57e8b9b96306b6769449d0f019"
 dependencies = [
  "int_math",
  "monotonic-time-rs",
@@ -3608,7 +3630,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-render-wgpu"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48c59f818003b6d59499c91692e2a8e84729d53c4456b054270303444d476137"
 dependencies = [
  "bytemuck",
  "int_math",
@@ -3631,7 +3655,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fe8b85468f786e1557a7f064f93af6afc0cb71f1ea1d969bbcde7d0a237e727"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3648,7 +3674,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-analyzer"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e86c7734658bf0188f9918bd5b81543730c071ea5cf7dd5b71119b45b9081714"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3659,11 +3687,15 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-ast"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdc5731ff735eb056e1146a95b38e176279653823c508209fe4518832db6595b"
 
 [[package]]
 name = "swamp-script-core"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b169366e6c76be88037e15e6483c0b67936d2aca86ea84f394f2e2c4c8eafcb"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3674,7 +3706,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-dep-loader"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ff1ae296f7ef6d5551da27f6482b717fdb3fee4790a218afd867fcca658e81b"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3685,7 +3719,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-error-report"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd19623896ff88c9cce008f2e5fd7538fd596ed00a3599549ec56aa59bc75068"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
@@ -3695,7 +3731,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97554bef068bf47b7df8d7e267145f6b5b6109ad2abbbaaa7184424d95437775"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3707,7 +3745,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval-loader"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93fdb443abc4c433f1dd617455146782a9cef97bbcd9b018f617534536eab25a"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3719,7 +3759,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-parser"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6eb76435d5ff33723b137c4ebab4c16acc4f6ac642917b35c3f0ea244aa40e05"
 dependencies = [
  "pest",
  "pest_derive",
@@ -3729,7 +3771,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-semantic"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c37af8306ae0bf246604b1e08a3956ee0342d49f15f6598a04621f417512eb2"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3737,7 +3781,9 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-source-map"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53b504cae680ba462bd672448a772f5688df109340dd0d9bc31bfa415447a15c"
 dependencies = [
  "pathdiff",
  "seq-map",
@@ -3747,21 +3793,27 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-std"
-version = "0.0.8"
+version = "0.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7bf34677d3c6e9e47336e3003002943a6478656c641c12fbaf52eeef6b14c6ae"
 dependencies = [
  "swamp-script-semantic",
 ]
 
 [[package]]
 name = "swamp-wgpu"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33b6abedbc661ea78bac8c046a5f5734a870a152e638523429f97cf2cf88586e"
 dependencies = [
  "wgpu",
 ]
 
 [[package]]
 name = "swamp-wgpu-sprites"
-version = "0.0.14-alpha.1"
+version = "0.0.14-alpha.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6042668485aea078a2383762999ef85bf2345ac887c03e0646b580f7c088f4e1"
 dependencies = [
  "bytemuck",
  "image",
