@@ -1,3 +1,6 @@
+use mangrove.render {
+    SpriteParams,
+}
 /// Handles the rendering of the game
 struct Render {
     player_ship_material: mangrove::render::FixedAtlasHandle,
@@ -39,11 +42,10 @@ impl Render {
             _ => 1,
         }
 
-        sprite_params = mangrove::render::SpriteParams {
-            flip_x: false,
-            flip_y: false,
+        sprite_params = SpriteParams {
             rotate: 3,
             color: (1.0, 0.2, 1.0, 1.0),
+            ..
         }
 
         gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, sprite_params)
@@ -51,12 +53,11 @@ impl Render {
         for shot in logic.shots {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
 
-        shot_params = mangrove::render::SpriteParams {
-            flip_x: false,
-            flip_y: false,
-            rotate: 3,
-            color: (1.0, 1.0, 1.0, 1.0),
-        }
+            shot_params = SpriteParams {
+                rotate: 3,
+                color: (1.0, 1.0, 1.0, 1.0),
+                ..
+            }
 
             gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, shot_params)
         }
