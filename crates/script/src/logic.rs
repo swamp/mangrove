@@ -419,10 +419,7 @@ impl Plugin for ScriptLogicPlugin {
         if let Ok(script_logic) = script_logic_result {
             app.insert_local_resource(script_logic);
         } else {
-            show_mangrove_error(
-                script_logic_result.err().unwrap(),
-                &source_map.wrapper.source_map,
-            );
+            // TODO: stop ticking the logic
         }
     }
 }

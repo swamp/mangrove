@@ -2,6 +2,7 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
+use crate::err::show_mangrove_error;
 use seq_map::SeqMapError;
 use std::cell::RefCell;
 use std::error::Error;
@@ -246,7 +247,7 @@ fn parse_module(
                 offset: parse_err.span.offset,
                 length: parse_err.span.length,
             },
-            specific: SpecificError::ExpectingTypeIdentifier,
+            specific: parse_err.specific,
         })
     })?;
 
@@ -261,6 +262,31 @@ fn parse_module(
 }
 
 pub fn compile<C>(
+    base_path: &Path,
+    relative_path: &str,
+    module_path: &[String],
+    resolved_program: &mut ResolvedProgram,
+    externals: &mut ExternalFunctions<C>,
+    mut source_map: &mut SourceMap,
+    module_name: &str,
+) -> Result<(), MangroveError> {
+    if let Err(found_err) = compile_internal(
+        base_path,
+        relative_path,
+        module_path,
+        resolved_program,
+        externals,
+        &mut source_map,
+        module_name,
+    ) {
+        show_mangrove_error(&found_err, source_map);
+        Err(found_err)
+    } else {
+        Ok(())
+    }
+}
+
+pub fn compile_internal<C>(
     base_path: &Path,
     relative_path: &str,
     module_path: &[String],
@@ -289,6 +315,10 @@ pub fn compile<C>(
 
     let mut dependency_parser = DependencyParser::new();
     dependency_parser.add_ast_module(Vec::from(main_path), parsed_module);
+
+    for (module_path, _module_ref) in &resolved_program.modules.modules {
+        dependency_parser.add_resolved_module(module_path.clone());
+    }
 
     let module_paths_in_order = parse_dependant_modules_and_resolve(
         base_path.to_owned(),
