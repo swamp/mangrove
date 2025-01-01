@@ -7,6 +7,7 @@ struct Render {
     player_shot_material: mangrove::render::FixedAtlasHandle,
     alan_material: mangrove::render::FixedAtlasHandle,
     explosion_material: mangrove::render::FixedAtlasHandle,
+    background_material: mangrove::render::MaterialHandle,
     tick: Int,
 }
 
@@ -24,6 +25,7 @@ impl Render {
             player_shot_material: assets.frame_fixed_grid_material_png('projectiles/player_beam', (8,16), (16*2, 16)),
             alan_material: assets.frame_fixed_grid_material_png('enemies/alan_16x16', cell_size, (16*6, 16)),
             explosion_material: assets.frame_fixed_grid_material_png('effects/explosion_16x16', cell_size, (16*6, 16)),
+            background_material: assets.material_png('space_bg_64x64'),
             tick: 0,
         }
     }
@@ -42,6 +44,12 @@ impl Render {
             _ => 1,
         }
 
+/*        gfx.sprite_ex((0, 0, 0), self.background_material, SpriteParams {
+            scale: 1,
+            color: (1.0, 1.0, 1.0, 1.0),
+            ..
+        })
+*/
         sprite_params = SpriteParams {
             rotate: 3,
             color: (1.0, 0.2, 1.0, 1.0),
@@ -54,7 +62,7 @@ impl Render {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
 
             shot_params = SpriteParams {
-                rotate: 3,
+                rotate: 3, // Rotation is counterclockwise
                 color: (1.0, 1.0, 1.0, 1.0),
                 ..
             }

@@ -42,14 +42,24 @@ impl RenderWrapper {
         }
     }
 
-    pub fn push_sprite(&self, pos: Vec3, material_ref: &MaterialRef, size: UVec2) {
+    pub fn push_sprite(&self, pos: Vec3, material_ref: &MaterialRef) {
         // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
         let render: &mut Render;
         unsafe {
             render = &mut *self.render;
         }
 
-        render.draw_sprite(pos, size, material_ref);
+        render.draw_sprite(pos, material_ref);
+    }
+
+    pub fn push_sprite_ex(&self, pos: Vec3, material_ref: &MaterialRef, params: SpriteParams) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.draw_sprite_ex(pos, &material_ref, params);
     }
 
     pub fn sprite_atlas_frame(&mut self, position: Vec3, frame: u16, atlas: &impl FrameLookup) {
@@ -205,13 +215,17 @@ pub fn register_gfx_struct_value_with_members(
     };
 
     let int_type = types.int_type();
-    let tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
-    let tuple_type_ref = Rc::new(tuple_type);
+    let position_3_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
+    let position_tuple_type_ref = Rc::new(position_3_tuple_type);
+    let pos_3_type_ref = ResolvedType::Tuple(position_tuple_type_ref);
 
+    let position_2_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
+    let position_2_tuple_type_ref = Rc::new(position_2_tuple_type);
+    let pos_2_type_ref = ResolvedType::Tuple(position_2_tuple_type_ref);
     //position
     let position_param = ResolvedParameter {
         name: Default::default(),
-        resolved_type: ResolvedType::Tuple(tuple_type_ref),
+        resolved_type: pos_3_type_ref.clone(),
         is_mutable: None,
     };
 
@@ -235,7 +249,7 @@ pub fn register_gfx_struct_value_with_members(
                 mut_self_parameter.clone(),
                 position_param.clone(),
                 material_handle.clone(),
-                size_param,
+                size_param.clone(),
             ])
                 .to_vec(),
             return_type: types.int_type(),
@@ -258,17 +272,66 @@ pub fn register_gfx_struct_value_with_members(
 
             let material_ref = params[2].downcast_hidden_rust::<MaterialRef>().unwrap();
 
-            let size = uvec2_like(&params[3])?;
+            context
+                .render
+                .as_mut()
+                .unwrap()
+                .push_sprite(position, &material_ref.borrow());
+
+            Ok(Value::Unit)
+        },
+    )?;
+
+    // sprite_ex() ---------------------------
+    let sprite_ex_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
+    let sprite_ex_fn = ResolvedExternalFunctionDefinition {
+        name: Default::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: true,
+            parameters: (&[
+                mut_self_parameter.clone(),
+                position_param.clone(),
+                material_handle.clone(),
+                size_param,
+            ])
+                .to_vec(),
+            return_type: types.int_type(),
+        },
+        id: sprite_ex_external_fn_id,
+    };
+
+    let _sprite_ex_fn = gfx_struct_type.borrow_mut().add_external_member_function(
+        "sprite_ex",
+        ResolvedExternalFunctionDefinitionRef::from(sprite_ex_fn),
+    )?;
+
+    externals.register_external_function(
+        "sprite_ex",
+        sprite_ex_external_fn_id,
+        move |mem_val: &[VariableValue], context| {
+            let params = convert_to_values(mem_val).unwrap();
+            //let _self_value = &params[0]; // the Gfx struct is empty by design.
+            let position = vec3_like(&params[1])?;
+
+            let material_ref = params[2].downcast_hidden_rust::<MaterialRef>().unwrap();
+
+            let props = sprite_params(&params[3])?;
 
             context
                 .render
                 .as_mut()
                 .unwrap()
-                .push_sprite(position, &material_ref.borrow(), size);
+                .push_sprite_ex(position, &material_ref.borrow(), props);
 
             Ok(Value::Unit)
         },
     )?;
+
+
+
+
+
+
 
     // frame
     let frame = ResolvedParameter {
@@ -364,6 +427,22 @@ pub fn register_gfx_struct_value_with_members(
         index: 3,
     };
     defined_fields.insert("color".to_string(), color_field)?;
+
+
+    let scale_field = ResolvedAnonymousStructFieldType {
+        identifier: ResolvedFieldName(Default::default()),
+        field_type: types.int_type(),
+        index: 4,
+    };
+    defined_fields.insert("scale".to_string(), scale_field)?;
+
+
+    let size = ResolvedAnonymousStructFieldType {
+        identifier: ResolvedFieldName(Default::default()),
+        field_type: pos_2_type_ref.clone(),
+        index: 5,
+    };
+    defined_fields.insert("size".to_string(), size)?;
 
     let sprite_params_type = ResolvedStructType {
         name: Default::default(),

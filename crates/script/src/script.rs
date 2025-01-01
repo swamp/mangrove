@@ -4,13 +4,13 @@
  */
 use crate::err::show_mangrove_error;
 use seq_map::SeqMapError;
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::io;
 use std::path::Path;
 use std::rc::Rc;
-use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec3};
+use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec2, Vec3};
 use swamp_script::prelude::*;
 use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
@@ -116,8 +116,9 @@ pub fn create_empty_struct_value_util(
 pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, ValueError> {
     if let Value::Struct(_struct_type_ref, fields) = sprite_params_struct {
         Ok(SpriteParams {
-            dest_size: None,
-            source: None,
+            scale: fields[4].borrow().expect_int()? as u8,
+            texture_size: UVec2::new(0, 0),
+            texture_pos: uvec2_like(&*fields[5].borrow())?,
             flip_x: fields[0].borrow().as_bool()?,
             flip_y: fields[1].borrow().as_bool()?,
             rotation: match fields[2].borrow().expect_int()? % 4 {
@@ -127,13 +128,14 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
                 3 => Rotation::Degrees270,
                 _ => return Err(ValueError::TypeError("wrong rotation".to_string())),
             },
-            pivot: None,
+            pivot: Vec2::new(0, 0),
             color: color_like(&fields[3].borrow())?,
         })
     } else {
         Err(ValueError::TypeError("not a sprite param".to_string()))
     }
 }
+
 
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
     match v {
