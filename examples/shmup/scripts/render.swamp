@@ -52,7 +52,7 @@ impl Render {
 
         gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
             scale: 1,
-            color: Color::new(1.0, 1.0, 1.0, 0.1),
+            color: Color::new(1.0, 1.0, 1.0, 0.3),
             uv: (self.background_x.floor(), 0),
             ..
         })
@@ -60,7 +60,6 @@ impl Render {
         sprite_params = SpriteParams {
             scale: 1, // TODO: remove scale
             rotate: 3,
-            color: Color::new(1.0, 0.2, 1.0, 1.0),
             ..
         }
 

@@ -137,7 +137,7 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
     }
 }
 
-pub fn create_color_value(color_struct_type_ref: ResolvedStructTypeRef) -> Value {
+pub fn create_default_color_value(color_struct_type_ref: ResolvedStructTypeRef) -> Value {
     let mut fields = Vec::new();
 
     fields.push(Value::Float(Fp::one())); // red
@@ -156,7 +156,7 @@ pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
         .collect()
 }
 
-pub fn create_sprite_params(
+pub fn create_default_sprite_params(
     sprite_params_struct_type_ref: ResolvedStructTypeRef,
     color_type: ResolvedStructTypeRef,
     types: ResolvedProgramTypes,
@@ -167,7 +167,7 @@ pub fn create_sprite_params(
     fields.push(Value::Bool(false)); // flip_x
     fields.push(Value::Bool(false)); // flip_y
     fields.push(Value::Int(0)); // rotation
-    fields.push(create_color_value(color_type));
+    fields.push(create_default_color_value(color_type));
     fields.push(Value::Int(1)); // scale
     fields.push(Value::Tuple(
         math_types.size2_tuple_type,

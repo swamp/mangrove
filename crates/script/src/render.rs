@@ -5,8 +5,8 @@
 
 use crate::logic::ScriptLogic;
 use crate::script::{
-    compile, create_color_value, create_empty_struct_value_util, sprite_params, uvec2_like,
-    vec3_like, MangroveError,
+    compile, create_default_color_value, create_empty_struct_value_util, sprite_params, uvec2_like,
+    value_to_value_ref, vec3_like, MangroveError,
 };
 use crate::util::get_impl_func;
 use crate::{ScriptMessage, SourceMapResource};
@@ -261,7 +261,15 @@ pub fn register_color_struct_type(
     externals.register_external_function(
         new_external_function_id,
         move |mem_val: &[VariableValue], context| {
-            Ok(create_color_value(color_type_for_new.clone()))
+            let params = convert_to_values(mem_val).expect("should only be values for Color::new");
+            let r = params[0].clone();
+            let g = params[1].clone();
+            let b = params[2].clone();
+            let a = params[3].clone();
+            Ok(Value::Struct(
+                color_type_for_new.clone(),
+                value_to_value_ref(&[r, g, b, a].to_vec()),
+            ))
         },
     )?;
 
@@ -283,7 +291,7 @@ pub fn register_color_struct_type(
     externals.register_external_function(
         default_fn_external_function_id,
         move |mem_val: &[VariableValue], context| {
-            Ok(create_color_value(color_type_for_default.clone()))
+            Ok(create_default_color_value(color_type_for_default.clone()))
         },
     )?;
 
