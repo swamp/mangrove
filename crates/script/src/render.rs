@@ -5,8 +5,9 @@
 
 use crate::logic::ScriptLogic;
 use crate::script::{
-    compile, create_default_color_value, create_empty_struct_value_util, sprite_params, uvec2_like,
-    value_to_value_ref, vec3_like, MangroveError,
+    compile, create_default_color_value, create_default_sprite_params,
+    create_empty_struct_value_util, sprite_params, uvec2_like, value_to_value_ref, vec3_like,
+    MangroveError,
 };
 use crate::util::get_impl_func;
 use crate::{ScriptMessage, SourceMapResource};
@@ -119,8 +120,10 @@ impl Display for FixedAtlasWrapper {
     }
 }
 
+#[derive(Clone)]
 pub struct MathTypes {
     pub pos2: ResolvedType,
+    pub pos2_tuple_type: ResolvedTupleTypeRef,
     pub pos3: ResolvedType,
     pub size2: ResolvedType,
     pub size2_tuple_type: ResolvedTupleTypeRef,
@@ -310,7 +313,7 @@ pub fn register_math_types(types: &ResolvedProgramTypes) -> MathTypes {
 
     let position_2_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
     let position_2_tuple_type_ref = Rc::new(position_2_tuple_type);
-    let pos_2_type_ref = ResolvedType::Tuple(position_2_tuple_type_ref);
+    let pos_2_type_ref = ResolvedType::Tuple(position_2_tuple_type_ref.clone());
 
     let position_3_tuple_type =
         ResolvedTupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
@@ -323,6 +326,7 @@ pub fn register_math_types(types: &ResolvedProgramTypes) -> MathTypes {
 
     MathTypes {
         pos2: pos_2_type_ref,
+        pos2_tuple_type: position_2_tuple_type_ref.clone(),
         pos3: pos_3_type_ref,
         size2: size_2_type_ref,
         size2_tuple_type: size_int_tuple_type_ref.clone(),
@@ -338,9 +342,15 @@ pub fn register_gfx_types(
 ) -> Result<GfxTypes, MangroveError> {
     let color_struct_ref =
         register_color_struct_type(&types, namespace, state, external_functions)?;
-    let color_type = ResolvedType::Struct(color_struct_ref);
-    let sprite_params_struct_ref =
-        register_gfx_sprite_params(types, namespace, &color_type, math_types)?;
+    let color_type = ResolvedType::Struct(color_struct_ref.clone());
+    let sprite_params_struct_ref = register_gfx_sprite_params(
+        types,
+        state,
+        external_functions,
+        namespace,
+        color_struct_ref,
+        math_types,
+    )?;
     let sprite_params = ResolvedType::Struct(sprite_params_struct_ref);
     Ok(GfxTypes {
         color: color_type,
@@ -350,8 +360,10 @@ pub fn register_gfx_types(
 
 pub fn register_gfx_sprite_params(
     types: &ResolvedProgramTypes,
+    state: &mut ResolvedProgramState,
+    externals: &mut ExternalFunctions<ScriptRenderContext>,
     namespace: &mut ResolvedModuleNamespace,
-    color_type: &ResolvedType,
+    color_type: ResolvedStructTypeRef,
     math_types: &MathTypes,
 ) -> Result<ResolvedStructTypeRef, MangroveError> {
     // Props
@@ -376,7 +388,7 @@ pub fn register_gfx_sprite_params(
 
     let color_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: color_type.clone(),
+        field_type: ResolvedType::Struct(color_type.clone()),
     };
     defined_fields.insert("color".to_string(), color_field)?;
 
@@ -388,13 +400,13 @@ pub fn register_gfx_sprite_params(
 
     let uv = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: math_types.size2.clone(),
+        field_type: math_types.pos2.clone(),
     };
     defined_fields.insert("uv".to_string(), uv)?;
 
     let size = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: math_types.pos2.clone(),
+        field_type: math_types.size2.clone(),
     };
     defined_fields.insert("size".to_string(), size)?;
 
@@ -404,8 +416,39 @@ pub fn register_gfx_sprite_params(
         anon_struct_type: ResolvedAnonymousStructType { defined_fields },
         functions: Default::default(),
     };
+    let sprite_params_struct_type_ref = namespace.add_struct(sprite_params_type)?;
 
-    Ok(namespace.add_struct(sprite_params_type)?)
+    // SpriteParams::default()
+    let default_fn_external_function_id = state.allocate_external_function_id();
+    let default_fn = ResolvedExternalFunctionDefinition {
+        name: ResolvedNode::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: false,
+            parameters: vec![],
+            return_type: ResolvedType::Struct(sprite_params_struct_type_ref.clone()),
+        },
+        id: default_fn_external_function_id,
+    };
+    let default_fn_ref = Rc::new(default_fn);
+    sprite_params_struct_type_ref
+        .borrow_mut()
+        .add_external_member_function("default", default_fn_ref)?;
+
+    let sprite_params_struct_ref_for_default = sprite_params_struct_type_ref.clone();
+    let color_type_for_default = color_type.clone();
+    let math_types_for_default = math_types.clone();
+    externals.register_external_function(
+        default_fn_external_function_id,
+        move |mem_val: &[VariableValue], context| {
+            Ok(create_default_sprite_params(
+                sprite_params_struct_ref_for_default.clone(),
+                &color_type_for_default,
+                &math_types_for_default.clone(),
+            ))
+        },
+    )?;
+
+    Ok(sprite_params_struct_type_ref)
 }
 
 pub fn register_gfx_struct_value_with_members(

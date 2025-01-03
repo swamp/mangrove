@@ -158,19 +158,24 @@ pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
 
 pub fn create_default_sprite_params(
     sprite_params_struct_type_ref: ResolvedStructTypeRef,
-    color_type: ResolvedStructTypeRef,
-    types: ResolvedProgramTypes,
-    math_types: MathTypes,
+    color_type: &ResolvedStructTypeRef,
+    math_types: &MathTypes,
 ) -> Value {
     let mut fields = Vec::new();
 
     fields.push(Value::Bool(false)); // flip_x
     fields.push(Value::Bool(false)); // flip_y
     fields.push(Value::Int(0)); // rotation
-    fields.push(create_default_color_value(color_type));
+    fields.push(create_default_color_value(color_type.clone()));
     fields.push(Value::Int(1)); // scale
     fields.push(Value::Tuple(
-        math_types.size2_tuple_type,
+        // texture_position (uv)
+        math_types.pos2_tuple_type.clone(),
+        value_to_value_ref(&*[Value::Int(0), Value::Int(0)].to_vec()),
+    ));
+    fields.push(Value::Tuple(
+        // texture_size
+        math_types.size2_tuple_type.clone(),
         value_to_value_ref(&*[Value::Int(0), Value::Int(0)].to_vec()),
     ));
 
