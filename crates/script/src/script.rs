@@ -136,7 +136,6 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
     }
 }
 
-
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
     match v {
         Value::Tuple(_, fields) => {

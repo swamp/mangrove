@@ -1,5 +1,6 @@
 use mangrove.render {
     SpriteParams,
+    Color,
 }
 /// Handles the rendering of the game
 struct Render {
@@ -52,7 +53,7 @@ impl Render {
 */
         sprite_params = SpriteParams {
             rotate: 3,
-            color: (1.0, 0.2, 1.0, 1.0),
+            color: Color::new(1.0, 0.2, 1.0, 1.0),
             ..
         }
 
@@ -63,7 +64,7 @@ impl Render {
 
             shot_params = SpriteParams {
                 rotate: 3, // Rotation is counterclockwise
-                color: (1.0, 1.0, 1.0, 1.0),
+                color: Color::new(1.0, 1.0, 1.0, 1.0),
                 ..
             }
 
