@@ -51,14 +51,12 @@ impl Render {
         self.background_x = self.background_x % 512.0
 
         gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
-            scale: 1,
             color: Color::new(1.0, 1.0, 1.0, 0.3),
             uv: (self.background_x.floor(), 0),
             ..
         })
 
         sprite_params = SpriteParams {
-            scale: 1, // TODO: remove scale
             rotate: 3,
             ..
         }
@@ -69,7 +67,6 @@ impl Render {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
 
             shot_params = SpriteParams {
-            scale: 1, // todo:
                 rotate: 3, // Rotation is counterclockwise
                 color: Color::new(1.0, 1.0, 1.0, 1.0),
                 ..
