@@ -3272,6 +3272,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59fb3dae55e96c352048c88e6a2b9db15b25451ed4af54af3973d06371d40a6d"
 
 [[package]]
+name = "seq-set"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fa4f2bd1345ef404e7e9ee384e7b7cb60ed09cd6e9b410dbb7c8d4156c0f353"
+
+[[package]]
 name = "serde"
 version = "1.0.215"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3735,6 +3741,7 @@ dependencies = [
  "fixed32",
  "seq-fmt",
  "seq-map",
+ "seq-set",
 ]
 
 [[package]]

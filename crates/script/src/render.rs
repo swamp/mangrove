@@ -263,7 +263,7 @@ pub fn register_color_struct_type(
     let color_type_for_new = color_struct_type_ref.clone();
     externals.register_external_function(
         new_external_function_id,
-        move |mem_val: &[VariableValue], context| {
+        move |mem_val: &[VariableValue], _context| {
             let params = convert_to_values(mem_val).expect("should only be values for Color::new");
             let r = params[0].clone();
             let g = params[1].clone();
@@ -293,7 +293,7 @@ pub fn register_color_struct_type(
     let color_type_for_default = color_struct_type_ref.clone();
     externals.register_external_function(
         default_fn_external_function_id,
-        move |mem_val: &[VariableValue], context| {
+        move |_mem_val: &[VariableValue], _context| {
             Ok(create_default_color_value(color_type_for_default.clone()))
         },
     )?;
@@ -439,7 +439,7 @@ pub fn register_gfx_sprite_params(
     let math_types_for_default = math_types.clone();
     externals.register_external_function(
         default_fn_external_function_id,
-        move |mem_val: &[VariableValue], context| {
+        move |_mem_val: &[VariableValue], _context| {
             Ok(create_default_sprite_params(
                 sprite_params_struct_ref_for_default.clone(),
                 &color_type_for_default,
@@ -1006,6 +1006,7 @@ pub fn boot(
         render: None,
     };
 
+    resolved_program.modules.finalize()?;
     let mut constants = Constants::new();
     eval_constants(
         &external_functions,

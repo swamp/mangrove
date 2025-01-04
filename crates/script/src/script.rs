@@ -5,7 +5,7 @@
 use crate::err::show_mangrove_error;
 use crate::render::MathTypes;
 use seq_map::SeqMapError;
-use std::cell::{Ref, RefCell};
+use std::cell::RefCell;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::io;
@@ -17,7 +17,7 @@ use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
     ResolveError,
 };
-use tracing::{info, trace};
+use tracing::trace;
 
 #[derive(Debug)]
 pub enum MangroveError {

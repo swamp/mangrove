@@ -355,6 +355,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
     };
 
     let mut script_context = ScriptLogicContext {};
+    resolved_program.modules.finalize()?;
     let mut constants = Constants::new();
     eval_constants(
         &external_functions,

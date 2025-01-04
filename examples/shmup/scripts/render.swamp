@@ -18,15 +18,16 @@ struct Render {
 impl Render {
 
     fn new(mut assets: mangrove::render::Assets) -> Render {
-        cell_size = (16, 16)
-        texture_size = (16*3, 16)
-        player_ship_material = assets.frame_fixed_grid_material_png('player/ship_16x16', cell_size, texture_size)
+        const SIZE = 16
+        const SHIP_TEXTURE_SIZE = (SIZE*3, SIZE)
+        const CELL_SIZE = (SIZE, SIZE)
+        player_ship_material = assets.frame_fixed_grid_material_png('player/ship_16x16', CELL_SIZE, SHIP_TEXTURE_SIZE)
 
         Render {
             player_ship_material: player_ship_material,
-            player_shot_material: assets.frame_fixed_grid_material_png('projectiles/player_beam', (8,16), (16*2, 16)),
-            alan_material: assets.frame_fixed_grid_material_png('enemies/alan_16x16', cell_size, (16*6, 16)),
-            explosion_material: assets.frame_fixed_grid_material_png('effects/explosion_16x16', cell_size, (16*6, 16)),
+            player_shot_material: assets.frame_fixed_grid_material_png('projectiles/player_beam', (8,SIZE), (SIZE*2, SIZE)),
+            alan_material: assets.frame_fixed_grid_material_png('enemies/alan_16x16', CELL_SIZE, (SIZE*6, SIZE)),
+            explosion_material: assets.frame_fixed_grid_material_png('effects/explosion_16x16', CELL_SIZE, (SIZE*6, SIZE)),
             background_material: assets.material_png('blue_nebula_04-512x512'),
             tick: 0,
             background_x: 0.0,
@@ -56,9 +57,11 @@ impl Render {
             ..
         })
 
+        const STANDARD_ROTATE = 3
+
         const SHIP_SPRITE_PARAMS = SpriteParams {
             scale: 1,
-            rotate: 3,
+            rotate: STANDARD_ROTATE,
             ..
         }
 

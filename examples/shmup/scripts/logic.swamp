@@ -232,17 +232,20 @@ impl Logic {
 
 }
 
+
 /// Called by the mangrove engine at startup
 fn main() -> Logic {
+    const STARTING_POS = Position::new(20.0, 80.0)
+    const FIRE_COOLDOWN = 15
     Logic {
         tick_count: 0,
         direction: 0.0,
-        pos: Position::new(20.0, 80.0),
+        pos: STARTING_POS,
         shots: Sparse<Shot>::new(),
         enemies: Sparse<Enemy>::new(),
         explosions: Sparse<Explosion>::new(),
         players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
-        cooldown_settings: [ 10, 15, 30 ],
+        cooldown_settings: [ 10, FIRE_COOLDOWN, 30 ],
         cooldown: none,
     }
 }
