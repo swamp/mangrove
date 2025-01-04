@@ -819,6 +819,7 @@ pub struct ScriptRender {
     render_value_ref: ValueRef,
     render_fn: ResolvedInternalFunctionDefinitionRef,
     externals: ExternalFunctions<ScriptRenderContext>,
+    constants: Constants,
     gfx_struct_ref: ValueRef,
 }
 
@@ -828,6 +829,7 @@ impl ScriptRender {
         render_value_ref: ValueRef,
         render_struct_type_ref: ResolvedStructTypeRef,
         externals: ExternalFunctions<ScriptRenderContext>,
+        constants: Constants,
         gfx_struct_ref: ValueRef,
     ) -> Result<Self, MangroveError> {
         let render_fn = get_impl_func(&render_struct_type_ref, "render");
@@ -837,6 +839,7 @@ impl ScriptRender {
             render_value_ref,
             gfx_struct_ref,
             externals,
+            constants,
         })
     }
 
@@ -850,12 +853,11 @@ impl ScriptRender {
             render: Some(RenderWrapper::new(wgpu_render)),
         };
 
-        //info!(render_value=?self.render_value_ref, "render()");
-
         let self_mut_ref = VariableValue::Reference(ValueReference(self.render_value_ref.clone()));
 
         util_execute_function(
             &self.externals,
+            &self.constants,
             &self.render_fn,
             &[
                 self_mut_ref, //   self.render_value_ref.clone()
@@ -1013,8 +1015,17 @@ pub fn boot(
         render: None,
     };
 
+    let mut constants = Constants::new();
+    eval_constants(
+        &external_functions,
+        &mut constants,
+        &resolved_program.modules,
+        &mut script_context,
+    )?;
+
     let render_struct_value = util_execute_function(
         &external_functions,
+        &constants,
         &main_fn,
         &[assets_value],
         &mut script_context,
@@ -1037,6 +1048,7 @@ pub fn boot(
         render_struct_value_mutable_ref.clone(),
         render_struct_type_ref.clone(),
         external_functions,
+        constants,
         gfx_value,
     )
 }

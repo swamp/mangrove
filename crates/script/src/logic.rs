@@ -36,6 +36,7 @@ pub struct ScriptLogic {
     gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
     gamepad_button_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
     external_functions: ExternalFunctions<ScriptLogicContext>,
+    constants: Constants,
     script_context: ScriptLogicContext,
     resolved_program: ResolvedProgram,
     input_module: ResolvedModuleRef,
@@ -48,6 +49,7 @@ impl ScriptLogic {
         gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
         gamepad_button_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
         external_functions: ExternalFunctions<ScriptLogicContext>,
+        constants: Constants,
         resolved_program: ResolvedProgram,
         //axis_enum_type: ResolvedEnumTypeRef,
         input_module: ResolvedModuleRef,
@@ -59,6 +61,7 @@ impl ScriptLogic {
             gamepad_button_changed_fn,
             external_functions,
             script_context: ScriptLogicContext {},
+            constants,
             resolved_program,
             input_module,
         }
@@ -85,6 +88,7 @@ impl ScriptLogic {
             VariableValue::Reference(ValueReference(self.logic_value_ref.clone()));
         let _ = util_execute_function(
             &self.external_functions,
+            &self.constants,
             &self.logic_fn,
             &[variable_value_ref],
             &mut self.script_context,
@@ -109,6 +113,7 @@ impl ScriptLogic {
 
         let _ = util_execute_function(
             &self.external_functions,
+            &self.constants,
             fn_def,
             &complete_arguments,
             &mut self.script_context,
@@ -350,9 +355,17 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
     };
 
     let mut script_context = ScriptLogicContext {};
+    let mut constants = Constants::new();
+    eval_constants(
+        &external_functions,
+        &mut constants,
+        &resolved_program.modules,
+        &mut script_context,
+    )?;
 
     let logic_value = util_execute_function(
         &external_functions,
+        &constants,
         &main_fn,
         &[],
         &mut script_context,
@@ -380,6 +393,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
         gamepad_axis_changed_fn,
         gamepad_button_changed_fn,
         external_functions,
+        constants,
         resolved_program,
         // axis_enum_type,
         input_module_ref.clone(),

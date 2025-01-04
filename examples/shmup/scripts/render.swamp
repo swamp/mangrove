@@ -50,18 +50,19 @@ impl Render {
         self.background_x += 0.5
         self.background_x = self.background_x % 512.0
 
-        gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
+         gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
             color: Color::new(1.0, 1.0, 1.0, 0.3),
             uv: (self.background_x.floor(), 0),
             ..
         })
 
-        sprite_params = SpriteParams {
+        const SHIP_SPRITE_PARAMS = SpriteParams {
+            scale: 1,
             rotate: 3,
             ..
         }
 
-        gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, sprite_params)
+        gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, SHIP_SPRITE_PARAMS)
 
         for shot in logic.shots {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)

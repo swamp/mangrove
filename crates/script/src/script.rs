@@ -17,7 +17,7 @@ use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
     ResolveError,
 };
-use tracing::trace;
+use tracing::{info, trace};
 
 #[derive(Debug)]
 pub enum MangroveError {
