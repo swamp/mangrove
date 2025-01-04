@@ -3755,6 +3755,7 @@ name = "swamp-script-semantic"
 version = "0.0.9"
 dependencies = [
  "fixed32",
+ "seq-fmt",
  "seq-map",
 ]
 
