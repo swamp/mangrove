@@ -3,6 +3,9 @@ use gameplay {
     Something,
 }
 
+const SCREEN_HEIGHT = 180
+const SCREEN_WIDTH = 320
+
 struct Shot {
     x: Float,
     y: Float,
@@ -67,6 +70,7 @@ struct Enemy {
     rect: Rect,
     direction: Float,
     enemy: EnemyType,
+    time: Int,
 }
 
 enum ExplosionType {
@@ -113,8 +117,10 @@ impl Logic {
             // But it is strongly recommended with '{' '}' for easier reading
             if explosion.tick >= 30 
                 self.explosions.remove(explosion_id)
-             else 
+             else {
                 explosion.tick += 1
+                explosion.pos.x -= 1.5
+            }
         }
     }
 
@@ -139,6 +145,14 @@ impl Logic {
                 self.cooldown = none
             }
         }
+    }
+
+    fn random_range(value: Float, min: Int, max: Int) -> Int {
+        min + (value.rnd() % (max - min))
+    }
+
+    fn random_range_int(value: Int, min: Int, max: Int) -> Int {
+        min + (value.rnd() % (max - min))
     }
 
     // This is not normally how you structure the code
@@ -171,16 +185,22 @@ impl Logic {
             print('shadow cooldown is some: {cooldown} {self.cooldown}')
         }
 
+        const ENEMY_MARGIN = 30
+
         if self.tick_count % 30 == 0 {
+            random_y = Logic::random_range_int(self.tick_count, ENEMY_MARGIN, SCREEN_HEIGHT - ENEMY_MARGIN)
+
             rect = Rect { 
-                pos: Position { x: 220.0, y: 50.0 }, 
+                pos: Position { x: SCREEN_WIDTH.to_float() + 32.0, y: random_y.to_float() }, 
                 size: Size { width: 16.0, height: 16.0 } 
             }
             
+
             self.enemies.add(Enemy {
                 rect: rect, 
                 enemy: EnemyType::Alan, 
-                direction: -1.2 
+                direction: -1.2,
+                time: Logic::random_range_int(self.tick_count, 0, 3),
             })
 
             // This is just to test for in maps
@@ -190,15 +210,19 @@ impl Logic {
         }
 
         for id, mut enemy in self.enemies {
-             enemy.rect.pos.x += enemy.direction
+            enemy.rect.pos.x += enemy.direction
+            enemy.time += 1
             if enemy.rect.pos.x < -10.0 {
+                self.enemies.remove(id)
+            }
+            if enemy.time > 400 {
                 self.enemies.remove(id)
             }
         }
 
         for shot_id, mut shot in self.shots {
             shot.x = shot.x + 3.0
-            if shot.x > 250.0 {
+            if shot.x > SCREEN_WIDTH.to_float() {
                 self.shots.remove(shot_id)
             } 
         }

@@ -3427,6 +3427,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "squirrel-prng"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41f08241958ab06f8afaaf7e54b8a96cd68d69b222a4461275d832e97f19914d"
+
+[[package]]
 name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3706,6 +3712,7 @@ version = "0.0.9"
 dependencies = [
  "fixed32",
  "seq-map",
+ "squirrel-prng",
  "swamp-script-core",
  "swamp-script-semantic",
  "swamp-script-source-map",
