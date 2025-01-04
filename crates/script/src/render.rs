@@ -5,7 +5,9 @@
 
 use crate::logic::ScriptLogic;
 use crate::script::{
-    compile, create_empty_struct_value_util, sprite_params, uvec2_like, vec3_like, MangroveError,
+    compile, create_default_color_value, create_default_sprite_params,
+    create_empty_struct_value_util, sprite_params, uvec2_like, value_to_value_ref, vec3_like,
+    MangroveError,
 };
 use crate::util::get_impl_func;
 use crate::{ScriptMessage, SourceMapResource};
@@ -42,14 +44,24 @@ impl RenderWrapper {
         }
     }
 
-    pub fn push_sprite(&self, pos: Vec3, material_ref: &MaterialRef, size: UVec2) {
+    pub fn push_sprite(&self, pos: Vec3, material_ref: &MaterialRef) {
         // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
         let render: &mut Render;
         unsafe {
             render = &mut *self.render;
         }
 
-        render.draw_sprite(pos, size, material_ref);
+        render.draw_sprite(pos, material_ref);
+    }
+
+    pub fn push_sprite_ex(&self, pos: Vec3, material_ref: &MaterialRef, params: SpriteParams) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.draw_sprite_ex(pos, &material_ref, params);
     }
 
     pub fn sprite_atlas_frame(&mut self, position: Vec3, frame: u16, atlas: &impl FrameLookup) {
@@ -106,6 +118,20 @@ impl Display for FixedAtlasWrapper {
             self.fixed_atlas.one_cell_size, self.fixed_atlas.texture_size
         )
     }
+}
+
+#[derive(Clone)]
+pub struct MathTypes {
+    pub pos2: ResolvedType,
+    pub pos2_tuple_type: ResolvedTupleTypeRef,
+    pub pos3: ResolvedType,
+    pub size2: ResolvedType,
+    pub size2_tuple_type: ResolvedTupleTypeRef,
+}
+
+pub struct GfxTypes {
+    pub color: ResolvedType,
+    pub sprite_params: ResolvedType,
 }
 
 impl GameAssetsWrapper {
@@ -179,17 +205,266 @@ impl GameAssetsWrapper {
     }
 }
 
-pub fn register_gfx_struct_value_with_members(
+pub fn register_color_struct_type(
+    types: &ResolvedProgramTypes,
+    namespace: &mut ResolvedModuleNamespace,
+    state: &mut ResolvedProgramState,
+    externals: &mut ExternalFunctions<ScriptRenderContext>,
+) -> Result<ResolvedStructTypeRef, MangroveError> {
+    let mut defined_fields = SeqMap::new();
+
+    let r_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: types.float_type(),
+    };
+    defined_fields.insert("r".to_string(), r_field)?;
+
+    let g_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: types.float_type(),
+    };
+    defined_fields.insert("g".to_string(), g_field)?;
+
+    let b_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: types.float_type(),
+    };
+    defined_fields.insert("b".to_string(), b_field)?;
+
+    let a_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: types.float_type(),
+    };
+    defined_fields.insert("a".to_string(), a_field)?;
+
+    let color_type = ResolvedStructType {
+        name: Default::default(),
+        assigned_name: "Color".to_string(),
+        anon_struct_type: ResolvedAnonymousStructType { defined_fields },
+        functions: Default::default(),
+    };
+
+    let color_struct_type_ref = namespace.add_struct(color_type)?;
+
+    // Color::new()
+    let new_external_function_id = state.allocate_external_function_id();
+    let new_fn = ResolvedExternalFunctionDefinition {
+        name: ResolvedNode::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: false,
+            parameters: vec![],
+            return_type: ResolvedType::Struct(color_struct_type_ref.clone()),
+        },
+        id: new_external_function_id,
+    };
+    let new_fn_ref = Rc::new(new_fn);
+    let new_fn_wrap = ResolvedFunction::External(new_fn_ref.clone());
+
+    let color_type_for_new = color_struct_type_ref.clone();
+    externals.register_external_function(
+        new_external_function_id,
+        move |mem_val: &[VariableValue], context| {
+            let params = convert_to_values(mem_val).expect("should only be values for Color::new");
+            let r = params[0].clone();
+            let g = params[1].clone();
+            let b = params[2].clone();
+            let a = params[3].clone();
+            Ok(Value::Struct(
+                color_type_for_new.clone(),
+                value_to_value_ref(&[r, g, b, a].to_vec()),
+            ))
+        },
+    )?;
+
+    // Color::default()
+    let default_fn_external_function_id = state.allocate_external_function_id();
+    let default_fn = ResolvedExternalFunctionDefinition {
+        name: ResolvedNode::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: false,
+            parameters: vec![],
+            return_type: ResolvedType::Struct(color_struct_type_ref.clone()),
+        },
+        id: default_fn_external_function_id,
+    };
+    let default_fn_ref = Rc::new(default_fn);
+    let default_fn_ref_wrap = ResolvedFunction::External(default_fn_ref.clone());
+
+    let color_type_for_default = color_struct_type_ref.clone();
+    externals.register_external_function(
+        default_fn_external_function_id,
+        move |mem_val: &[VariableValue], context| {
+            Ok(create_default_color_value(color_type_for_default.clone()))
+        },
+    )?;
+
+    // insert functions
+    let mut functions = SeqMap::new();
+    functions.insert("new".to_string(), new_fn_wrap.into())?;
+    functions.insert("default".to_string(), default_fn_ref_wrap.into())?;
+
+    color_struct_type_ref.borrow_mut().functions = functions;
+
+    Ok(color_struct_type_ref)
+}
+
+pub fn register_math_types(types: &ResolvedProgramTypes) -> MathTypes {
+    let int_type = types.int_type();
+
+    let position_2_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
+    let position_2_tuple_type_ref = Rc::new(position_2_tuple_type);
+    let pos_2_type_ref = ResolvedType::Tuple(position_2_tuple_type_ref.clone());
+
+    let position_3_tuple_type =
+        ResolvedTupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
+    let position_tuple_type_ref = Rc::new(position_3_tuple_type);
+    let pos_3_type_ref = ResolvedType::Tuple(position_tuple_type_ref);
+
+    let size_int_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
+    let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
+    let size_2_type_ref = ResolvedType::Tuple(size_int_tuple_type_ref.clone());
+
+    MathTypes {
+        pos2: pos_2_type_ref,
+        pos2_tuple_type: position_2_tuple_type_ref.clone(),
+        pos3: pos_3_type_ref,
+        size2: size_2_type_ref,
+        size2_tuple_type: size_int_tuple_type_ref.clone(),
+    }
+}
+
+pub fn register_gfx_types(
+    types: &ResolvedProgramTypes,
+    state: &mut ResolvedProgramState,
+    external_functions: &mut ExternalFunctions<ScriptRenderContext>,
+    math_types: &MathTypes,
+    namespace: &mut ResolvedModuleNamespace,
+) -> Result<GfxTypes, MangroveError> {
+    let color_struct_ref =
+        register_color_struct_type(&types, namespace, state, external_functions)?;
+    let color_type = ResolvedType::Struct(color_struct_ref.clone());
+    let sprite_params_struct_ref = register_gfx_sprite_params(
+        types,
+        state,
+        external_functions,
+        namespace,
+        color_struct_ref,
+        math_types,
+    )?;
+    let sprite_params = ResolvedType::Struct(sprite_params_struct_ref);
+    Ok(GfxTypes {
+        color: color_type,
+        sprite_params,
+    })
+}
+
+pub fn register_gfx_sprite_params(
     types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     namespace: &mut ResolvedModuleNamespace,
+    color_type: ResolvedStructTypeRef,
+    math_types: &MathTypes,
+) -> Result<ResolvedStructTypeRef, MangroveError> {
+    // Props
+    let mut defined_fields = SeqMap::new();
+    let flip_x_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: types.bool_type(),
+    };
+    defined_fields.insert("flip_x".to_string(), flip_x_field)?;
+
+    let flip_y_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: types.bool_type(),
+    };
+    defined_fields.insert("flip_y".to_string(), flip_y_field)?;
+
+    let rotate_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: types.int_type(),
+    };
+    defined_fields.insert("rotate".to_string(), rotate_field)?;
+
+    let color_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: ResolvedType::Struct(color_type.clone()),
+    };
+    defined_fields.insert("color".to_string(), color_field)?;
+
+    let scale_field = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: types.int_type(),
+    };
+    defined_fields.insert("scale".to_string(), scale_field)?;
+
+    let uv = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: math_types.pos2.clone(),
+    };
+    defined_fields.insert("uv".to_string(), uv)?;
+
+    let size = ResolvedAnonymousStructFieldType {
+        identifier: None,
+        field_type: math_types.size2.clone(),
+    };
+    defined_fields.insert("size".to_string(), size)?;
+
+    let sprite_params_type = ResolvedStructType {
+        name: Default::default(),
+        assigned_name: "SpriteParams".to_string(),
+        anon_struct_type: ResolvedAnonymousStructType { defined_fields },
+        functions: Default::default(),
+    };
+    let sprite_params_struct_type_ref = namespace.add_struct(sprite_params_type)?;
+
+    // SpriteParams::default()
+    let default_fn_external_function_id = state.allocate_external_function_id();
+    let default_fn = ResolvedExternalFunctionDefinition {
+        name: ResolvedNode::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: false,
+            parameters: vec![],
+            return_type: ResolvedType::Struct(sprite_params_struct_type_ref.clone()),
+        },
+        id: default_fn_external_function_id,
+    };
+    let default_fn_ref = Rc::new(default_fn);
+    sprite_params_struct_type_ref
+        .borrow_mut()
+        .add_external_member_function("default", default_fn_ref)?;
+
+    let sprite_params_struct_ref_for_default = sprite_params_struct_type_ref.clone();
+    let color_type_for_default = color_type.clone();
+    let math_types_for_default = math_types.clone();
+    externals.register_external_function(
+        default_fn_external_function_id,
+        move |mem_val: &[VariableValue], context| {
+            Ok(create_default_sprite_params(
+                sprite_params_struct_ref_for_default.clone(),
+                &color_type_for_default,
+                &math_types_for_default.clone(),
+            ))
+        },
+    )?;
+
+    Ok(sprite_params_struct_type_ref)
+}
+
+pub fn register_gfx_struct_value_with_members(
+    types: &ResolvedProgramTypes,
+    mut state: &mut ResolvedProgramState,
+    externals: &mut ExternalFunctions<ScriptRenderContext>,
+    mut namespace: &mut ResolvedModuleNamespace,
 ) -> Result<ValueRef, MangroveError> {
     let gfx_type_number = state.allocate_number();
     let (gfx_value, gfx_struct_type) =
         create_empty_struct_value_util(namespace, "Gfx", gfx_type_number)?;
     let gfx_value_mut = Rc::new(RefCell::new(gfx_value.clone()));
     let assets_general_type = ResolvedType::Struct(gfx_struct_type.clone());
+
+    let math_types = register_math_types(&types);
+    let gfx_types = register_gfx_types(&types, &mut state, externals, &math_types, &mut namespace)?;
 
     let mut_self_parameter = ResolvedParameter {
         name: ResolvedNode::default(),
@@ -204,24 +479,23 @@ pub fn register_gfx_struct_value_with_members(
         is_mutable: None,
     };
 
-    let int_type = types.int_type();
-    let tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
-    let tuple_type_ref = Rc::new(tuple_type);
-
     //position
     let position_param = ResolvedParameter {
         name: Default::default(),
-        resolved_type: ResolvedType::Tuple(tuple_type_ref),
+        resolved_type: math_types.pos3.clone(),
         is_mutable: None,
     };
-
-    let size_int_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
-    let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
 
     // size
     let size_param = ResolvedParameter {
         name: Default::default(),
-        resolved_type: ResolvedType::Tuple(size_int_tuple_type_ref),
+        resolved_type: math_types.size2,
+        is_mutable: None,
+    };
+
+    let sprite_params_parameter = ResolvedParameter {
+        name: Default::default(),
+        resolved_type: gfx_types.sprite_params,
         is_mutable: None,
     };
 
@@ -235,7 +509,7 @@ pub fn register_gfx_struct_value_with_members(
                 mut_self_parameter.clone(),
                 position_param.clone(),
                 material_handle.clone(),
-                size_param,
+                size_param.clone(),
             ])
                 .to_vec(),
             return_type: types.int_type(),
@@ -249,7 +523,6 @@ pub fn register_gfx_struct_value_with_members(
     )?;
 
     externals.register_external_function(
-        "sprite",
         sprite_external_fn_id,
         move |mem_val: &[VariableValue], context| {
             let params = convert_to_values(mem_val).unwrap();
@@ -258,13 +531,55 @@ pub fn register_gfx_struct_value_with_members(
 
             let material_ref = params[2].downcast_hidden_rust::<MaterialRef>().unwrap();
 
-            let size = uvec2_like(&params[3])?;
-
             context
                 .render
                 .as_mut()
                 .unwrap()
-                .push_sprite(position, &material_ref.borrow(), size);
+                .push_sprite(position, &material_ref.borrow());
+
+            Ok(Value::Unit)
+        },
+    )?;
+
+    // sprite_ex() ---------------------------
+    let sprite_ex_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
+    let sprite_ex_fn = ResolvedExternalFunctionDefinition {
+        name: Default::default(),
+        signature: ResolvedFunctionSignature {
+            first_parameter_is_self: true,
+            parameters: (&[
+                mut_self_parameter.clone(),
+                position_param.clone(),
+                material_handle.clone(),
+                sprite_params_parameter.clone(),
+            ])
+                .to_vec(),
+            return_type: types.int_type(),
+        },
+        id: sprite_ex_external_fn_id,
+    };
+
+    let _sprite_ex_fn = gfx_struct_type.borrow_mut().add_external_member_function(
+        "sprite_ex",
+        ResolvedExternalFunctionDefinitionRef::from(sprite_ex_fn),
+    )?;
+
+    externals.register_external_function(
+        sprite_ex_external_fn_id,
+        move |mem_val: &[VariableValue], context| {
+            let params = convert_to_values(mem_val).unwrap();
+            //let _self_value = &params[0]; // the Gfx struct is empty by design.
+            let position = vec3_like(&params[1])?;
+
+            let material_ref = params[2].downcast_hidden_rust::<MaterialRef>().unwrap();
+
+            let props = sprite_params(&params[3])?;
+
+            context.render.as_mut().unwrap().push_sprite_ex(
+                position,
+                &material_ref.borrow(),
+                props,
+            );
 
             Ok(Value::Unit)
         },
@@ -300,7 +615,6 @@ pub fn register_gfx_struct_value_with_members(
         .add_external_member_function("sprite_atlas_frame", sprite_atlas_frame_fn.into())?;
 
     externals.register_external_function(
-        "sprite_atlas_frame",
         sprite_atlas_frame_external_fn_id,
         move |mem_values: &[VariableValue], context| {
             let params = convert_to_values(mem_values)
@@ -325,61 +639,7 @@ pub fn register_gfx_struct_value_with_members(
 
     // sprite_atlas_frame_ex ---------------------------
 
-    // Props
-    let sprite_props_type_id = state.allocate_number();
-    let mut defined_fields = SeqMap::new();
-    let flip_x_field = ResolvedAnonymousStructFieldType {
-        identifier: ResolvedFieldName(Default::default()),
-        field_type: types.bool_type(),
-        index: 0,
-    };
-    defined_fields.insert("flip_x".to_string(), flip_x_field)?;
-
-    let flip_y_field = ResolvedAnonymousStructFieldType {
-        identifier: ResolvedFieldName(Default::default()),
-        field_type: types.bool_type(),
-        index: 1,
-    };
-    defined_fields.insert("flip_y".to_string(), flip_y_field)?;
-
-    let rotate_field = ResolvedAnonymousStructFieldType {
-        identifier: ResolvedFieldName(Default::default()),
-        field_type: types.int_type(),
-        index: 2,
-    };
-    defined_fields.insert("rotate".to_string(), rotate_field)?;
-
-    let color_tuple_type = ResolvedType::Tuple(
-        ResolvedTupleType(Vec::from([
-            types.float_type(),
-            types.float_type(),
-            types.float_type(),
-            types.float_type(),
-        ]))
-        .into(),
-    );
-    let color_field = ResolvedAnonymousStructFieldType {
-        identifier: ResolvedFieldName(Default::default()),
-        field_type: color_tuple_type.clone(),
-        index: 3,
-    };
-    defined_fields.insert("color".to_string(), color_field)?;
-
-    let sprite_params_type = ResolvedStructType {
-        name: Default::default(),
-        assigned_name: "SpriteParams".to_string(),
-        anon_struct_type: ResolvedAnonymousStructType { defined_fields },
-        number: sprite_props_type_id,
-        functions: Default::default(),
-    };
-    let sprite_params_type_ref = namespace.add_struct(sprite_params_type)?;
     //--- props
-
-    let sprite_props_parameter = ResolvedParameter {
-        name: Default::default(),
-        resolved_type: ResolvedType::Struct(sprite_params_type_ref),
-        is_mutable: None,
-    };
 
     let sprite_atlas_frame_ex_external_fn_id: ExternalFunctionId =
         state.allocate_external_function_id();
@@ -392,7 +652,7 @@ pub fn register_gfx_struct_value_with_members(
                 position_param,
                 material_handle,
                 frame,
-                sprite_props_parameter,
+                sprite_params_parameter,
             ])
                 .to_vec(),
             return_type: types.int_type(),
@@ -404,7 +664,6 @@ pub fn register_gfx_struct_value_with_members(
         .add_external_member_function("sprite_atlas_frame_ex", sprite_atlas_frame_ex_fn.into())?;
 
     externals.register_external_function(
-        "sprite_atlas_frame_ex",
         sprite_atlas_frame_ex_external_fn_id,
         move |mem_values: &[VariableValue], context| {
             let params = convert_to_values(mem_values)
@@ -478,7 +737,6 @@ pub fn register_asset_struct_value_with_members(
         .add_external_member_function("material_png", material_png_def.into())?;
 
     externals.register_external_function(
-        "material_png",
         material_png_function_id,
         move |mem_values: &[VariableValue], context| {
             //let self_value = &params[0]; // Assets is, by design, an empty struct
@@ -536,7 +794,6 @@ pub fn register_asset_struct_value_with_members(
     )?;
 
     externals.register_external_function(
-        "frame_fixed_grid_material_png",
         frame_fixed_grid_material_png_function_id,
         move |mem_values: &[VariableValue], context| {
             let params = convert_to_values(mem_values)
