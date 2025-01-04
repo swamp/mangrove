@@ -64,16 +64,16 @@ impl Render {
 
         gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, SHIP_SPRITE_PARAMS)
 
+        const SHOT_SPRITE_PARAMS = SpriteParams {
+            rotate: 3, // Rotation is counterclockwise
+            color: Color::new(1.0, 1.0, 1.0, 1.0),
+            ..
+        }
+
         for shot in logic.shots {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
 
-            shot_params = SpriteParams {
-                rotate: 3, // Rotation is counterclockwise
-                color: Color::new(1.0, 1.0, 1.0, 1.0),
-                ..
-            }
-
-            gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, shot_params)
+            gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, SHOT_SPRITE_PARAMS)
         }
 
         for enemy in logic.enemies {
