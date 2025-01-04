@@ -457,9 +457,7 @@ pub fn register_gfx_struct_value_with_members(
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     mut namespace: &mut ResolvedModuleNamespace,
 ) -> Result<ValueRef, MangroveError> {
-    let gfx_type_number = state.allocate_number();
-    let (gfx_value, gfx_struct_type) =
-        create_empty_struct_value_util(namespace, "Gfx", gfx_type_number)?;
+    let (gfx_value, gfx_struct_type) = create_empty_struct_value_util(namespace, "Gfx")?;
     let gfx_value_mut = Rc::new(RefCell::new(gfx_value.clone()));
     let assets_general_type = ResolvedType::Struct(gfx_struct_type.clone());
 
@@ -700,9 +698,7 @@ pub fn register_asset_struct_value_with_members(
     material_struct_type_ref: ResolvedStructTypeRef,
     fixed_grid_struct_type_ref: ResolvedStructTypeRef,
 ) -> Result<VariableValue, MangroveError> {
-    let assets_type_number = state.allocate_number();
-    let (assets_value, assets_type) =
-        create_empty_struct_value_util(namespace, "Assets", assets_type_number)?;
+    let (assets_value, assets_type) = create_empty_struct_value_util(namespace, "Assets")?;
     let assets_value_mut =
         VariableValue::Reference(ValueReference(Rc::new(RefCell::new(assets_value.clone()))));
 
@@ -896,7 +892,6 @@ pub fn create_render_module(
         number: 91,
     });
 
-    let material_handle_struct_id = resolved_program.state.allocate_number();
     let material_handle_struct_ref = mangrove_render_module
         .namespace
         .borrow_mut()
@@ -906,15 +901,12 @@ pub fn create_render_module(
                 "hidden",
                 ResolvedType::RustType(material_handle_rust_type_ref.clone()),
             )],
-            material_handle_struct_id,
         )?;
 
     let fixed_atlas_handle_rust_type_ref = Rc::new(ResolvedRustType {
         type_name: "FixedAtlasHandle".to_string(),
         number: 92,
     });
-
-    let fixed_atlas_handle_struct_id = resolved_program.state.allocate_number();
 
     let fixed_atlas_handle_struct_ref = mangrove_render_module
         .namespace
@@ -925,7 +917,6 @@ pub fn create_render_module(
                 "hidden",
                 ResolvedType::RustType(fixed_atlas_handle_rust_type_ref.clone()),
             )],
-            fixed_atlas_handle_struct_id,
         )?;
 
     let assets_struct_value = register_asset_struct_value_with_members(

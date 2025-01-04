@@ -96,9 +96,8 @@ impl From<String> for MangroveError {
 pub fn create_empty_struct_type(
     namespace: &mut ResolvedModuleNamespace,
     name: &str,
-    type_number: TypeNumber,
 ) -> Result<ResolvedStructTypeRef, ResolveError> {
-    Ok(namespace.add_generated_struct(name, &[("hidden", ResolvedType::Any)], type_number)?)
+    Ok(namespace.add_generated_struct(name, &[("hidden", ResolvedType::Any)])?)
 }
 
 pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
@@ -108,9 +107,8 @@ pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
 pub fn create_empty_struct_value_util(
     mut namespace: &mut ResolvedModuleNamespace,
     name: &str,
-    type_number: TypeNumber,
 ) -> Result<(Value, ResolvedStructTypeRef), ResolveError> {
-    let struct_type = create_empty_struct_type(&mut namespace, name, type_number)?;
+    let struct_type = create_empty_struct_type(&mut namespace, name)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
 }
 
