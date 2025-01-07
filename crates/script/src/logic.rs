@@ -16,11 +16,10 @@ use tracing::error;
 
 pub fn logic_tick(
     mut script: LoReM<ScriptLogic>,
-    _source_map: Re<SourceMapResource>,
+    source_map: Re<SourceMapResource>,
     error: Re<ErrorResource>,
 ) {
-    //let lookup: &dyn SourceMapLookup = &source_map.wrapper;
-    //Some(lookup)
+    let lookup: &dyn SourceMapLookup = &source_map.wrapper;
     if error.has_errors {
         return;
     }

@@ -10,6 +10,7 @@ use crate::script::{
     create_empty_struct_value_util, sprite_params, uvec2_like, value_to_value_ref, vec3_like,
     MangroveError,
 };
+use crate::source_map::SourceMapWrapper;
 use crate::util::get_impl_func;
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use monotonic_time_rs::Millis;
@@ -250,7 +251,8 @@ pub fn register_color_struct_type(
     // Color::new()
     let new_external_function_id = state.allocate_external_function_id();
     let new_fn = ResolvedExternalFunctionDefinition {
-        name: ResolvedNode::default(),
+        name: None,
+        assigned_name: "new".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: false,
             parameters: vec![],
@@ -280,7 +282,8 @@ pub fn register_color_struct_type(
     // Color::default()
     let default_fn_external_function_id = state.allocate_external_function_id();
     let default_fn = ResolvedExternalFunctionDefinition {
-        name: ResolvedNode::default(),
+        name: None,
+        assigned_name: "default".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: false,
             parameters: vec![],
@@ -422,7 +425,8 @@ pub fn register_gfx_sprite_params(
     // SpriteParams::default()
     let default_fn_external_function_id = state.allocate_external_function_id();
     let default_fn = ResolvedExternalFunctionDefinition {
-        name: ResolvedNode::default(),
+        name: None,
+        assigned_name: "default".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: false,
             parameters: vec![],
@@ -433,7 +437,7 @@ pub fn register_gfx_sprite_params(
     let default_fn_ref = Rc::new(default_fn);
     sprite_params_struct_type_ref
         .borrow_mut()
-        .add_external_member_function("default", default_fn_ref)?;
+        .add_external_member_function(default_fn_ref)?;
 
     let sprite_params_struct_ref_for_default = sprite_params_struct_type_ref.clone();
     let color_type_for_default = color_type.clone();
@@ -482,7 +486,7 @@ pub fn register_gfx_struct_value_with_members(
 
     //position
     let position_param = ResolvedTypeForParameter {
-        name: "".to_string(),
+        name: "position".to_string(),
         resolved_type: math_types.pos3.clone(),
         is_mutable: false,
         node: None,
@@ -506,7 +510,8 @@ pub fn register_gfx_struct_value_with_members(
     // sprite() ---------------------------
     let sprite_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
     let sprite_fn = ResolvedExternalFunctionDefinition {
-        name: Default::default(),
+        name: None,
+        assigned_name: "sprite".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: true,
 
@@ -522,10 +527,9 @@ pub fn register_gfx_struct_value_with_members(
         id: sprite_external_fn_id,
     };
 
-    let _sprite_fn = gfx_struct_type.borrow_mut().add_external_member_function(
-        "sprite",
-        ResolvedExternalFunctionDefinitionRef::from(sprite_fn),
-    )?;
+    let _sprite_fn = gfx_struct_type
+        .borrow_mut()
+        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(sprite_fn))?;
 
     externals.register_external_function(
         sprite_external_fn_id,
@@ -549,7 +553,8 @@ pub fn register_gfx_struct_value_with_members(
     // sprite_ex() ---------------------------
     let sprite_ex_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
     let sprite_ex_fn = ResolvedExternalFunctionDefinition {
-        name: Default::default(),
+        name: None,
+        assigned_name: "sprite_ex".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: true,
             parameters: (&[
@@ -564,10 +569,9 @@ pub fn register_gfx_struct_value_with_members(
         id: sprite_ex_external_fn_id,
     };
 
-    let _sprite_ex_fn = gfx_struct_type.borrow_mut().add_external_member_function(
-        "sprite_ex",
-        ResolvedExternalFunctionDefinitionRef::from(sprite_ex_fn),
-    )?;
+    let _sprite_ex_fn = gfx_struct_type
+        .borrow_mut()
+        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(sprite_ex_fn))?;
 
     externals.register_external_function(
         sprite_ex_external_fn_id,
@@ -602,7 +606,8 @@ pub fn register_gfx_struct_value_with_members(
     let sprite_atlas_frame_external_fn_id: ExternalFunctionId =
         state.allocate_external_function_id();
     let sprite_atlas_frame_fn = ResolvedExternalFunctionDefinition {
-        name: Default::default(),
+        name: None,
+        assigned_name: "sprite_atlas_frame".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: true,
             parameters: (&[
@@ -618,7 +623,7 @@ pub fn register_gfx_struct_value_with_members(
     };
     gfx_struct_type
         .borrow_mut()
-        .add_external_member_function("sprite_atlas_frame", sprite_atlas_frame_fn.into())?;
+        .add_external_member_function(sprite_atlas_frame_fn.into())?;
 
     externals.register_external_function(
         sprite_atlas_frame_external_fn_id,
@@ -650,7 +655,8 @@ pub fn register_gfx_struct_value_with_members(
     let sprite_atlas_frame_ex_external_fn_id: ExternalFunctionId =
         state.allocate_external_function_id();
     let sprite_atlas_frame_ex_fn = ResolvedExternalFunctionDefinition {
-        name: Default::default(),
+        name: None,
+        assigned_name: "sprite_atlas_frame_ex".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: true,
             parameters: (&[
@@ -667,7 +673,7 @@ pub fn register_gfx_struct_value_with_members(
     };
     gfx_struct_type
         .borrow_mut()
-        .add_external_member_function("sprite_atlas_frame_ex", sprite_atlas_frame_ex_fn.into())?;
+        .add_external_member_function(sprite_atlas_frame_ex_fn.into())?;
 
     externals.register_external_function(
         sprite_atlas_frame_ex_external_fn_id,
@@ -729,9 +735,10 @@ pub fn register_asset_struct_value_with_members(
 
     let material_png_function_id: ExternalFunctionId = state.allocate_external_function_id();
     let material_png_def = ResolvedExternalFunctionDefinition {
-        name: Default::default(),
+        name: None,
+        assigned_name: "material_png".to_string(),
         signature: FunctionTypeSignature {
-            first_parameter_is_self: false,
+            first_parameter_is_self: true, // assets
             parameters: (&[mut_self_parameter.clone(), asset_name_parameter.clone()]).to_vec(),
             return_type: Box::from(ResolvedType::Struct(material_struct_type_ref)),
         },
@@ -740,7 +747,7 @@ pub fn register_asset_struct_value_with_members(
 
     let _material_png_fn = assets_type
         .borrow_mut()
-        .add_external_member_function("material_png", material_png_def.into())?;
+        .add_external_member_function(material_png_def.into())?;
 
     externals.register_external_function(
         material_png_function_id,
@@ -780,9 +787,10 @@ pub fn register_asset_struct_value_with_members(
         state.allocate_external_function_id();
 
     let frame_fixed_grid_material_png_def = ResolvedExternalFunctionDefinition {
-        name: Default::default(),
+        name: None,
+        assigned_name: "frame_fixed_grid_material_png".to_string(),
         signature: FunctionTypeSignature {
-            first_parameter_is_self: false,
+            first_parameter_is_self: true,
             parameters: (&[
                 mut_self_parameter,
                 asset_name_parameter,
@@ -795,10 +803,9 @@ pub fn register_asset_struct_value_with_members(
         id: frame_fixed_grid_material_png_function_id,
     };
 
-    let _frame_fixed_grid_material_png_fn = assets_type.borrow_mut().add_external_member_function(
-        "frame_fixed_grid_material_png",
-        frame_fixed_grid_material_png_def.into(),
-    )?;
+    let _frame_fixed_grid_material_png_fn = assets_type
+        .borrow_mut()
+        .add_external_member_function(frame_fixed_grid_material_png_def.into())?;
 
     externals.register_external_function(
         frame_fixed_grid_material_png_function_id,
@@ -854,6 +861,7 @@ impl ScriptRender {
         &mut self,
         wgpu_render: &mut Render,
         logic_value_ref: &Value,
+        _source_map_wrapper: &SourceMapWrapper,
     ) -> Result<(), ExecuteError> {
         let mut script_context = ScriptRenderContext {
             game_assets: None,
@@ -990,7 +998,7 @@ pub fn boot(
             &mut source_map.wrapper.source_map,
             "render",
         )?;
-    }
+    };
 
     let root_module_path = &["render".to_string()].to_vec();
     let main_module = resolved_program
@@ -1026,13 +1034,14 @@ pub fn boot(
         &mut script_context,
     )?;
 
+    let source_map = resource_storage.fetch::<SourceMapResource>();
     let render_struct_value = util_execute_function(
         &external_functions,
         &constants,
         &main_fn,
         &[assets_value],
         &mut script_context,
-        None,
+        Some(&source_map.wrapper),
     )?;
 
     let render_struct_type_ref =
@@ -1061,12 +1070,17 @@ pub fn render_tick(
     logic: LoRe<ScriptLogic>,
     mut wgpu_render: ReM<Render>,
     error: Re<ErrorResource>,
+    source_map: Re<SourceMapResource>,
 ) {
     if error.has_errors {
         return;
     }
     script
-        .render(&mut wgpu_render, &logic.immutable_logic_value())
+        .render(
+            &mut wgpu_render,
+            &logic.immutable_logic_value(),
+            &source_map.wrapper,
+        )
         .expect("script.render() crashed");
 }
 

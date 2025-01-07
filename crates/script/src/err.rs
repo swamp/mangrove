@@ -5,7 +5,7 @@
 use crate::script::{DecoratedParseErr, MangroveError};
 use crate::ErrorResource;
 use swamp::prelude::{App, Plugin};
-use swamp_script::prelude::{show_error, show_parse_error, SourceMap};
+use swamp_script::prelude::{show_error, show_execute_error, show_parse_error, SourceMap};
 
 pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
     match err {
@@ -13,7 +13,7 @@ pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
         MangroveError::DecoratedParseError(decorated_parse_error) => {
             show_decorated_err(&decorated_parse_error, source_map)
         }
-        MangroveError::ExecuteError(_) => todo!(),
+        MangroveError::ExecuteError(err) => show_execute_error(err, source_map),
         MangroveError::Other(_) => todo!(),
         MangroveError::ScriptResolveError(_) => todo!(),
         MangroveError::SemanticError(_) => todo!(),

@@ -3708,6 +3708,7 @@ version = "0.0.10"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
+ "swamp-script-eval",
  "swamp-script-parser",
  "swamp-script-semantic",
  "swamp-script-source-map",
@@ -3718,6 +3719,7 @@ name = "swamp-script-eval"
 version = "0.0.10"
 dependencies = [
  "fixed32",
+ "seq-fmt",
  "seq-map",
  "squirrel-prng",
  "swamp-script-core",

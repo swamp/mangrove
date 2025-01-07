@@ -238,7 +238,8 @@ fn prepare_main_module<C>(
     let print_id = state.allocate_external_function_id();
 
     let print_external = ResolvedExternalFunctionDefinition {
-        name: Default::default(),
+        name: None,
+        assigned_name: "print".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: false,
             parameters: [any_parameter].to_vec(),
