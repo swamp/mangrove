@@ -12,14 +12,13 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
 use swamp_script::prelude::*;
-use tracing::error;
 
 pub fn logic_tick(
     mut script: LoReM<ScriptLogic>,
     source_map: Re<SourceMapResource>,
     error: Re<ErrorResource>,
 ) {
-    let lookup: &dyn SourceMapLookup = &source_map.wrapper;
+    let _lookup: &dyn SourceMapLookup = &source_map.wrapper;
     if error.has_errors {
         return;
     }

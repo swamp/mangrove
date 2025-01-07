@@ -21,7 +21,6 @@ use swamp::prelude::{
     App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Msg,
     Plugin, Re, ReAll, ReM, Render, ResourceStorage, SpriteParams, UVec2, UpdatePhase, Vec3,
 };
-use swamp_script::prelude::Rule::self_parameter;
 use swamp_script::prelude::*;
 use tracing::error;
 
