@@ -4,6 +4,7 @@ use gameplay {
 }
 
 const SCREEN_HEIGHT = 180
+const SCREEN_HEIGHT_F = 180.to_float()
 const SCREEN_WIDTH = 320
 
 struct Shot {
@@ -68,6 +69,7 @@ enum EnemyType {
 
 struct Enemy {
     rect: Rect,
+    base_y: Float,
     direction: Float,
     enemy: EnemyType,
     time: Int,
@@ -164,13 +166,15 @@ impl Logic {
     // This is not normally how you structure the code
     // it is just to test mut arguments
     fn move_in_y_with_direction(mut position: Position, direction: Float) {
+        const SHIP_Y_MARGIN = 20.0
+
         position.y += direction
+        position.y = position.y.clamp(SHIP_Y_MARGIN, SCREEN_HEIGHT_F - SHIP_Y_MARGIN)
     }
 
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.tick_count += 1
-
 
         z = Something::new(5)
         a = some_utility_function(5)
@@ -184,9 +188,9 @@ impl Logic {
         if cooldown? {
         }
 
-        const ENEMY_MARGIN = 30
+        const ENEMY_MARGIN = 20
 
-        if self.tick_count % 30 == 0 {
+        if self.tick_count % 47 == 0 {
             random_y = Logic::random_range_int(self.tick_count, ENEMY_MARGIN, SCREEN_HEIGHT - ENEMY_MARGIN)
 
             rect = Rect { 
@@ -196,6 +200,7 @@ impl Logic {
             
             self.enemies.add(Enemy {
                 rect: rect, 
+                base_y: rect.pos.y,
                 enemy: EnemyType::Alan, 
                 direction: -1.2,
                 time: Logic::random_range_int(self.tick_count, 0, 3),
@@ -207,9 +212,18 @@ impl Logic {
             }
         }
 
+        const MAGNITUDE = 5.0
+
         for id, mut enemy in self.enemies {
             enemy.rect.pos.x += enemy.direction
             enemy.time += 1
+            sway_time = enemy.time.to_float() * 0.01
+            sway_angle = sway_time * 6.28
+            y = sway_angle.cos() * MAGNITUDE
+
+            enemy.rect.pos.y = enemy.base_y + y
+
+
             if enemy.rect.pos.x < -10.0 {
                 self.enemies.remove(id)
             }
@@ -219,7 +233,7 @@ impl Logic {
         }
 
         for shot_id, mut shot in self.shots {
-            shot.x = shot.x + 3.0
+            shot.x = shot.x + 8.0
             if shot.x > SCREEN_WIDTH.to_float() {
                 self.shots.remove(shot_id)
             } 
