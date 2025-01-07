@@ -21,6 +21,7 @@ use swamp::prelude::{
     App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Msg,
     Plugin, Re, ReAll, ReM, Render, ResourceStorage, SpriteParams, UVec2, UpdatePhase, Vec3,
 };
+use swamp_script::prelude::Rule::self_parameter;
 use swamp_script::prelude::*;
 use tracing::error;
 
@@ -248,14 +249,39 @@ pub fn register_color_struct_type(
 
     let color_struct_type_ref = namespace.add_struct(color_type)?;
 
-    // Color::new()
+    // Color::new(r, g, b, a)
     let new_external_function_id = state.allocate_external_function_id();
     let new_fn = ResolvedExternalFunctionDefinition {
         name: None,
         assigned_name: "new".to_string(),
         signature: FunctionTypeSignature {
             first_parameter_is_self: false,
-            parameters: vec![],
+            parameters: vec![
+                ResolvedTypeForParameter {
+                    name: "r".to_string(),
+                    resolved_type: types.float_type(),
+                    is_mutable: false,
+                    node: None,
+                },
+                ResolvedTypeForParameter {
+                    name: "g".to_string(),
+                    resolved_type: types.float_type(),
+                    is_mutable: false,
+                    node: None,
+                },
+                ResolvedTypeForParameter {
+                    name: "b".to_string(),
+                    resolved_type: types.float_type(),
+                    is_mutable: false,
+                    node: None,
+                },
+                ResolvedTypeForParameter {
+                    name: "a".to_string(),
+                    resolved_type: types.float_type(),
+                    is_mutable: false,
+                    node: None,
+                },
+            ],
             return_type: Box::from(ResolvedType::Struct(color_struct_type_ref.clone())),
         },
         id: new_external_function_id,
