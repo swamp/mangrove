@@ -228,20 +228,21 @@ fn prepare_main_module<C>(
     let root_module_path = &[module_name.to_string()].to_vec();
     let main_module = ResolvedModule::new(root_module_path);
 
-    let any_parameter = ResolvedParameter {
+    let any_parameter = ResolvedTypeForParameter {
         name: Default::default(),
         resolved_type: ResolvedType::Any,
-        is_mutable: None,
+        is_mutable: false,
+        node: None,
     };
 
     let print_id = state.allocate_external_function_id();
 
     let print_external = ResolvedExternalFunctionDefinition {
         name: Default::default(),
-        signature: ResolvedFunctionSignature {
+        signature: FunctionTypeSignature {
             first_parameter_is_self: false,
             parameters: [any_parameter].to_vec(),
-            return_type: types.unit_type(),
+            return_type: Box::from(types.unit_type()),
         },
         id: print_id,
     };
@@ -320,7 +321,6 @@ pub fn compile<C>(
         &mut source_map,
         module_name,
     ) {
-        show_mangrove_error(&found_err, source_map);
         Err(found_err)
     } else {
         Ok(())
@@ -379,147 +379,3 @@ pub fn compile_internal<C>(
 
     Ok(())
 }
-
-/*
-fn boot_call_main(
-    main_module: &ResolvedModule,
-    mut resource_storage: &mut ResourceStorage,
-    material_handle_struct_ref: ResolvedStructTypeRef,
-    material_handle_rust_type_ref: ResolvedRustTypeRef,
-    externals: &ExternalFunctions<ScriptContext>,
-    assets_value_mut: Value,
-) -> Result<
-    (
-        Value,
-        ResolvedStructTypeRef,
-        Value,
-        ResolvedStructTypeRef,
-        Value,
-        ResolvedStructTypeRef,
-    ),
-    MangroveError,
-> {
-    let main_fn = main_module
-        .namespace
-        .get_internal_function("main")
-        .expect("No main function");
-
-    let script_app_tuple: Value;
-    {
-
-
-
-
-        script_app_tuple = util_execute_function(
-            &externals,
-            &main_fn,
-            &[assets_value_mut.clone()],
-            &mut script_context,
-        )
-        .expect("should work");
-    }
-
-    let (tuple_type, fields) = match script_app_tuple {
-        Value::Tuple(ref tuple_type, fields) => (tuple_type, fields),
-        _ => panic!("only support struct for now"),
-    };
-
-    // Use references so they can be mutated
-
-    let render_value_ref = Value::Reference(Rc::new(RefCell::new(fields[1].clone())));
-    let audio_value_ref = Value::Reference(Rc::new(RefCell::new(fields[2].clone())));
-
-    let tuple_types = &tuple_type.0;
-    let logic_struct_type = tuple_types[0].expect_struct_type()?;
-    let render_struct_type = tuple_types[1].expect_struct_type()?;
-    let audio_struct_type = tuple_types[2].expect_struct_type()?;
-
-    Ok((
-        logic_value_ref,
-        logic_struct_type.clone(),
-        render_value_ref,
-        render_struct_type.clone(),
-        audio_value_ref,
-        audio_struct_type.clone(),
-    ))
-}
-
-#[derive(LocalResource)]
-pub struct Script {
-    clock: InstantMonotonicClock,
-    externals: ExternalFunctions<ScriptContext>,
-
-
-    // Audio
-    #[allow(unused)]
-    audio_value_ref: Value,
-    #[allow(unused)]
-    audio_fn: ResolvedInternalFunctionDefinitionRef,
-}
-
-impl Debug for Script {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "script")
-    }
-}
-
- */
-/*
-impl Script {
-    pub fn new(resource_storage: &mut ResourceStorage) -> Result<Self, MangroveError> {
-        let mut state = ResolvedProgramState::new();
-        let mut modules = ResolvedModules::new();
-        let types = ResolvedProgramTypes::new();
-        let mut externals = ExternalFunctions::<ScriptContext>::new();
-
-
-
-        compile(
-            Path::new("scripts/main.swamp"),
-            &types,
-            &mut state,
-            &mut externals,
-            &mut modules,
-        )?;
-
-        let main_module = modules
-            .get(&ModulePath(vec!["main".to_string()]))
-            .expect("Failed to find main module");
-
-        let (
-            logic_value_mut,
-            logic_struct_type,
-            render_value_mut,
-            render_struct_type,
-            audio_value_mut,
-            audio_struct_type,
-        ) = boot_call_main(
-            main_module,
-            resource_storage,
-            material_struct_ref.clone(),
-            material_handle_rust_type_ref,
-            &externals,
-            assets_value_mut,
-        )?;
-
-
-        Ok(Self {
-            clock: InstantMonotonicClock::new(),
-            externals,
-            gfx_struct_value: gfx_value_mut,
-            render_fn,
-            logic_fn,
-            gamepad_changed_fn,
-            audio_fn,
-            logic_value_ref: logic_value_mut,
-            render_value_ref: render_value_mut,
-            audio_value_ref: audio_value_mut,
-        })
-    }
-
-    pub fn now(&self) -> Millis {
-        self.clock.now()
-    }
-
-}
-*/

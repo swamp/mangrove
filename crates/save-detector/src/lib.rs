@@ -3,12 +3,12 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use limnus_message::prelude::Message;
-use mangrove_script::ScriptMessage;
+use mangrove_script::{ErrorResource, ScriptMessage};
 use message_channel::{Channel, Receiver};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
-use swamp::prelude::{App, LoReM, LocalResource, MsgM, Plugin, UpdatePhase};
+use swamp::prelude::{App, LoReM, LocalResource, MsgM, Plugin, ReM, UpdatePhase};
 
 #[derive(LocalResource, Debug)]
 pub struct FileWatcher {
@@ -45,8 +45,13 @@ pub fn start_watch(
     Ok((watcher, receiver))
 }
 
-pub fn tick(mut detector_message: MsgM<ScriptMessage>, file_watcher: LoReM<FileWatcher>) {
+pub fn tick(
+    mut detector_message: MsgM<ScriptMessage>,
+    file_watcher: LoReM<FileWatcher>,
+    mut err: ReM<ErrorResource>,
+) {
     while let Ok(_found) = file_watcher.receiver.recv() {
+        err.has_errors = false;
         detector_message.send(ScriptMessage::Reload);
     }
 }

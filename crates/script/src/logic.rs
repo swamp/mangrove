@@ -3,20 +3,27 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 
+use crate::err::show_mangrove_error;
 use crate::script::{compile, MangroveError};
 use crate::util::{get_impl_func, get_impl_func_optional};
-use crate::{ScriptMessage, SourceMapResource};
+use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
 use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
 use swamp_script::prelude::*;
-
 use tracing::error;
 
-pub fn logic_tick(mut script: LoReM<ScriptLogic>, _source_map: Re<SourceMapResource>) {
+pub fn logic_tick(
+    mut script: LoReM<ScriptLogic>,
+    _source_map: Re<SourceMapResource>,
+    error: Re<ErrorResource>,
+) {
     //let lookup: &dyn SourceMapLookup = &source_map.wrapper;
     //Some(lookup)
+    if error.has_errors {
+        return;
+    }
     script.tick(None).expect("script.tick() crashed");
 }
 
@@ -405,14 +412,18 @@ pub fn detect_reload_tick(
     script_messages: Msg<ScriptMessage>,
     mut script_logic: LoReM<ScriptLogic>,
     mut source_map_resource: ReM<SourceMapResource>,
+    mut err: ReM<ErrorResource>,
 ) {
     for msg in script_messages.iter_previous() {
         match msg {
             ScriptMessage::Reload => match boot(&mut source_map_resource) {
                 Ok(new_logic) => *script_logic = new_logic,
                 Err(mangrove_error) => {
-                    eprintln!("script logic failed: {}", mangrove_error);
-                    error!(error=?mangrove_error, "script logic compile failed");
+                    show_mangrove_error(&mangrove_error, &source_map_resource.wrapper.source_map);
+                    err.has_errors = true;
+
+                    //                    eprintln!("script logic failed: {}", mangrove_error);
+                    //                    error!(error=?mangrove_error, "script logic compile failed");
                 }
             },
         }
@@ -427,13 +438,47 @@ impl Plugin for ScriptLogicPlugin {
         app.add_system(UpdatePhase::Update, logic_tick);
         app.add_system(UpdatePhase::Update, input_tick);
 
-        let source_map = app.resources_mut().fetch_mut::<SourceMapResource>();
-
-        let script_logic_result = boot(source_map);
-        if let Ok(script_logic) = script_logic_result {
-            app.insert_local_resource(script_logic);
-        } else {
-            // TODO: stop ticking the logic
-        }
+        // HACK: Just add a completely zeroed out ScriptLogic and wait for reload message.
+        // TODO: Should not try to call updates with params that are not available yet.
+        app.insert_local_resource(ScriptLogic {
+            logic_value_ref: Rc::new(RefCell::new(Default::default())),
+            logic_fn: Rc::new(ResolvedInternalFunctionDefinition {
+                body: ResolvedExpression::Break(Default::default()),
+                name: ResolvedLocalIdentifier(Default::default()),
+                signature: FunctionTypeSignature {
+                    first_parameter_is_self: false,
+                    parameters: vec![],
+                    return_type: Box::from(ResolvedType::Any),
+                },
+                constants: vec![],
+            }),
+            gamepad_axis_changed_fn: None,
+            gamepad_button_changed_fn: None,
+            external_functions: ExternalFunctions::new(),
+            constants: Constants { values: vec![] },
+            script_context: ScriptLogicContext {},
+            resolved_program: ResolvedProgram {
+                types: ResolvedProgramTypes {
+                    int_type: Rc::new(ResolvedIntType),
+                    float_type: Rc::new(ResolvedFloatType),
+                    string_type: Rc::new(ResolvedStringType),
+                    bool_type: Rc::new(ResolvedBoolType),
+                    unit_type: Rc::new(ResolvedUnitType),
+                    none_type: Rc::new(ResolvedNoneType),
+                    exclusive_range_type: Rc::new(ResolvedExclusiveRangeType),
+                },
+                state: ResolvedProgramState {
+                    array_types: vec![],
+                    number: 0,
+                    external_function_number: 0,
+                },
+                modules: Default::default(),
+            },
+            input_module: Rc::new(RefCell::new(ResolvedModule {
+                definitions: vec![],
+                expression: None,
+                namespace: Rc::new(RefCell::new(ResolvedModuleNamespace::new(&vec![]))),
+            })),
+        });
     }
 }

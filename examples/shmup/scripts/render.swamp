@@ -14,7 +14,6 @@ struct Render {
 }
 
 
-
 impl Render {
 
     fn new(mut assets: mangrove::render::Assets) -> Render {
@@ -40,7 +39,7 @@ impl Render {
         self.tick += 1
         x, y = logic.pos.floor()
 
-        player_ship_pos = (x, y, 0)
+        player_ship_pos = (x, y, 10)
         sprite_size = (16, 16)
 
         ship_frame = match logic.direction.sign() {
@@ -53,31 +52,31 @@ impl Render {
         self.background_x = self.background_x % 512.0
 
          gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
-            color: Color::new(1.0, 1.0, 1.0, 0.3),
+            color: Color::new(1.0, 1.0, 1.0, 0.5),
             uv: (self.background_x.floor(), 0),
             ..
         })
 
         const STANDARD_ROTATE = 3
 
-        const SHIP_SPRITE_PARAMS = SpriteParams {
-            scale: 1,
+        ship_sprite_params = SpriteParams {
             rotate: STANDARD_ROTATE,
             ..
         }
 
-        gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, SHIP_SPRITE_PARAMS)
+        gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, ship_sprite_params)
 
-        const SHOT_SPRITE_PARAMS = SpriteParams {
+        power = (self.tick % 10).to_float() / 10.0
+        shot_sprite_params = SpriteParams {
             rotate: 3, // Rotation is counterclockwise
-            color: Color::new(1.0, 1.0, 1.0, 1.0),
+            color: Color::new(1.0, 1.0, 1.0, power),
             ..
         }
 
         for shot in logic.shots {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
 
-            gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, SHOT_SPRITE_PARAMS)
+            gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, shot_sprite_params)
         }
 
         for id, enemy in logic.enemies {

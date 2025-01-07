@@ -2,8 +2,9 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-
 use crate::script::{DecoratedParseErr, MangroveError};
+use crate::ErrorResource;
+use swamp::prelude::{App, Plugin};
 use swamp_script::prelude::{show_error, show_parse_error, SourceMap};
 
 pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
@@ -26,13 +27,10 @@ pub fn show_decorated_err(err: &DecoratedParseErr, source_map: &SourceMap) {
     show_parse_error(&err.specific, &err.span, &source_map);
 }
 
-/*
-pub fn show_error(err: &ResolveError, source_map: &SourceMap) {
-    let builder = build_resolve_error(err);
-    let report = builder.build();
-    report.print(&source_map, stderr()).unwrap();
-}
+pub struct ErrorPlugin;
 
-#[must_use]
-pub fn build_resolve_error(err: &ResolveError) -> Builder<usize> {
- */
+impl Plugin for ErrorPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(ErrorResource { has_errors: false });
+    }
+}

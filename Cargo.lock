@@ -891,7 +891,7 @@ checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 
 [[package]]
 name = "eira"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "yansi",
 ]
@@ -3278,6 +3278,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fa4f2bd1345ef404e7e9ee384e7b7cb60ed09cd6e9b410dbb7c8d4156c0f353"
 
 [[package]]
+name = "seq-set"
+version = "0.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5db959338009b6bd8da1cde5d24d008839580508dbceaec2da63ac5def5960b2"
+
+[[package]]
 name = "serde"
 version = "1.0.215"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3643,7 +3649,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3660,9 +3666,10 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-analyzer"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "seq-map",
+ "seq-set 0.0.2",
  "swamp-script-ast",
  "swamp-script-semantic",
  "swamp-script-source-map",
@@ -3671,11 +3678,11 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-ast"
-version = "0.0.9"
+version = "0.0.10"
 
 [[package]]
 name = "swamp-script-core"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3686,7 +3693,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-dep-loader"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3697,7 +3704,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-error-report"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
@@ -3708,7 +3715,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3721,7 +3728,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval-loader"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3733,7 +3740,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-parser"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "pest",
  "pest_derive",
@@ -3743,17 +3750,17 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-semantic"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "fixed32",
  "seq-fmt",
  "seq-map",
- "seq-set",
+ "seq-set 0.0.1",
 ]
 
 [[package]]
 name = "swamp-script-source-map"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "pathdiff",
  "seq-map",
@@ -3763,7 +3770,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-std"
-version = "0.0.9"
+version = "0.0.10"
 dependencies = [
  "swamp-script-semantic",
 ]

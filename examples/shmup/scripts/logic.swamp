@@ -195,7 +195,6 @@ impl Logic {
                 size: Size { width: 16.0, height: 16.0 } 
             }
             
-
             self.enemies.add(Enemy {
                 rect: rect, 
                 enemy: EnemyType::Alan, 
@@ -261,6 +260,7 @@ impl Logic {
 fn main() -> Logic {
     const STARTING_POS = Position::new(20.0, 80.0)
     const FIRE_COOLDOWN = 15
+
     Logic {
         tick_count: 0,
         direction: 0.0,

@@ -3,6 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use mangrove_save_detector::SaveDetectorPlugin;
+use mangrove_script::err::ErrorPlugin;
 use mangrove_script::logic::ScriptLogicPlugin;
 use mangrove_script::render::ScriptRenderPlugin;
 use mangrove_script::source_map::SourceMapPlugin;
@@ -11,7 +12,6 @@ use mangrove_script::ScriptPlugin;
 use swamp::prelude::SwampDefaultPlugins;
 use swamp::prelude::*;
 
-//const RESOLUTION: (u16, u16) = (640, 360);
 const RESOLUTION: (u16, u16) = (640 / 2, 360 / 2);
 
 fn main() {
@@ -26,6 +26,7 @@ fn main() {
         .add_plugins(SwampDefaultPlugins)
         .add_plugins(FlushRenderPlugin)
         .add_plugins(SourceMapPlugin)
+        .add_plugins(ErrorPlugin)
         .add_plugins(ScriptPlugin)
         .add_plugins(ScriptLogicPlugin)
         .add_plugins(ScriptRenderPlugin)
