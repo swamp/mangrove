@@ -93,14 +93,14 @@ impl RenderWrapper {
         render.sprite_atlas_frame_ex(position, frame, atlas, params);
     }
 
-    pub fn text_draw(&self, pos: Vec3, str: &str, material_ref: &FontAndMaterial, _color: &Color) {
+    pub fn text_draw(&self, pos: Vec3, str: &str, material_ref: &FontAndMaterial, color: &Color) {
         // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
         let render: &mut Render;
         unsafe {
             render = &mut *self.render;
         }
 
-        render.text_draw(pos, str, material_ref) // TODO: Implement color
+        render.text_draw(pos, str, material_ref, color)
     }
 }
 
