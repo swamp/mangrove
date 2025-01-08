@@ -53,8 +53,10 @@ impl Render {
         for id, bonus in bonuses {
             score_string = Render::fill_zeroes('{bonus.score}', 2)
 
-            pos_3d = (bonus.pos.x.round(), bonus.pos.y.round(), 0)
-            gfx.text(pos_3d, score_string, self.font_and_material, Color::new(1.0, 1.0, 1.0, 0.5))
+            y_offset = bonus.tick.to_float() / 2.0
+            pos_3d = (bonus.pos.x.round(), bonus.pos.y.round() + y_offset.round(), 0)
+            power = (20 - bonus.tick).max(0).to_float() / 30.0
+            gfx.text(pos_3d, score_string, self.font_and_material, Color::new(0.5, 0.5, 1.0, power))
         }
     }
 
@@ -77,7 +79,7 @@ impl Render {
 
         score_string = Render::fill_zeroes('{logic.score}', 6)
 
-        gfx.text((SCREEN_WIDTH-60, SCREEN_HEIGHT-30, 0), 'SCORE {score_string}', self.font_and_material, Color::new(1.0, 1.0, 1.0, 0.5))
+        gfx.text((SCREEN_WIDTH-60, SCREEN_HEIGHT-30, 0), 'SCORE {score_string}', self.font_and_material, Color::new(1.0, 0.8, 1.0, 0.5))
 
         gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
             color: Color::new(1.0, 1.0, 1.0, 0.5),

@@ -117,9 +117,8 @@ impl Logic {
                 self.shots.remove(shot_id)
                 self.enemies.remove(enemy_id)
                 score_for_enemy = 10
-                score_pos = Position::new(enemy.rect.pos.x, enemy.rect.pos.y - 10.0)
                 self.explosions.add(Explosion { pos: enemy.rect.pos, tick: 0, type: ExplosionType::Fire })
-                self.score_bonus.add(ScoreBonus { pos: score_pos, tick: 0, score: score_for_enemy })
+                self.score_bonus.add(ScoreBonus { pos: enemy.rect.pos, tick: 0, score: score_for_enemy })
                 self.score += score_for_enemy
             }
         }
@@ -146,7 +145,6 @@ impl Logic {
                 self.score_bonus.remove(bonus_id)
              else {
                 bonus.tick += 1
-                bonus.pos.y += 0.2
             }
         }
     }
