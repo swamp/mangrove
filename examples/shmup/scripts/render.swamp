@@ -12,6 +12,7 @@ struct Render {
     player_ship_material: mangrove::render::FixedAtlasHandle,
     player_shot_material: mangrove::render::FixedAtlasHandle,
     alan_material: mangrove::render::FixedAtlasHandle,
+    bonus_pickup_material: mangrove::render::FixedAtlasHandle,
     explosion_material: mangrove::render::FixedAtlasHandle,
     background_material: mangrove::render::MaterialHandle,
     font_and_material: mangrove::render::FontAndMaterialHandle,
@@ -33,6 +34,7 @@ impl Render {
             player_ship_material: player_ship_material,
             player_shot_material: assets.frame_fixed_grid_material_png('projectiles/player_beam', (8,SIZE), (SIZE*2, SIZE)),
             alan_material: assets.frame_fixed_grid_material_png('enemies/alan_16x16', CELL_SIZE, (SIZE*6, SIZE)),
+            bonus_pickup_material: assets.frame_fixed_grid_material_png('items/pickups_16x16', CELL_SIZE, (SIZE*3, SIZE)),
             explosion_material: assets.frame_fixed_grid_material_png('effects/explosion_16x16', CELL_SIZE, (SIZE*6, SIZE)),
             background_material: assets.material_png('blue_nebula_04-512x512'),
             font_and_material: assets.bm_font('font/hackman'),
@@ -128,6 +130,12 @@ impl Render {
                 frame = 5
             }
             gfx.sprite_atlas_frame(explosion_pos, self.explosion_material, frame)
+        }
+
+        for bonus_item in logic.bonus_items {
+            bonus_pos = (bonus_item.pos.x.floor() + 4, bonus_item.pos.y.floor(), 0)
+            frame = 0
+            gfx.sprite_atlas_frame(bonus_pos, self.bonus_pickup_material, frame)
         }
     }
 

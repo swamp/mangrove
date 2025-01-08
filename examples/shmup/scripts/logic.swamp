@@ -105,6 +105,10 @@ struct ScoreBonus {
     score: Int,
 }
 
+struct BonusItem {
+    pos: Position,
+}
+
 struct Logic {
     tick_count: Int, /// how many ticks have passed
     direction: Float, /// which direction the player ship
@@ -113,6 +117,7 @@ struct Logic {
     enemies: std::Sparse<Enemy>,
     explosions: std::Sparse<Explosion>,
     score_bonus: std::Sparse<ScoreBonus>,
+    bonus_items: std::Sparse<BonusItem>,
     players: [Int: Player],
     formations: [Int: Formation],
     cooldown_settings: [Int], // just to test arrays
@@ -132,6 +137,30 @@ impl Logic {
         min + (value.rnd() % (max - min))
     }
 
+
+    fn has_enemies_in_formation(self, formation: Int) -> Bool {
+        for enemy in self.enemies {
+            if enemy.formation == formation {
+                return true
+            }
+        }
+
+        false
+    }
+
+    fn remove_enemy(mut self, id: std::SparseId) -> Bool {
+        enemy = self.enemies[id]
+        if enemy? {
+            self.enemies.remove(id)
+
+            if self.formations.has(enemy.formation) && !self.has_enemies_in_formation(enemy.formation) {
+                self.formations.remove(enemy.formation)
+                return true
+            }
+        }
+        false
+    }
+
     fn check_shots_vs_enemies(mut self) {
         for shot_id, shot in self.shots {
             for enemy_id, enemy in self.enemies {
@@ -140,11 +169,14 @@ impl Logic {
                     continue
                 }
                 self.shots.remove(shot_id)
-                self.enemies.remove(enemy_id)
+                was_last_in_formation = self.remove_enemy(enemy_id)
                 score_for_enemy = 10
                 self.explosions.add(Explosion { pos: enemy.rect.pos, tick: 0, type: ExplosionType::Fire })
                 self.score_bonus.add(ScoreBonus { pos: enemy.rect.pos, tick: 0, score: score_for_enemy })
                 self.score += score_for_enemy
+                if was_last_in_formation {
+                    self.bonus_items.add(BonusItem { pos: enemy.rect.pos } )
+                }
             }
         }
     }
@@ -174,6 +206,16 @@ impl Logic {
         }
     }
 
+    fn tick_bonus_items(mut self) {
+        for bonus_id, mut bonus_item in self.bonus_items {
+            if bonus_item.pos.x < -30.0 {
+                self.bonus_items.remove(bonus_id)
+            } else {
+                bonus_item.pos.x -= 0.6
+            }
+        }
+    }
+
     fn check_player_input(mut self) {
         for mut player in self.players {
             if player.fire && player.fire_cooldown == 0 {
@@ -197,12 +239,6 @@ impl Logic {
 
     fn next_formation_enemy_type(mut self) -> EnemyType {
         self.enemy_type = Logic::next_enemy_type(self.enemy_type)
-        match EnemyType::BonBon {
-            Alan => print('alan'),
-            BonBon => print('bonbon'),
-            Lips => print('lips'),
-        }
-        print('next enemy {self.enemy_type}')
         self.enemy_type
     }
 
@@ -263,6 +299,9 @@ impl Logic {
         position.y = position.y.clamp(SHIP_Y_MARGIN, SCREEN_HEIGHT_F - SHIP_Y_MARGIN)
     }
 
+
+
+
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.tick_count += 1
@@ -281,11 +320,6 @@ impl Logic {
 
         if self.tick_count % 147 == 0 {
             self.create_formation()
-
-            // This is just to test for in maps
-            for player_id, player in self.players {
-                print('player {player_id} fire: {player.fire} cooldown: {player.fire_cooldown} {self.cooldown}')
-            }
         }
 
         const MAGNITUDE = 5.0
@@ -296,11 +330,11 @@ impl Logic {
             sway_time = enemy.time.to_float() * 0.01
             sway_angle = sway_time * 6.28
             y = sway_angle.cos() * MAGNITUDE
-
             enemy.rect.pos.y = enemy.base_y + y
 
             if enemy.rect.pos.x < -32.0 {
-                self.enemies.remove(id)
+                self.formations.remove(enemy.formation) // if player missed this, then remove formation
+                self.remove_enemy(id)
             }
         }
 
@@ -313,6 +347,7 @@ impl Logic {
 
         self.tick_explosions()
         self.tick_score_bonus()
+        self.tick_bonus_items()
         self.check_shots_vs_enemies()
         self.check_player_input()
         self.players_fire_cooldown()
@@ -355,6 +390,7 @@ fn main() -> Logic {
         enemies: std::Sparse<Enemy>::new(),
         explosions: std::Sparse<Explosion>::new(),
         score_bonus: std::Sparse<ScoreBonus>::new(),
+        bonus_items: std::Sparse<BonusItem>::new(),
         players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
         cooldown_settings: [ 10, FIRE_COOLDOWN, 30 ],
         cooldown: none,
