@@ -6,7 +6,7 @@
 use crate::err::show_mangrove_error;
 use crate::logic::ScriptLogic;
 use crate::script::{
-    compile, create_default_color_value, create_default_sprite_params,
+    color_like, compile, create_default_color_value, create_default_sprite_params,
     create_empty_struct_value_util, sprite_params, uvec2_like, value_to_value_ref, vec3_like,
     MangroveError,
 };
@@ -18,8 +18,9 @@ use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
-    App, Assets, FixedAtlas, FrameLookup, GameAssets, LoRe, LoReM, LocalResource, MaterialRef, Msg,
-    Plugin, Re, ReAll, ReM, Render, ResourceStorage, SpriteParams, UVec2, UpdatePhase, Vec3,
+    App, Assets, Color, FixedAtlas, FontAndMaterial, FrameLookup, GameAssets, Gfx, LoRe, LoReM,
+    LocalResource, MaterialRef, Msg, Plugin, Re, ReAll, ReM, Render, ResourceStorage, SpriteParams,
+    UVec2, UpdatePhase, Vec3,
 };
 use swamp_script::prelude::*;
 use tracing::error;
@@ -91,6 +92,16 @@ impl RenderWrapper {
 
         render.sprite_atlas_frame_ex(position, frame, atlas, params);
     }
+
+    pub fn text_draw(&self, pos: Vec3, str: &str, material_ref: &FontAndMaterial, _color: &Color) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.text_draw(pos, str, material_ref) // TODO: Implement color
+    }
 }
 
 // I didn't want to change the implementation of GameAssets.
@@ -105,6 +116,9 @@ pub struct GameAssetsWrapper {
 
     fixed_atlas_struct_type_ref: ResolvedStructTypeRef,
     fixed_atlas_rust_type_ref: ResolvedRustTypeRef,
+
+    font_and_material_struct_type_ref: ResolvedStructTypeRef,
+    font_and_material_rust_type_ref: ResolvedRustTypeRef,
 }
 
 #[derive(Debug)]
@@ -118,6 +132,21 @@ impl Display for FixedAtlasWrapper {
             f,
             "fixed_atlas {:?} {:?}",
             self.fixed_atlas.one_cell_size, self.fixed_atlas.texture_size
+        )
+    }
+}
+
+#[derive(Debug)]
+pub struct FontAndMaterialWrapper {
+    pub font_and_material: FontAndMaterial,
+}
+impl Display for FontAndMaterialWrapper {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "font_and_material {:?} {:?}",
+            self.font_and_material.font_ref.asset_name().unwrap(),
+            self.font_and_material.material_ref.asset_name().unwrap()
         )
     }
 }
@@ -143,6 +172,9 @@ impl GameAssetsWrapper {
         material_rust_type_ref: ResolvedRustTypeRef,
         fixed_atlas_struct_type_ref: ResolvedStructTypeRef,
         fixed_atlas_rust_type_ref: ResolvedRustTypeRef,
+
+        font_and_material_struct_type_ref: ResolvedStructTypeRef,
+        font_and_material_rust_type_ref: ResolvedRustTypeRef,
     ) -> Self {
         let ptr = game_assets as *mut GameAssets;
         Self {
@@ -151,6 +183,8 @@ impl GameAssetsWrapper {
             material_rust_type_ref,
             fixed_atlas_struct_type_ref,
             fixed_atlas_rust_type_ref,
+            font_and_material_struct_type_ref,
+            font_and_material_rust_type_ref,
         }
     }
 
@@ -179,6 +213,19 @@ impl GameAssetsWrapper {
         )
     }
 
+    fn font_and_material_handle(&self, font_and_material: FontAndMaterial) -> Value {
+        let wrapper = FontAndMaterialWrapper { font_and_material };
+        let font_and_material_ref = Rc::new(RefCell::new(Value::RustValue(
+            self.font_and_material_rust_type_ref.clone(),
+            Rc::new(RefCell::new(Box::new(wrapper))),
+        )));
+
+        Value::Struct(
+            self.font_and_material_struct_type_ref.clone(),
+            [font_and_material_ref.into()].to_vec(),
+        )
+    }
+
     pub fn material_png(&self, name: &str) -> Value {
         // Safety: We assume the GameAssets pointer is still valid, since the GameAssetsWrapper is short-lived (only alive during a tick)
         let assets: &mut GameAssets;
@@ -204,6 +251,18 @@ impl GameAssetsWrapper {
         let material_ref = assets.frame_fixed_grid_material_png(name, grid_size, texture_size);
 
         self.fixed_atlas_handle(material_ref)
+    }
+
+    pub fn bm_font(&self, name: &str) -> Value {
+        let assets: &mut GameAssets;
+        unsafe {
+            // Safety: We assume the GameAssets pointer is still valid, since the GameAssetsWrapper is short-lived (only alive during a tick)
+
+            assets = &mut *self.game_assets;
+        }
+        let font_and_material_ref = assets.bm_font(name);
+
+        self.font_and_material_handle(font_and_material_ref)
     }
 }
 
@@ -504,7 +563,7 @@ pub fn register_gfx_struct_value_with_members(
     let string_type = types.string_type();
     let material_handle = ResolvedTypeForParameter {
         name: "material_handle".to_string(),
-        resolved_type: string_type,
+        resolved_type: string_type.clone(),
         is_mutable: false,
         node: None,
     };
@@ -613,6 +672,75 @@ pub fn register_gfx_struct_value_with_members(
                 position,
                 &material_ref.borrow(),
                 props,
+            );
+
+            Ok(Value::Unit)
+        },
+    )?;
+
+    let font_and_material_handle = ResolvedTypeForParameter {
+        name: "font_and_material_handle".to_string(),
+        resolved_type: string_type.clone(), // TODO: Use correct type
+        is_mutable: false,
+        node: None,
+    };
+
+    let color_parameter = ResolvedTypeForParameter {
+        name: "color".to_string(),
+        resolved_type: gfx_types.color,
+        is_mutable: false,
+        node: None,
+    };
+
+    let text_parameter = ResolvedTypeForParameter {
+        name: "str".to_string(),
+        resolved_type: string_type,
+        is_mutable: false,
+        node: None,
+    };
+
+    // text() ---------------------------
+    let text_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
+    let text_fn = ResolvedExternalFunctionDefinition {
+        name: None,
+        assigned_name: "text".to_string(),
+        signature: FunctionTypeSignature {
+            first_parameter_is_self: true,
+            parameters: (&[
+                mut_self_parameter.clone(),
+                position_param.clone(),
+                text_parameter.clone(),
+                font_and_material_handle.clone(),
+                color_parameter.clone(),
+            ])
+                .to_vec(),
+            return_type: Box::from(types.int_type()),
+        },
+        id: text_external_fn_id,
+    };
+
+    let _text_fn = gfx_struct_type
+        .borrow_mut()
+        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(text_fn))?;
+
+    externals.register_external_function(
+        text_external_fn_id,
+        move |mem_val: &[VariableValue], context| {
+            let params = convert_to_values(mem_val).unwrap();
+            //let _self_value = &params[0]; // the Gfx struct is empty by design.
+            let position = vec3_like(&params[1])?;
+            let text = params[2].expect_string()?;
+
+            let font_and_material_wrapper_ref = params[3]
+                .downcast_hidden_rust::<FontAndMaterialWrapper>()
+                .unwrap();
+            let color = color_like(&params[4])?;
+
+            context.render.as_mut().unwrap().text_draw(
+                position,
+                &*text,
+                &font_and_material_wrapper_ref.borrow().font_and_material,
+                &color,
             );
 
             Ok(Value::Unit)
@@ -736,6 +864,7 @@ pub fn register_asset_struct_value_with_members(
     namespace: &mut ResolvedModuleNamespace,
     material_struct_type_ref: ResolvedStructTypeRef,
     fixed_grid_struct_type_ref: ResolvedStructTypeRef,
+    font_and_material_struct_type_ref: ResolvedStructTypeRef,
 ) -> Result<VariableValue, MangroveError> {
     let (assets_value, assets_type) = create_empty_struct_value_util(namespace, "Assets")?;
     let assets_value_mut =
@@ -753,7 +882,7 @@ pub fn register_asset_struct_value_with_members(
     let string_type = types.string_type();
     let asset_name_parameter = ResolvedTypeForParameter {
         name: "asset_name".to_string(),
-        resolved_type: string_type,
+        resolved_type: string_type.clone(),
         is_mutable: false,
         node: None,
     };
@@ -787,6 +916,34 @@ pub fn register_asset_struct_value_with_members(
                 .as_mut()
                 .unwrap()
                 .material_png(asset_name))
+        },
+    )?;
+
+    let bm_font_function_id: ExternalFunctionId = state.allocate_external_function_id();
+    let bm_font_def = ResolvedExternalFunctionDefinition {
+        name: None,
+        assigned_name: "bm_font".to_string(),
+        signature: FunctionTypeSignature {
+            first_parameter_is_self: true, // assets
+            parameters: (&[mut_self_parameter.clone(), asset_name_parameter.clone()]).to_vec(),
+            return_type: Box::from(ResolvedType::Struct(font_and_material_struct_type_ref)),
+        },
+        id: bm_font_function_id,
+    };
+
+    let _bm_font_fn = assets_type
+        .borrow_mut()
+        .add_external_member_function(bm_font_def.into())?;
+
+    externals.register_external_function(
+        bm_font_function_id,
+        move |mem_values: &[VariableValue], context| {
+            //let self_value = &params[0]; // Assets is, by design, an empty struct
+            let params = convert_to_values(mem_values)
+                .expect("should only be passed values to material png function");
+            let asset_name = &params[1].expect_string()?;
+
+            Ok(context.game_assets.as_mut().unwrap().bm_font(asset_name))
         },
     )?;
 
@@ -925,6 +1082,8 @@ pub fn create_render_module(
         ResolvedRustTypeRef,
         ResolvedStructTypeRef,
         ResolvedRustTypeRef,
+        ResolvedStructTypeRef,
+        ResolvedRustTypeRef,
     ),
     MangroveError,
 > {
@@ -963,6 +1122,22 @@ pub fn create_render_module(
             )],
         )?;
 
+    let font_and_material_rust_type_ref = Rc::new(ResolvedRustType {
+        type_name: "FontAndMaterialHandle".to_string(),
+        number: 92,
+    });
+
+    let font_and_material_struct_ref = mangrove_render_module
+        .namespace
+        .borrow_mut()
+        .add_generated_struct(
+            "FontAndMaterialHandle",
+            &[(
+                "hidden",
+                ResolvedType::RustType(font_and_material_rust_type_ref.clone()),
+            )],
+        )?;
+
     let assets_struct_value = register_asset_struct_value_with_members(
         &resolved_program.types,
         &mut resolved_program.state,
@@ -970,6 +1145,7 @@ pub fn create_render_module(
         &mut mangrove_render_module.namespace.borrow_mut(),
         material_handle_struct_ref.clone(),
         fixed_atlas_handle_struct_ref.clone(),
+        font_and_material_struct_ref.clone(),
     )?;
 
     let gfx_struct_value = register_gfx_struct_value_with_members(
@@ -987,6 +1163,8 @@ pub fn create_render_module(
         material_handle_rust_type_ref,
         fixed_atlas_handle_struct_ref,
         fixed_atlas_handle_rust_type_ref,
+        font_and_material_struct_ref,
+        font_and_material_rust_type_ref,
     ))
 }
 
@@ -1005,6 +1183,8 @@ pub fn boot(
         material_handle_rust_type_ref,
         fixed_atlas_struct_type_ref,
         fixed_atlas_handle_rust_type_ref,
+        font_and_material_struct_type_ref,
+        font_and_material_rust_type_ref,
     ) = create_render_module(&mut resolved_program, &mut external_functions)?;
 
     let render_module_ref = Rc::new(RefCell::new(render_module));
@@ -1046,6 +1226,8 @@ pub fn boot(
             material_handle_rust_type_ref,
             fixed_atlas_struct_type_ref.clone(),
             fixed_atlas_handle_rust_type_ref,
+            font_and_material_struct_type_ref.clone(),
+            font_and_material_rust_type_ref,
         )),
         render: None,
     };
