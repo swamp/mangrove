@@ -117,7 +117,7 @@ impl Render {
             frame = if pulsating_time < 40  pulsating_time/10  else  0 
             match enemy.enemy {
                 Alan => gfx.sprite_atlas_frame(enemy_pos, self.alan_material, frame),
-                _ => print('not handled enemy type: {enemy.enemy}'),
+                _ => {},
             }
         }
 

@@ -67,11 +67,25 @@ enum EnemyType {
     Lips,
 }
 
+struct Waypoints {
+    points: [Position],
+}
+
+enum FormationMovement {
+    Waypoints(Waypoints),
+    Sine,
+}
+
+struct Formation {
+    movement: FormationMovement,
+}
+
 struct Enemy {
     rect: Rect,
     base_y: Float,
     direction: Float,
     enemy: EnemyType,
+    formation: Int,
     time: Int,
 }
 
@@ -100,12 +114,23 @@ struct Logic {
     explosions: std::Sparse<Explosion>,
     score_bonus: std::Sparse<ScoreBonus>,
     players: [Int: Player],
+    formations: [Int: Formation],
     cooldown_settings: [Int], // just to test arrays
     cooldown: Int?,
     score: Int,
+    formation_id: Int,
+    enemy_type: EnemyType,
 }
 
 impl Logic {
+
+    fn random_range(value: Float, min: Int, max: Int) -> Int {
+        min + (value.rnd() % (max - min))
+    }
+
+    fn random_range_int(value: Int, min: Int, max: Int) -> Int {
+        min + (value.rnd() % (max - min))
+    }
 
     fn check_shots_vs_enemies(mut self) {
         for shot_id, shot in self.shots {
@@ -162,6 +187,57 @@ impl Logic {
         }
     }
 
+    fn next_enemy_type(e: EnemyType) -> EnemyType {
+        match e {
+            Alan => EnemyType::BonBon,
+            BonBon => EnemyType::Lips,
+            Lips => EnemyType::Alan,
+        }
+    }
+
+    fn next_formation_enemy_type(mut self) -> EnemyType {
+        self.enemy_type = Logic::next_enemy_type(self.enemy_type)
+        match EnemyType::BonBon {
+            Alan => print('alan'),
+            BonBon => print('bonbon'),
+            Lips => print('lips'),
+        }
+        print('next enemy {self.enemy_type}')
+        self.enemy_type
+    }
+
+    fn create_formation(mut self) {
+        self.formation_id += 1
+        self.formation_id %= 32
+        formation_id = self.formation_id
+
+        enemy_type = self.next_formation_enemy_type()
+
+        self.formations[formation_id] = Formation { movement: FormationMovement::Sine }
+
+        count_in_formation = Logic::random_range_int(self.tick_count, 2, 4)
+
+        const ENEMY_MARGIN = 20
+
+        for offset_index in 0..count_in_formation {
+            random_y = Logic::random_range_int(self.tick_count, ENEMY_MARGIN, SCREEN_HEIGHT - ENEMY_MARGIN)
+            x_offset = offset_index * 32
+            rect = Rect { 
+                pos: Position { x: SCREEN_WIDTH.to_float() + 32.0 + x_offset.to_float(), y: random_y.to_float() }, 
+                size: Size { width: 16.0, height: 16.0 } 
+            }
+
+            self.enemies.add(Enemy {
+                rect: rect, 
+                base_y: rect.pos.y,
+                enemy: enemy_type, 
+                direction: -1.2,
+                formation: formation_id,
+                time: x_offset,
+            })
+        }
+    }
+
     fn players_fire_cooldown(mut self) {
         for mut player in self.players {
             if player.fire_cooldown > 0 {
@@ -170,14 +246,6 @@ impl Logic {
                 self.cooldown = none
             }
         }
-    }
-
-    fn random_range(value: Float, min: Int, max: Int) -> Int {
-        min + (value.rnd() % (max - min))
-    }
-
-    fn random_range_int(value: Int, min: Int, max: Int) -> Int {
-        min + (value.rnd() % (max - min))
     }
 
     // This is not normally how you structure the code
@@ -211,23 +279,8 @@ impl Logic {
         if cooldown? {
         }
 
-        const ENEMY_MARGIN = 20
-
-        if self.tick_count % 47 == 0 {
-            random_y = Logic::random_range_int(self.tick_count, ENEMY_MARGIN, SCREEN_HEIGHT - ENEMY_MARGIN)
-
-            rect = Rect { 
-                pos: Position { x: SCREEN_WIDTH.to_float() + 32.0, y: random_y.to_float() }, 
-                size: Size { width: 16.0, height: 16.0 } 
-            }
-            
-            self.enemies.add(Enemy {
-                rect: rect, 
-                base_y: rect.pos.y,
-                enemy: EnemyType::Alan, 
-                direction: -1.2,
-                time: Logic::random_range_int(self.tick_count, 0, 3),
-            })
+        if self.tick_count % 147 == 0 {
+            self.create_formation()
 
             // This is just to test for in maps
             for player_id, player in self.players {
@@ -246,11 +299,7 @@ impl Logic {
 
             enemy.rect.pos.y = enemy.base_y + y
 
-
-            if enemy.rect.pos.x < -10.0 {
-                self.enemies.remove(id)
-            }
-            if enemy.time > 400 {
+            if enemy.rect.pos.x < -32.0 {
                 self.enemies.remove(id)
             }
         }
@@ -309,6 +358,9 @@ fn main() -> Logic {
         players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
         cooldown_settings: [ 10, FIRE_COOLDOWN, 30 ],
         cooldown: none,
+        formations: [],
         score: 0,
+        formation_id: 0,
+        enemy_type: EnemyType::Alan,
     }
 }
