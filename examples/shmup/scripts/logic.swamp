@@ -85,6 +85,12 @@ struct Explosion {
     type: ExplosionType,
 }
 
+struct ScoreBonus {
+    pos: Position,
+        tick: Int,
+    score: Int,
+}
+
 struct Logic {
     tick_count: Int, /// how many ticks have passed
     direction: Float, /// which direction the player ship
@@ -92,9 +98,11 @@ struct Logic {
     shots: std::Sparse<Shot>,
     enemies: std::Sparse<Enemy>,
     explosions: std::Sparse<Explosion>,
+    score_bonus: std::Sparse<ScoreBonus>,
     players: [Int: Player],
     cooldown_settings: [Int], // just to test arrays
     cooldown: Int?,
+    score: Int,
 }
 
 impl Logic {
@@ -108,7 +116,11 @@ impl Logic {
                 }
                 self.shots.remove(shot_id)
                 self.enemies.remove(enemy_id)
+                score_for_enemy = 10
+                score_pos = Position::new(enemy.rect.pos.x, enemy.rect.pos.y - 10.0)
                 self.explosions.add(Explosion { pos: enemy.rect.pos, tick: 0, type: ExplosionType::Fire })
+                self.score_bonus.add(ScoreBonus { pos: score_pos, tick: 0, score: score_for_enemy })
+                self.score += score_for_enemy
             }
         }
     }
@@ -122,6 +134,19 @@ impl Logic {
              else {
                 explosion.tick += 1
                 explosion.pos.x -= 1.5
+            }
+        }
+    }
+
+    fn tick_score_bonus(mut self) {
+        for bonus_id, mut bonus in self.score_bonus {
+            // This is just to show that the scope is not needed for if statements
+            // But it is strongly recommended with '{' '}' for easier reading
+            if bonus.tick >= 30 
+                self.score_bonus.remove(bonus_id)
+             else {
+                bonus.tick += 1
+                bonus.pos.y += 0.2
             }
         }
     }
@@ -240,6 +265,7 @@ impl Logic {
         }
 
         self.tick_explosions()
+        self.tick_score_bonus()
         self.check_shots_vs_enemies()
         self.check_player_input()
         self.players_fire_cooldown()
@@ -278,11 +304,13 @@ fn main() -> Logic {
         tick_count: 0,
         direction: 0.0,
         pos: STARTING_POS,
-        shots: Sparse<Shot>::new(),
-        enemies: Sparse<Enemy>::new(),
-        explosions: Sparse<Explosion>::new(),
+        shots: std::Sparse<Shot>::new(),
+        enemies: std::Sparse<Enemy>::new(),
+        explosions: std::Sparse<Explosion>::new(),
+        score_bonus: std::Sparse<ScoreBonus>::new(),
         players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
         cooldown_settings: [ 10, FIRE_COOLDOWN, 30 ],
         cooldown: none,
+        score: 0,
     }
 }

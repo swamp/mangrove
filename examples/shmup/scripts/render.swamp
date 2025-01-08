@@ -2,6 +2,11 @@ use mangrove.render {
     SpriteParams,
     Color,
 }
+
+const SCREEN_HEIGHT = 180
+const SCREEN_HEIGHT_F = 180.to_float()
+const SCREEN_WIDTH = 320
+
 /// Handles the rendering of the game
 struct Render {
     player_ship_material: mangrove::render::FixedAtlasHandle,
@@ -9,6 +14,7 @@ struct Render {
     alan_material: mangrove::render::FixedAtlasHandle,
     explosion_material: mangrove::render::FixedAtlasHandle,
     background_material: mangrove::render::MaterialHandle,
+    font_and_material: mangrove::render::FontAndMaterialHandle,
     tick: Int,
     background_x: Float,
 }
@@ -29,8 +35,26 @@ impl Render {
             alan_material: assets.frame_fixed_grid_material_png('enemies/alan_16x16', CELL_SIZE, (SIZE*6, SIZE)),
             explosion_material: assets.frame_fixed_grid_material_png('effects/explosion_16x16', CELL_SIZE, (SIZE*6, SIZE)),
             background_material: assets.material_png('blue_nebula_04-512x512'),
+            font_and_material: assets.bm_font('font/hackman'),
             tick: 0,
             background_x: 0.0,
+        }
+    }
+
+    fn fill_zeroes(s: String, len: Int) -> String {
+        mut x = s
+        while x.len() < len {
+            x = "0" + x 
+        }
+        x
+    }
+
+    fn render_score_bonus(self, mut gfx: mangrove::render::Gfx, bonuses: std::Sparse<logic::ScoreBonus>) {
+        for id, bonus in bonuses {
+            score_string = Render::fill_zeroes('{bonus.score}', 2)
+
+            pos_3d = (bonus.pos.x.round(), bonus.pos.y.round(), 0)
+            gfx.text(pos_3d, score_string, self.font_and_material, Color::new(1.0, 1.0, 1.0, 0.5))
         }
     }
 
@@ -51,7 +75,11 @@ impl Render {
         self.background_x += 0.5
         self.background_x = self.background_x % 512.0
 
-         gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
+        score_string = Render::fill_zeroes('{logic.score}', 6)
+
+        gfx.text((SCREEN_WIDTH-60, SCREEN_HEIGHT-30, 0), 'SCORE {score_string}', self.font_and_material, Color::new(1.0, 1.0, 1.0, 0.5))
+
+        gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
             color: Color::new(1.0, 1.0, 1.0, 0.5),
             uv: (self.background_x.floor(), 0),
             ..
@@ -72,6 +100,8 @@ impl Render {
             color: Color::new(1.0, 1.0, 1.0, power),
             ..
         }
+
+        self.render_score_bonus(gfx, logic.score_bonus)
 
         for shot in logic.shots {
             shot_pos = (shot.x.floor(), shot.y.floor(), 0)
