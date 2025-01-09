@@ -561,9 +561,24 @@ pub fn register_gfx_struct_value_with_members(
     };
 
     let string_type = types.string_type();
+
+    let material_handle_type_ref = namespace
+        .get_struct("MaterialHandle")
+        .expect("material handle is missing");
+
     let material_handle = ResolvedTypeForParameter {
         name: "material_handle".to_string(),
-        resolved_type: string_type.clone(),
+        resolved_type: ResolvedType::Struct(material_handle_type_ref.clone()),
+        is_mutable: false,
+        node: None,
+    };
+
+    let fixed_atlas_handle_type_ref = namespace
+        .get_struct("FixedAtlasHandle")
+        .expect("FixedAtlasHandle is missing");
+    let fixed_atlas_handle = ResolvedTypeForParameter {
+        name: "fixed_atlas_handle".to_string(),
+        resolved_type: ResolvedType::Struct(fixed_atlas_handle_type_ref.clone()),
         is_mutable: false,
         node: None,
     };
@@ -678,9 +693,13 @@ pub fn register_gfx_struct_value_with_members(
         },
     )?;
 
+    let font_and_material_handle_ref = namespace
+        .get_struct("FontAndMaterialHandle")
+        .expect("FontAndMaterialHandle is missing");
+
     let font_and_material_handle = ResolvedTypeForParameter {
         name: "font_and_material_handle".to_string(),
-        resolved_type: string_type.clone(), // TODO: Use correct type
+        resolved_type: ResolvedType::Struct(font_and_material_handle_ref.clone()),
         is_mutable: false,
         node: None,
     };
@@ -766,7 +785,7 @@ pub fn register_gfx_struct_value_with_members(
             parameters: (&[
                 mut_self_parameter.clone(),
                 position_param.clone(),
-                material_handle.clone(),
+                fixed_atlas_handle.clone(),
                 frame.clone(),
             ])
                 .to_vec(),
@@ -815,7 +834,7 @@ pub fn register_gfx_struct_value_with_members(
             parameters: (&[
                 mut_self_parameter,
                 position_param,
-                material_handle,
+                fixed_atlas_handle,
                 frame,
                 sprite_params_parameter,
             ])
@@ -926,7 +945,9 @@ pub fn register_asset_struct_value_with_members(
         signature: FunctionTypeSignature {
             first_parameter_is_self: true, // assets
             parameters: (&[mut_self_parameter.clone(), asset_name_parameter.clone()]).to_vec(),
-            return_type: Box::from(ResolvedType::Struct(font_and_material_struct_type_ref)),
+            return_type: Box::from(ResolvedType::Struct(
+                font_and_material_struct_type_ref.clone(),
+            )),
         },
         id: bm_font_function_id,
     };
@@ -1122,10 +1143,13 @@ pub fn create_render_module(
             )],
         )?;
 
-    let font_and_material_rust_type_ref = Rc::new(ResolvedRustType {
-        type_name: "FontAndMaterialHandle".to_string(),
-        number: 92,
-    });
+    let font_and_material_rust_type_ref = mangrove_render_module
+        .namespace
+        .borrow_mut()
+        .add_built_in_rust_type(ResolvedRustType {
+            type_name: "FontAndMaterialHandle".to_string(),
+            number: 0,
+        })?;
 
     let font_and_material_struct_ref = mangrove_render_module
         .namespace
