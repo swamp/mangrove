@@ -91,12 +91,14 @@ impl Render {
 
         const STANDARD_ROTATE = 3
 
-        ship_sprite_params = SpriteParams {
+        const SHIP_SPRITE_PARAMS = SpriteParams {
             rotate: STANDARD_ROTATE,
             ..
         }
 
-        gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, ship_sprite_params)
+        gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, SHIP_SPRITE_PARAMS)
+
+        self.render_score_bonus(gfx, logic.score_bonus)
 
         power = (self.tick % 10).to_float() / 10.0
         shot_sprite_params = SpriteParams {
@@ -105,14 +107,16 @@ impl Render {
             ..
         }
 
-        self.render_score_bonus(gfx, logic.score_bonus)
+        // Render shots
+        with shots = logic.shots, mut gfx, shot_sprite_params, mat=self.player_shot_material {
+            for shot in shots {
+                shot_pos = (shot.x.floor(), shot.y.floor(), 0)
 
-        for shot in logic.shots {
-            shot_pos = (shot.x.floor(), shot.y.floor(), 0)
-
-            gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, shot_sprite_params)
+                gfx.sprite_atlas_frame_ex(shot_pos, mat, 1, shot_sprite_params)
+            }
         }
 
+        // Render enemies
         with enemies=logic.enemies, mut gfx, mat=self.alan_material {
             for id, enemy in enemies {
                 enemy_pos = (enemy.rect.pos.x.floor(), enemy.rect.pos.y.floor(), 0)
@@ -125,6 +129,7 @@ impl Render {
             }
         }
 
+        // Render explosions
         with explosions=logic.explosions, mut gfx, mat=self.explosion_material  {
             for explosion in explosions {
                 explosion_pos = (explosion.pos.x.floor() + 4, explosion.pos.y.floor(), 0)
@@ -136,6 +141,7 @@ impl Render {
             }
         }
 
+        // Render bonus items
         with bonus_items = logic.bonus_items, mut gfx, mat = self.bonus_pickup_material {
             for bonus_item in bonus_items {
                 bonus_pos = (bonus_item.pos.x.floor() + 4, bonus_item.pos.y.floor(), 0)
@@ -144,7 +150,6 @@ impl Render {
             }
         }
     }
-
 }
 
 /// Called by the mangrove engine at startup
