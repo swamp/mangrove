@@ -113,29 +113,35 @@ impl Render {
             gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, shot_sprite_params)
         }
 
-        for id, enemy in logic.enemies {
-            enemy_pos = (enemy.rect.pos.x.floor(), enemy.rect.pos.y.floor(), 0)
-            pulsating_time = enemy.time % 53
-            frame = if pulsating_time < 40  pulsating_time/10  else  0 
-            match enemy.enemy {
-                Alan => gfx.sprite_atlas_frame(enemy_pos, self.alan_material, frame),
-                _ => {},
+        with enemies=logic.enemies, mut gfx, mat=self.alan_material {
+            for id, enemy in enemies {
+                enemy_pos = (enemy.rect.pos.x.floor(), enemy.rect.pos.y.floor(), 0)
+                pulsating_time = enemy.time % 53
+                frame = if pulsating_time < 40  pulsating_time/10  else  0 
+                match enemy.enemy {
+                    Alan => gfx.sprite_atlas_frame(enemy_pos, mat, frame),
+                    _ => {},
+                }
             }
         }
 
-        for explosion in logic.explosions {
-            explosion_pos = (explosion.pos.x.floor() + 4, explosion.pos.y.floor(), 0)
-            mut frame = explosion.tick / 3
-            if frame > 5 {
-                frame = 5
+        with explosions=logic.explosions, mut gfx, mat=self.explosion_material  {
+            for explosion in explosions {
+                explosion_pos = (explosion.pos.x.floor() + 4, explosion.pos.y.floor(), 0)
+                mut frame = explosion.tick / 3
+                if frame > 5 {
+                    frame = 5
+                }
+                gfx.sprite_atlas_frame(explosion_pos, mat, frame)
             }
-            gfx.sprite_atlas_frame(explosion_pos, self.explosion_material, frame)
         }
 
-        for bonus_item in logic.bonus_items {
-            bonus_pos = (bonus_item.pos.x.floor() + 4, bonus_item.pos.y.floor(), 0)
-            frame = 0
-            gfx.sprite_atlas_frame(bonus_pos, self.bonus_pickup_material, frame)
+        with bonus_items = logic.bonus_items, mut gfx, mat = self.bonus_pickup_material {
+            for bonus_item in bonus_items {
+                bonus_pos = (bonus_item.pos.x.floor() + 4, bonus_item.pos.y.floor(), 0)
+                frame = 0
+                gfx.sprite_atlas_frame(bonus_pos, mat, frame)
+            }
         }
     }
 

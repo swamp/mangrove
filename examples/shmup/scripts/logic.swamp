@@ -299,9 +299,6 @@ impl Logic {
         position.y = position.y.clamp(SHIP_Y_MARGIN, SCREEN_HEIGHT_F - SHIP_Y_MARGIN)
     }
 
-
-
-
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.tick_count += 1
@@ -338,11 +335,13 @@ impl Logic {
             }
         }
 
-        for shot_id, mut shot in self.shots {
-            shot.x = shot.x + 8.0
-            if shot.x > SCREEN_WIDTH.to_float() {
-                self.shots.remove(shot_id)
-            } 
+        with mut shots = mut self.shots {
+            for shot_id, mut shot in shots {
+                shot.x = shot.x + 8.0
+                if shot.x > SCREEN_WIDTH.to_float() {
+                    shots.remove(shot_id)
+                } 
+            }
         }
 
         self.tick_explosions()
