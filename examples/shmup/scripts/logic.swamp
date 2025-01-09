@@ -365,16 +365,17 @@ impl Logic {
         }
     }
 
+    fn some_guard() -> Bool {
+        false
+    }
     /// Called by the mangrove engine when a gamepad button changes
     fn gamepad_button_changed(mut self, player_id: Int, button: input::Button, value: Float) {
         match button {
-            South => self.set_player_input_fire(player_id, value > 0.5),
+            South | Logic::some_guard() && true => self.set_player_input_fire(player_id, value > 0.5),
             _ => print('not handled button: {button} value: {value}'),
         }
     }
-
 }
-
 
 /// Called by the mangrove engine at startup
 fn main() -> Logic {
