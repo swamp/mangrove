@@ -273,6 +273,9 @@ impl Logic {
         }
 
         cooldown = self.cooldown
+
+        print('cooldown: {cooldown??-1} is the value')
+
         if cooldown? {
         }
 
