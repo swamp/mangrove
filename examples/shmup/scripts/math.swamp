@@ -1,0 +1,42 @@
+struct Position {
+    x: Float,
+    y: Float,
+}
+
+impl Position {
+    fn new(x: Float, y: Float) -> Position {
+        Position { x: x, y: y }
+    }
+
+    fn add(mut self, other: Position) {
+        self.x = self.x + other.x
+        self.y = self.y + other.y
+    }
+
+    fn floor(self) -> (Int, Int) {
+        (self.x.floor(), self.y.floor())
+    }
+}
+
+struct Size {
+    width: Float,
+    height: Float,
+}
+
+struct Rect {
+    pos: Position,
+    size: Size,
+}
+
+impl Rect {
+    fn new(pos: Position, size: Size) -> Rect {
+        Rect { pos: pos, size: size }
+    }
+
+    fn intersects(self, other: Rect) -> Bool {
+        self.pos.x < other.pos.x + other.size.width &&
+        self.pos.x + self.size.width > other.pos.x &&
+        self.pos.y < other.pos.y + other.size.height &&
+        self.pos.y + self.size.height > other.pos.y
+    }
+}

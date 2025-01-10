@@ -12,6 +12,8 @@ struct Render {
     player_ship_material: mangrove::render::FixedAtlasHandle,
     player_shot_material: mangrove::render::FixedAtlasHandle,
     alan_material: mangrove::render::FixedAtlasHandle,
+    bon_bon_material: mangrove::render::FixedAtlasHandle,
+    lips_material: mangrove::render::FixedAtlasHandle,
     bonus_pickup_material: mangrove::render::FixedAtlasHandle,
     explosion_material: mangrove::render::FixedAtlasHandle,
     background_material: mangrove::render::MaterialHandle,
@@ -34,6 +36,8 @@ impl Render {
             player_ship_material: player_ship_material,
             player_shot_material: assets.frame_fixed_grid_material_png('projectiles/player_beam', (8,SIZE), (SIZE*2, SIZE)),
             alan_material: assets.frame_fixed_grid_material_png('enemies/alan_16x16', CELL_SIZE, (SIZE*6, SIZE)),
+            bon_bon_material: assets.frame_fixed_grid_material_png('enemies/bon_bon_16x16', CELL_SIZE, (SIZE*4, SIZE)),
+            lips_material: assets.frame_fixed_grid_material_png('enemies/lips_16x16', CELL_SIZE, (SIZE*5, SIZE)),
             bonus_pickup_material: assets.frame_fixed_grid_material_png('items/pickups_16x16', CELL_SIZE, (SIZE*3, SIZE)),
             explosion_material: assets.frame_fixed_grid_material_png('effects/explosion_16x16', CELL_SIZE, (SIZE*6, SIZE)),
             background_material: assets.material_png('blue_nebula_04-512x512'),
@@ -117,13 +121,21 @@ impl Render {
         }
 
         // Render enemies
-        with enemies=logic.enemies, mut gfx, mat=self.alan_material {
+        with enemies=logic.enemies, mut gfx, self {
             for id, enemy in enemies {
-                enemy_pos = (enemy.rect.pos.x.floor(), enemy.rect.pos.y.floor(), 0)
+                
+                z = match enemy.enemy {
+                    Alan => 1,
+                    BonBon => 2,
+                    Lips => 3,
+                    }
+                enemy_pos = (enemy.rect.pos.x.floor(), enemy.rect.pos.y.floor(), z)
                 pulsating_time = enemy.time % 53
                 frame = if pulsating_time < 40  pulsating_time/10  else  0 
                 match enemy.enemy {
-                    Alan => gfx.sprite_atlas_frame(enemy_pos, mat, frame),
+                    Alan => gfx.sprite_atlas_frame(enemy_pos, self.alan_material, frame),
+                    BonBon => gfx.sprite_atlas_frame(enemy_pos, self.bon_bon_material, frame),
+                    Lips => gfx.sprite_atlas_frame(enemy_pos, self.lips_material, frame),
                     _ => {},
                 }
             }

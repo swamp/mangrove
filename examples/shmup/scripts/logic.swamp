@@ -3,6 +3,12 @@ use gameplay {
     Something,
 }
 
+use math {
+    Rect,
+    Position,
+    Size,
+}
+
 const SCREEN_HEIGHT = 180
 const SCREEN_HEIGHT_F = 180.to_float()
 const SCREEN_WIDTH = 320
@@ -11,50 +17,6 @@ struct Shot {
     x: Float,
     y: Float,
 }
-
-struct Position {
-    x: Float,
-    y: Float,
-}
-
-impl Position {
-    fn new(x: Float, y: Float) -> Position {
-        Position { x: x, y: y }
-    }
-
-    fn add(mut self, other: Position) {
-        self.x = self.x + other.x
-        self.y = self.y + other.y
-    }
-
-    fn floor(self) -> (Int, Int) {
-        (self.x.floor(), self.y.floor())
-    }
-}
-
-struct Size {
-    width: Float,
-    height: Float,
-}
-
-struct Rect {
-    pos: Position,
-    size: Size,
-}
-
-impl Rect {
-    fn new(pos: Position, size: Size) -> Rect {
-        Rect { pos: pos, size: size }
-    }
-
-    fn intersects(self, other: Rect) -> Bool {
-        self.pos.x < other.pos.x + other.size.width &&
-        self.pos.x + self.size.width > other.pos.x &&
-        self.pos.y < other.pos.y + other.size.height &&
-        self.pos.y + self.size.height > other.pos.y
-    }
-}
-
 
 struct Player {
     fire: Bool,
@@ -134,7 +96,7 @@ impl Logic {
     }
 
     fn random_range_int(value: Int, min: Int, max: Int) -> Int {
-        min + (value.rnd() % (max - min))
+        min + (value.rnd() % (max - min + 1))
     }
 
 
@@ -243,14 +205,14 @@ impl Logic {
 
     fn create_formation(mut self) {
         self.formation_id += 1
-        self.formation_id %= 32
+        self.formation_id %= 1024
         formation_id = self.formation_id
 
         enemy_type = self.next_formation_enemy_type()
 
         self.formations[formation_id] = Formation { movement: FormationMovement::Sine }
 
-        count_in_formation = Logic::random_range_int(self.tick_count, 2, 4)
+        count_in_formation = Logic::random_range_int(self.tick_count, 3, 5)
 
         const ENEMY_MARGIN = 20
 
@@ -314,16 +276,16 @@ impl Logic {
         if cooldown? {
         }
 
-        if self.tick_count % 147 == 0 {
+        if self.tick_count % 1 == 0 {
             self.create_formation()
         }
 
-        const MAGNITUDE = 5.0
+        const MAGNITUDE = 8.0
 
         for id, mut enemy in self.enemies {
-            enemy.rect.pos.x += enemy.direction
+            enemy.rect.pos.x += enemy.direction * 1.0
             enemy.time += 1
-            sway_time = enemy.time.to_float() * 0.01
+            sway_time = enemy.time.to_float() * 0.02
             sway_angle = sway_time * 6.28
             y = sway_angle.cos() * MAGNITUDE
             enemy.rect.pos.y = enemy.base_y + y
