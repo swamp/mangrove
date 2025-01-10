@@ -1,13 +1,13 @@
 [package]
 name = "mangrove-save-detector"
-version = "0.0.5-alpha.1"
+version = "0.0.5"
 edition = "2021"
 license = "MIT"
 description = "Detects file changes and sends message to mangrove script plugin"
 repository = "https://github.com/swamp/mangrove"
 
 [dependencies]
-mangrove-script = { path = "../script", version = "0.0.5-alpha.1" }
+mangrove-script = { path = "../script", version = "0.0.5" }
 
 swamp = "0.0.14"
 # swamp = { path = "../../../swamp/crates/swamp", version = "0.0.14-alpha.1" }
