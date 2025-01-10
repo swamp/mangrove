@@ -183,11 +183,10 @@ impl Logic {
 
     fn tick_explosions(mut self) {
         for explosion_id, mut explosion in self.explosions {
-            // This is just to show that the scope is not needed for if statements
-            // But it is strongly recommended with '{' '}' for easier reading
-            if explosion.tick >= 30 
+            // This is just to show off the guard expression syntax
+            | explosion.tick >= 30 -> 
                 self.explosions.remove(explosion_id)
-             else {
+            | _ -> {
                 explosion.tick += 1
                 explosion.pos.x -= 1.5
             }
@@ -366,12 +365,12 @@ impl Logic {
     }
 
     fn some_guard() -> Bool {
-        false
+        true
     }
     /// Called by the mangrove engine when a gamepad button changes
     fn gamepad_button_changed(mut self, player_id: Int, button: input::Button, value: Float) {
         match button {
-            South | Logic::some_guard() && true => self.set_player_input_fire(player_id, value > 0.5),
+            South | Logic::some_guard() && true => self.set_player_input_fire(player_id, value > 0.1),
             _ => print('not handled button: {button} value: {value}'),
         }
     }

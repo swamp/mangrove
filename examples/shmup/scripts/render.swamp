@@ -133,10 +133,10 @@ impl Render {
         with explosions=logic.explosions, mut gfx, mat=self.explosion_material  {
             for explosion in explosions {
                 explosion_pos = (explosion.pos.x.floor() + 4, explosion.pos.y.floor(), 0)
-                mut frame = explosion.tick / 3
-                if frame > 5 {
-                    frame = 5
-                }
+                adjusted_time = explosion.tick / 3
+                frame = 
+                    | adjusted_time < 6 -> adjusted_time
+                    | _ -> 5
                 gfx.sprite_atlas_frame(explosion_pos, mat, frame)
             }
         }
