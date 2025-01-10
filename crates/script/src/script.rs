@@ -20,7 +20,7 @@ use tracing::trace;
 
 #[derive(Debug)]
 pub enum MangroveError {
-    IoError(std::io::Error),
+    IoError(io::Error),
     DecoratedParseError(DecoratedParseErr),
     ExecuteError(ExecuteError),
     Other(String),
@@ -100,14 +100,14 @@ pub fn create_empty_struct_type(
 }
 
 pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
-    Value::Struct(struct_type.clone(), [].to_vec())
+    Value::Struct(struct_type, [].to_vec())
 }
 
 pub fn create_empty_struct_value_util(
-    mut namespace: &mut ResolvedModuleNamespace,
+    namespace: &mut ResolvedModuleNamespace,
     name: &str,
 ) -> Result<(Value, ResolvedStructTypeRef), ResolveError> {
-    let struct_type = create_empty_struct_type(&mut namespace, name)?;
+    let struct_type = create_empty_struct_type(namespace, name)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
 }
 
@@ -115,8 +115,8 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
     if let Value::Struct(_struct_type_ref, fields) = sprite_params_struct {
         Ok(SpriteParams {
             scale: fields[4].borrow().expect_int()? as u8,
-            texture_size: uvec2_like(&*fields[6].borrow())?,
-            texture_pos: uvec2_like(&*fields[5].borrow())?,
+            texture_size: uvec2_like(&fields[6].borrow())?,
+            texture_pos: uvec2_like(&fields[5].borrow())?,
             flip_x: fields[0].borrow().as_bool()?,
             flip_y: fields[1].borrow().as_bool()?,
             rotation: match fields[2].borrow().expect_int()? % 4 {
@@ -142,14 +142,14 @@ pub fn create_default_color_value(color_struct_type_ref: ResolvedStructTypeRef) 
     fields.push(Value::Float(Fp::one())); // blue
     fields.push(Value::Float(Fp::one())); // alpha
 
-    Value::Struct(color_struct_type_ref, value_to_value_ref(&*fields))
+    Value::Struct(color_struct_type_ref, value_to_value_ref(&fields))
 }
 
 pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
     fields
         .iter()
         .map(|v| Rc::new(RefCell::new(v.clone())))
-        .to_owned()
+        .clone()
         .collect()
 }
 
@@ -168,15 +168,15 @@ pub fn create_default_sprite_params(
     fields.push(Value::Tuple(
         // texture_position (uv)
         math_types.pos2_tuple_type.clone(),
-        value_to_value_ref(&*[Value::Int(0), Value::Int(0)].to_vec()),
+        value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
     ));
     fields.push(Value::Tuple(
         // texture_size
         math_types.size2_tuple_type.clone(),
-        value_to_value_ref(&*[Value::Int(0), Value::Int(0)].to_vec()),
+        value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
     ));
 
-    Value::Struct(sprite_params_struct_type_ref, value_to_value_ref(&*fields))
+    Value::Struct(sprite_params_struct_type_ref, value_to_value_ref(&fields))
 }
 
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
@@ -227,7 +227,7 @@ fn prepare_main_module<C>(
     let main_module = ResolvedModule::new(root_module_path);
 
     let any_parameter = ResolvedTypeForParameter {
-        name: Default::default(),
+        name: String::default(),
         resolved_type: ResolvedType::Any,
         is_mutable: false,
         node: None,
@@ -249,12 +249,12 @@ fn prepare_main_module<C>(
     main_module
         .namespace
         .borrow_mut()
-        .add_external_function_declaration("print", print_external.into())?;
+        .add_external_function_declaration("print", print_external)?;
     externals
         .register_external_function(print_id, move |args: &[VariableValue], _context| {
             if let Some(value) = args.first() {
                 let display_value = value.convert_to_string_if_needed();
-                println!("{}", display_value);
+                println!("{display_value}");
                 Ok(Value::Unit)
             } else {
                 Err("print requires at least one argument".to_string())?
@@ -295,8 +295,8 @@ fn parse_module(
     trace!("ast_program:\n{:#?}", ast_module);
 
     let parse_module = ParseModule {
-        file_id,
         ast_module,
+        file_id,
     };
 
     Ok(parse_module)
@@ -308,7 +308,7 @@ pub fn compile<C>(
     module_path: &[String],
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
-    mut source_map: &mut SourceMap,
+    source_map: &mut SourceMap,
     module_name: &str,
 ) -> Result<(), MangroveError> {
     if let Err(found_err) = compile_internal(
@@ -317,7 +317,7 @@ pub fn compile<C>(
         module_path,
         resolved_program,
         externals,
-        &mut source_map,
+        source_map,
         module_name,
     ) {
         Err(found_err)
@@ -332,16 +332,12 @@ pub fn compile_internal<C>(
     module_path: &[String],
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
-    mut source_map: &mut SourceMap,
+    source_map: &mut SourceMap,
     module_name: &str,
 ) -> Result<(), MangroveError> {
-    let parsed_module = parse_module(relative_path, &mut source_map)?;
+    let parsed_module = parse_module(relative_path, source_map)?;
 
-    let main_module = prepare_main_module(
-        &mut resolved_program.state,
-        externals,
-        module_name,
-    )?;
+    let main_module = prepare_main_module(&mut resolved_program.state, externals, module_name)?;
 
     let main_path = module_path;
 
@@ -363,7 +359,7 @@ pub fn compile_internal<C>(
         base_path.to_owned(),
         Vec::from(main_path),
         &mut dependency_parser,
-        &mut source_map,
+        source_map,
     )?;
 
     resolve_program(

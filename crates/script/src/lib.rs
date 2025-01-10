@@ -28,6 +28,7 @@ pub struct SourceMapResource {
 }
 
 impl SourceMapResource {
+    #[must_use]
     pub fn base_path(&self) -> &Path {
         self.wrapper.source_map.base_path()
     }

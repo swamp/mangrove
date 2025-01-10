@@ -11,20 +11,20 @@ pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
     match err {
         MangroveError::IoError(_) => todo!(),
         MangroveError::DecoratedParseError(decorated_parse_error) => {
-            show_decorated_err(&decorated_parse_error, source_map)
+            show_decorated(decorated_parse_error, source_map);
         }
         MangroveError::ExecuteError(err) => show_execute_error(err, source_map),
         MangroveError::Other(_) => todo!(),
         MangroveError::ScriptResolveError(_) => todo!(),
         MangroveError::SemanticError(_) => todo!(),
-        MangroveError::ResolveError(resolve_err) => show_error(&resolve_err, source_map),
+        MangroveError::ResolveError(resolve_err) => show_error(resolve_err, source_map),
         MangroveError::DepLoaderError(_) => todo!(),
         MangroveError::SeqMapError(_) => todo!(),
     }
 }
 
-pub fn show_decorated_err(err: &DecoratedParseErr, source_map: &SourceMap) {
-    show_parse_error(&err.specific, &err.span, &source_map);
+pub fn show_decorated(err: &DecoratedParseErr, source_map: &SourceMap) {
+    show_parse_error(&err.specific, &err.span, source_map);
 }
 
 pub struct ErrorPlugin;

@@ -12,8 +12,7 @@ pub fn get_impl_func(
     struct_type_ref
         .borrow()
         .get_internal_member_function(name)
-        .expect(&format!("must have function {}", name))
-        .clone()
+        .unwrap_or_else(|| panic!("must have function {name}"))
 }
 
 pub fn get_impl_func_optional(

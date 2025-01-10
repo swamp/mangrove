@@ -72,16 +72,18 @@ impl ScriptLogic {
         }
     }
 
+    #[must_use]
     pub fn immutable_logic_value(&self) -> Value {
         self.logic_value_ref.borrow().clone()
     }
 
+    #[must_use]
     pub fn main_module(&self) -> ResolvedModuleRef {
         let root_module_path = &["logic".to_string()].to_vec();
 
         self.resolved_program
             .modules
-            .get(&root_module_path)
+            .get(root_module_path)
             .expect("logic module should exist in logic")
     }
 
@@ -134,10 +136,10 @@ impl ScriptLogic {
             GamepadMessage::Disconnected(_) => {}
             GamepadMessage::Activated(_) => {}
             GamepadMessage::ButtonChanged(gamepad_id, button, value) => {
-                self.button_changed(gamepad_id, button, value)
+                self.button_changed(*gamepad_id, button, value);
             }
             GamepadMessage::AxisChanged(gamepad_id, axis, value) => {
-                self.axis_changed(gamepad_id, axis, value)
+                self.axis_changed(gamepad_id, axis, value);
             }
         }
     }
@@ -173,7 +175,7 @@ impl ScriptLogic {
         }
     }
 
-    fn button_changed(&mut self, gamepad_id: &GamePadId, button: &Button, value: &ButtonValueType) {
+    fn button_changed(&mut self, gamepad_id: GamePadId, button: &Button, value: &ButtonValueType) {
         let script_button_value = {
             let input_module_ref = self.input_module.borrow();
             let button_str = match button {
@@ -207,7 +209,9 @@ impl ScriptLogic {
         };
 
         if let Some(found_fn) = &self.gamepad_button_changed_fn {
-            let gamepad_id_value = Value::Int(*gamepad_id as i32);
+            let gamepad_id_value = Value::Int(
+                i32::try_from(gamepad_id).expect("could not convert gamepad button to i32"),
+            );
             let button_value = Value::Float(Fp::from(*value));
 
             let fn_ref = found_fn.clone();
