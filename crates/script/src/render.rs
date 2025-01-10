@@ -267,7 +267,6 @@ impl GameAssetsWrapper {
 }
 
 pub fn register_color_struct_type(
-    types: &ResolvedProgramTypes,
     namespace: &mut ResolvedModuleNamespace,
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
@@ -276,25 +275,25 @@ pub fn register_color_struct_type(
 
     let r_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: types.float_type(),
+        field_type: ResolvedType::Float,
     };
     defined_fields.insert("r".to_string(), r_field)?;
 
     let g_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: types.float_type(),
+        field_type: ResolvedType::Float,
     };
     defined_fields.insert("g".to_string(), g_field)?;
 
     let b_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: types.float_type(),
+        field_type: ResolvedType::Float,
     };
     defined_fields.insert("b".to_string(), b_field)?;
 
     let a_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: types.float_type(),
+        field_type: ResolvedType::Float,
     };
     defined_fields.insert("a".to_string(), a_field)?;
 
@@ -317,25 +316,25 @@ pub fn register_color_struct_type(
             parameters: vec![
                 ResolvedTypeForParameter {
                     name: "r".to_string(),
-                    resolved_type: types.float_type(),
+                    resolved_type: ResolvedType::Float,
                     is_mutable: false,
                     node: None,
                 },
                 ResolvedTypeForParameter {
                     name: "g".to_string(),
-                    resolved_type: types.float_type(),
+                    resolved_type: ResolvedType::Float,
                     is_mutable: false,
                     node: None,
                 },
                 ResolvedTypeForParameter {
                     name: "b".to_string(),
-                    resolved_type: types.float_type(),
+                    resolved_type: ResolvedType::Float,
                     is_mutable: false,
                     node: None,
                 },
                 ResolvedTypeForParameter {
                     name: "a".to_string(),
-                    resolved_type: types.float_type(),
+                    resolved_type: ResolvedType::Float,
                     is_mutable: false,
                     node: None,
                 },
@@ -396,8 +395,8 @@ pub fn register_color_struct_type(
     Ok(color_struct_type_ref)
 }
 
-pub fn register_math_types(types: &ResolvedProgramTypes) -> MathTypes {
-    let int_type = types.int_type();
+pub fn register_math_types() -> MathTypes {
+    let int_type = ResolvedType::Int;
 
     let position_2_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
     let position_2_tuple_type_ref = Rc::new(position_2_tuple_type);
@@ -422,17 +421,15 @@ pub fn register_math_types(types: &ResolvedProgramTypes) -> MathTypes {
 }
 
 pub fn register_gfx_types(
-    types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
     external_functions: &mut ExternalFunctions<ScriptRenderContext>,
     math_types: &MathTypes,
     namespace: &mut ResolvedModuleNamespace,
 ) -> Result<GfxTypes, MangroveError> {
     let color_struct_ref =
-        register_color_struct_type(&types, namespace, state, external_functions)?;
+        register_color_struct_type(namespace, state, external_functions)?;
     let color_type = ResolvedType::Struct(color_struct_ref.clone());
     let sprite_params_struct_ref = register_gfx_sprite_params(
-        types,
         state,
         external_functions,
         namespace,
@@ -447,7 +444,6 @@ pub fn register_gfx_types(
 }
 
 pub fn register_gfx_sprite_params(
-    types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     namespace: &mut ResolvedModuleNamespace,
@@ -458,19 +454,19 @@ pub fn register_gfx_sprite_params(
     let mut defined_fields = SeqMap::new();
     let flip_x_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: types.bool_type(),
+        field_type: ResolvedType::Bool,
     };
     defined_fields.insert("flip_x".to_string(), flip_x_field)?;
 
     let flip_y_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: types.bool_type(),
+        field_type: ResolvedType::Bool,
     };
     defined_fields.insert("flip_y".to_string(), flip_y_field)?;
 
     let rotate_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: types.int_type(),
+        field_type: ResolvedType::Int,
     };
     defined_fields.insert("rotate".to_string(), rotate_field)?;
 
@@ -482,7 +478,7 @@ pub fn register_gfx_sprite_params(
 
     let scale_field = ResolvedAnonymousStructFieldType {
         identifier: None,
-        field_type: types.int_type(),
+        field_type: ResolvedType::Int,
     };
     defined_fields.insert("scale".to_string(), scale_field)?;
 
@@ -541,7 +537,6 @@ pub fn register_gfx_sprite_params(
 }
 
 pub fn register_gfx_struct_value_with_members(
-    types: &ResolvedProgramTypes,
     mut state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     mut namespace: &mut ResolvedModuleNamespace,
@@ -550,8 +545,8 @@ pub fn register_gfx_struct_value_with_members(
     let gfx_value_mut = Rc::new(RefCell::new(gfx_value.clone()));
     let assets_general_type = ResolvedType::Struct(gfx_struct_type.clone());
 
-    let math_types = register_math_types(&types);
-    let gfx_types = register_gfx_types(&types, &mut state, externals, &math_types, &mut namespace)?;
+    let math_types = register_math_types();
+    let gfx_types = register_gfx_types(&mut state, externals, &math_types, &mut namespace)?;
 
     let mut_self_parameter = ResolvedTypeForParameter {
         name: "self".to_string(),
@@ -560,7 +555,7 @@ pub fn register_gfx_struct_value_with_members(
         node: None,
     };
 
-    let string_type = types.string_type();
+    let string_type = ResolvedType::String;
 
     let material_handle_type_ref = namespace
         .get_struct("MaterialHandle")
@@ -621,7 +616,7 @@ pub fn register_gfx_struct_value_with_members(
                 size_param.clone(),
             ])
                 .to_vec(),
-            return_type: Box::from(types.int_type()),
+            return_type: Box::from(ResolvedType::Int),
         },
         id: sprite_external_fn_id,
     };
@@ -663,7 +658,7 @@ pub fn register_gfx_struct_value_with_members(
                 sprite_params_parameter.clone(),
             ])
                 .to_vec(),
-            return_type: Box::from(types.int_type()),
+            return_type: Box::from(ResolvedType::Int),
         },
         id: sprite_ex_external_fn_id,
     };
@@ -733,7 +728,7 @@ pub fn register_gfx_struct_value_with_members(
                 color_parameter.clone(),
             ])
                 .to_vec(),
-            return_type: Box::from(types.int_type()),
+            return_type: Box::from(ResolvedType::Int),
         },
         id: text_external_fn_id,
     };
@@ -769,7 +764,7 @@ pub fn register_gfx_struct_value_with_members(
     // frame
     let frame = ResolvedTypeForParameter {
         name: Default::default(),
-        resolved_type: types.int_type(),
+        resolved_type: ResolvedType::Int,
         is_mutable: false,
         node: None,
     };
@@ -789,7 +784,7 @@ pub fn register_gfx_struct_value_with_members(
                 frame.clone(),
             ])
                 .to_vec(),
-            return_type: Box::from(types.int_type()),
+            return_type: Box::from(ResolvedType::Int),
         },
         id: sprite_atlas_frame_external_fn_id,
     };
@@ -839,7 +834,7 @@ pub fn register_gfx_struct_value_with_members(
                 sprite_params_parameter,
             ])
                 .to_vec(),
-            return_type: Box::from(types.int_type()),
+            return_type: Box::from(ResolvedType::Int),
         },
         id: sprite_atlas_frame_ex_external_fn_id,
     };
@@ -877,7 +872,6 @@ pub fn register_gfx_struct_value_with_members(
 }
 
 pub fn register_asset_struct_value_with_members(
-    types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     namespace: &mut ResolvedModuleNamespace,
@@ -898,7 +892,7 @@ pub fn register_asset_struct_value_with_members(
         node: None,
     };
 
-    let string_type = types.string_type();
+    let string_type = ResolvedType::String;
     let asset_name_parameter = ResolvedTypeForParameter {
         name: "asset_name".to_string(),
         resolved_type: string_type.clone(),
@@ -968,7 +962,7 @@ pub fn register_asset_struct_value_with_members(
         },
     )?;
 
-    let int_type = types.int_type();
+    let int_type = ResolvedType::Int;
     let size_int_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
     let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
 
@@ -1163,7 +1157,6 @@ pub fn create_render_module(
         )?;
 
     let assets_struct_value = register_asset_struct_value_with_members(
-        &resolved_program.types,
         &mut resolved_program.state,
         &mut externals,
         &mut mangrove_render_module.namespace.borrow_mut(),
@@ -1173,7 +1166,6 @@ pub fn create_render_module(
     )?;
 
     let gfx_struct_value = register_gfx_struct_value_with_members(
-        &resolved_program.types,
         &mut resolved_program.state,
         &mut externals,
         &mut mangrove_render_module.namespace.borrow_mut(),

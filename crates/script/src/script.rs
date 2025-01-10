@@ -219,7 +219,6 @@ pub fn uvec2_like(v: &Value) -> Result<UVec2, ValueError> {
 }
 
 fn prepare_main_module<C>(
-    types: &ResolvedProgramTypes,
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<C>,
     module_name: &str,
@@ -242,7 +241,7 @@ fn prepare_main_module<C>(
         signature: FunctionTypeSignature {
             first_parameter_is_self: false,
             parameters: [any_parameter].to_vec(),
-            return_type: Box::from(types.unit_type()),
+            return_type: Box::from(ResolvedType::Unit),
         },
         id: print_id,
     };
@@ -339,7 +338,6 @@ pub fn compile_internal<C>(
     let parsed_module = parse_module(relative_path, &mut source_map)?;
 
     let main_module = prepare_main_module(
-        &resolved_program.types,
         &mut resolved_program.state,
         externals,
         module_name,
@@ -369,7 +367,6 @@ pub fn compile_internal<C>(
     )?;
 
     resolve_program(
-        &resolved_program.types,
         &mut resolved_program.state,
         &mut resolved_program.modules,
         source_map,

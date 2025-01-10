@@ -456,15 +456,6 @@ impl Plugin for ScriptLogicPlugin {
             constants: Constants { values: vec![] },
             script_context: ScriptLogicContext {},
             resolved_program: ResolvedProgram {
-                types: ResolvedProgramTypes {
-                    int_type: Rc::new(ResolvedIntType),
-                    float_type: Rc::new(ResolvedFloatType),
-                    string_type: Rc::new(ResolvedStringType),
-                    bool_type: Rc::new(ResolvedBoolType),
-                    unit_type: Rc::new(ResolvedUnitType),
-                    none_type: Rc::new(ResolvedNoneType),
-                    exclusive_range_type: Rc::new(ResolvedExclusiveRangeType),
-                },
                 state: ResolvedProgramState {
                     array_types: vec![],
                     number: 0,
