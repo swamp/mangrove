@@ -14,7 +14,6 @@ mod modules;
 pub mod render;
 mod script;
 pub mod source_map;
-pub mod temp;
 mod util;
 
 #[derive(Message, Debug)]

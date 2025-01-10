@@ -7,7 +7,6 @@ use mangrove_script::err::ErrorPlugin;
 use mangrove_script::logic::ScriptLogicPlugin;
 use mangrove_script::render::ScriptRenderPlugin;
 use mangrove_script::source_map::SourceMapPlugin;
-use mangrove_script::temp::FlushRenderPlugin;
 use mangrove_script::ScriptPlugin;
 use swamp::prelude::SwampDefaultPlugins;
 use swamp::prelude::*;
@@ -20,11 +19,10 @@ fn main() {
             title: "mangrove".to_string(),
             requested_surface_size: UVec2::new(RESOLUTION.0 * 6, RESOLUTION.1 * 6),
             minimal_surface_size: UVec2::new(RESOLUTION.0, RESOLUTION.1),
-            fullscreen: false,
+            mode: ScreenMode::WindowedOnTop,
         })
         .add_plugins(DefaultPlugins)
         .add_plugins(SwampDefaultPlugins)
-        .add_plugins(FlushRenderPlugin)
         .add_plugins(SourceMapPlugin)
         .add_plugins(ErrorPlugin)
         .add_plugins(ScriptPlugin)

@@ -14,8 +14,8 @@ swamp = { path = "../../../swamp/crates/swamp", version="0.0.14-alpha.1" }
 swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.10" }
 #swamp-script = "0.0.9"
 
-limnus-message = "0.0.12"
-limnus-gamepad = "0.0.12"
+limnus-message = "0.0.13"
+limnus-gamepad = "0.0.13"
 
 tracing = "0.1.41"
 seq-map = "0.0.13"

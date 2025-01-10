@@ -12,7 +12,7 @@ mangrove-script = { path = "../script", version = "0.0.5-alpha.1" }
 swamp = { path = "../../../swamp/crates/swamp", version = "0.0.14-alpha.1" }
 #swamp = "0.0.14-alpha.2"
 
-limnus-message = "0.0.12"
+limnus-message = "0.0.13"
 
 message-channel = "0.0.1"
 
