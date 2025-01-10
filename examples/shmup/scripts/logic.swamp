@@ -274,7 +274,7 @@ impl Logic {
 
         cooldown = self.cooldown
 
-        print('cooldown: {cooldown ?? -1} is the value \n\xF0\x9F\x90\x8A\u(1F40A)NEXT LINE')
+        print('cooldown: {cooldown ?? -1} is the value \n\xF0\x9F\x90\x8A\u(1F40A)NEXT LINE (🐊)')
 
         if cooldown? {
         }
