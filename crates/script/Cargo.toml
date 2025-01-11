@@ -15,6 +15,7 @@ swamp-script = "0.0.11"
 
 limnus-message = "0.0.13"
 limnus-gamepad = "0.0.13"
+limnus-clock = "0.0.13"
 
 tracing = "0.1.41"
 seq-map = "0.0.13"
