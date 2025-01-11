@@ -19,7 +19,6 @@ struct Render {
     background_material: mangrove::render::MaterialHandle,
     font_and_material: mangrove::render::FontAndMaterialHandle,
     tick: Int,
-    background_x: Float,
 }
 
 
@@ -43,7 +42,6 @@ impl Render {
             background_material: assets.material_png('blue_nebula_04-512x512'),
             font_and_material: assets.bm_font('font/hackman'),
             tick: 0,
-            background_x: 0.0,
         }
     }
 
@@ -80,8 +78,7 @@ impl Render {
             _ => 1,
         }
 
-        self.background_x += 0.5
-        self.background_x = self.background_x % 512.0
+        background_x = (logic.tick_count.to_float() * 0.5).floor() % 512
 
         score_string = Render::fill_zeroes('{logic.score}', 6)
 
@@ -89,7 +86,7 @@ impl Render {
 
         gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
             color: Color::new(1.0, 1.0, 1.0, 0.5),
-            uv: (self.background_x.floor(), 0),
+            uv: (background_x, 0),
             ..
         })
 
