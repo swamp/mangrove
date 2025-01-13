@@ -9,7 +9,7 @@ use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_clock::Clock;
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
-use monotonic_time_rs::{Millis, MillisDuration, MonotonicClock};
+use monotonic_time_rs::{Millis, MillisDuration};
 use std::cell::RefCell;
 use std::rc::Rc;
 use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
