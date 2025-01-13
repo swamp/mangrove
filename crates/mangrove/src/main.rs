@@ -13,7 +13,10 @@ use swamp::prelude::*;
 
 const OLD_SCHOOL_RESOLUTION_LOW: (u16, u16) = (320, 180);
 #[allow(dead_code)]
-const OLD_SCHOOL_RESOLUTION_HIGH: (u16, u16) = (OLD_SCHOOL_RESOLUTION_LOW.0 * 2, OLD_SCHOOL_RESOLUTION_LOW.1 * 2);
+const OLD_SCHOOL_RESOLUTION_HIGH: (u16, u16) = (
+    OLD_SCHOOL_RESOLUTION_LOW.0 * 2,
+    OLD_SCHOOL_RESOLUTION_LOW.1 * 2,
+);
 #[allow(dead_code)]
 const INTERMEDIATE_RESOLUTION: (u16, u16) = (384, 216);
 

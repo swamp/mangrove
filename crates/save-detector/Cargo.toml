@@ -9,8 +9,8 @@ repository = "https://github.com/swamp/mangrove"
 [dependencies]
 mangrove-script = { path = "../script", version = "0.0.6" }
 
-swamp = "0.0.15"
-# swamp = { path = "../../../swamp/crates/swamp", version = "0.0.15" }
+#swamp = "0.0.15"
+swamp = { path = "../../../swamp/crates/swamp", version = "0.0.15" }
 
 limnus-message = "0.0.15"
 
