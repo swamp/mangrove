@@ -135,12 +135,12 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
 }
 
 pub fn create_default_color_value(color_struct_type_ref: ResolvedStructTypeRef) -> Value {
-    let mut fields = Vec::new();
-
-    fields.push(Value::Float(Fp::one())); // red
-    fields.push(Value::Float(Fp::one())); // green
-    fields.push(Value::Float(Fp::one())); // blue
-    fields.push(Value::Float(Fp::one())); // alpha
+    let fields = vec![
+        Value::Float(Fp::one()), // red
+        Value::Float(Fp::one()), // green
+        Value::Float(Fp::one()), // blue
+        Value::Float(Fp::one()), // alpha
+    ];
 
     Value::Struct(color_struct_type_ref, value_to_value_ref(&fields))
 }
@@ -158,23 +158,23 @@ pub fn create_default_sprite_params(
     color_type: &ResolvedStructTypeRef,
     math_types: &MathTypes,
 ) -> Value {
-    let mut fields = Vec::new();
-
-    fields.push(Value::Bool(false)); // flip_x
-    fields.push(Value::Bool(false)); // flip_y
-    fields.push(Value::Int(0)); // rotation
-    fields.push(create_default_color_value(color_type.clone()));
-    fields.push(Value::Int(1)); // scale
-    fields.push(Value::Tuple(
-        // texture_position (uv)
-        math_types.pos2_tuple_type.clone(),
-        value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
-    ));
-    fields.push(Value::Tuple(
-        // texture_size
-        math_types.size2_tuple_type.clone(),
-        value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
-    ));
+    let fields = vec![
+        Value::Bool(false), // flip_x
+        Value::Bool(false), // flip_y
+        Value::Int(0),      // rotation
+        create_default_color_value(color_type.clone()),
+        Value::Int(1), // scale
+        Value::Tuple(
+            // texture_position (uv)
+            math_types.pos2_tuple_type.clone(),
+            value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
+        ),
+        Value::Tuple(
+            // texture_size
+            math_types.size2_tuple_type.clone(),
+            value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
+        ),
+    ];
 
     Value::Struct(sprite_params_struct_type_ref, value_to_value_ref(&fields))
 }
@@ -351,7 +351,7 @@ pub fn compile_internal<C>(
     let mut dependency_parser = DependencyParser::new();
     dependency_parser.add_ast_module(Vec::from(main_path), parsed_module);
 
-    for (module_path, _module_ref) in &resolved_program.modules.modules {
+    for module_path in resolved_program.modules.modules.keys() {
         dependency_parser.add_resolved_module(module_path.clone());
     }
 

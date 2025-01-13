@@ -15,9 +15,11 @@ use std::rc::Rc;
 use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
 use swamp_script::prelude::*;
 
+/// # Panics
+///
 pub fn logic_tick(
     mut script: LoReM<ScriptLogic>,
-    source_map: Re<SourceMapResource>,
+    _source_map: Re<SourceMapResource>,
     clock: LoRe<Clock>,
     error: Re<ErrorResource>,
 ) {
@@ -27,7 +29,7 @@ pub fn logic_tick(
 
     script.next_time += MillisDuration::from_millis(16);
 
-    let _lookup: &dyn SourceMapLookup = &source_map.wrapper;
+    //let lookup: &dyn SourceMapLookup = &source_map.wrapper;
     if error.has_errors {
         return;
     }
@@ -66,7 +68,6 @@ impl ScriptLogic {
         external_functions: ExternalFunctions<ScriptLogicContext>,
         constants: Constants,
         resolved_program: ResolvedProgram,
-        //axis_enum_type: ResolvedEnumTypeRef,
         input_module: ResolvedModuleRef,
         now: Millis,
     ) -> Self {
@@ -89,6 +90,8 @@ impl ScriptLogic {
         self.logic_value_ref.borrow().clone()
     }
 
+    /// # Panics
+    ///
     #[must_use]
     pub fn main_module(&self) -> ResolvedModuleRef {
         let root_module_path = &["logic".to_string()].to_vec();
@@ -99,6 +102,8 @@ impl ScriptLogic {
             .expect("logic module should exist in logic")
     }
 
+    /// # Errors
+    ///
     pub fn tick(
         &mut self,
         debug_source_map: Option<&dyn SourceMapLookup>,
@@ -148,15 +153,15 @@ impl ScriptLogic {
             GamepadMessage::Disconnected(_) => {}
             GamepadMessage::Activated(_) => {}
             GamepadMessage::ButtonChanged(gamepad_id, button, value) => {
-                self.button_changed(*gamepad_id, button, value);
+                self.button_changed(*gamepad_id, *button, *value);
             }
             GamepadMessage::AxisChanged(gamepad_id, axis, value) => {
-                self.axis_changed(gamepad_id, axis, value);
+                self.axis_changed(*gamepad_id, *axis, *value);
             }
         }
     }
 
-    fn axis_changed(&mut self, gamepad_id: &GamePadId, axis: &Axis, value: &AxisValueType) {
+    fn axis_changed(&mut self, gamepad_id: GamePadId, axis: Axis, value: AxisValueType) {
         let script_axis_value = {
             let input_module_ref = self.input_module.borrow();
             let axis_str = match axis {
@@ -173,12 +178,12 @@ impl ScriptLogic {
                 .expect("axis")
                 .clone();
 
-            Value::EnumVariantSimple(variant.clone())
+            Value::EnumVariantSimple(variant)
         };
 
         if let Some(found_fn) = &self.gamepad_axis_changed_fn {
-            let gamepad_id_value = Value::Int(*gamepad_id as i32);
-            let axis_value = Value::Float(Fp::from(*value));
+            let gamepad_id_value = Value::Int(gamepad_id as i32);
+            let axis_value = Value::Float(Fp::from(value));
 
             let fn_ref = found_fn.clone();
 
@@ -187,7 +192,7 @@ impl ScriptLogic {
         }
     }
 
-    fn button_changed(&mut self, gamepad_id: GamePadId, button: &Button, value: &ButtonValueType) {
+    fn button_changed(&mut self, gamepad_id: GamePadId, button: Button, value: ButtonValueType) {
         let script_button_value = {
             let input_module_ref = self.input_module.borrow();
             let button_str = match button {
@@ -217,14 +222,14 @@ impl ScriptLogic {
                 .expect("button name failed")
                 .clone();
 
-            Value::EnumVariantSimple(variant.clone())
+            Value::EnumVariantSimple(variant)
         };
 
         if let Some(found_fn) = &self.gamepad_button_changed_fn {
             let gamepad_id_value = Value::Int(
                 i32::try_from(gamepad_id).expect("could not convert gamepad button to i32"),
             );
-            let button_value = Value::Float(Fp::from(*value));
+            let button_value = Value::Float(Fp::from(value));
 
             let fn_ref = found_fn.clone();
 
@@ -237,6 +242,8 @@ impl ScriptLogic {
     }
 }
 
+/// # Errors
+///
 pub fn input_module(
     resolve_state: &mut ResolvedProgramState,
 ) -> Result<(ResolvedModule, ResolvedEnumTypeRef, ResolvedEnumTypeRef), ResolveError> {
@@ -248,7 +255,7 @@ pub fn input_module(
 
         let parent = ResolvedEnumType {
             name: ResolvedLocalTypeIdentifier(ResolvedNode {
-                span: Default::default(),
+                span: Span::default(),
             }),
             assigned_name: "Axis".to_string(),
             module_path: Vec::from(module_path.clone()),
@@ -264,7 +271,7 @@ pub fn input_module(
             let variant = ResolvedEnumVariantType::new(
                 axis_enum_type_ref.clone(),
                 ResolvedLocalTypeIdentifier(ResolvedNode {
-                    span: Default::default(),
+                    span: Span::default(),
                 }),
                 variant_name,
                 ResolvedEnumVariantContainerType::Nothing,
@@ -283,10 +290,10 @@ pub fn input_module(
                                                                    // let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
         let parent = ResolvedEnumType {
             name: ResolvedLocalTypeIdentifier(ResolvedNode {
-                span: Default::default(),
+                span: Span::default(),
             }),
             assigned_name: "Button".to_string(),
-            module_path: Vec::from(module_path.clone()),
+            module_path: Vec::from(module_path),
             number: button_enum_type_id,
         };
         let parent_ref = Rc::new(parent);
@@ -318,7 +325,7 @@ pub fn input_module(
                 owner: button_enum_type_ref.clone(),
                 data: ResolvedEnumVariantContainerType::Nothing,
                 name: ResolvedLocalTypeIdentifier(ResolvedNode {
-                    span: Default::default(),
+                    span: Span::default(),
                 }),
                 assigned_name: button_variant_name.to_string(),
                 number: variant_type_id,
@@ -336,6 +343,10 @@ pub fn input_module(
     Ok((module, axis_enum_type_ref, button_enum_type_ref))
 }
 
+/// # Errors
+///
+/// # Panics
+///
 pub fn boot(source_map: &mut SourceMapResource, now: Millis) -> Result<ScriptLogic, MangroveError> {
     let mut resolved_program = ResolvedProgram::new();
     let mut external_functions = ExternalFunctions::<ScriptLogicContext>::new();
@@ -349,7 +360,7 @@ pub fn boot(source_map: &mut SourceMapResource, now: Millis) -> Result<ScriptLog
 
     compile(
         base_path.as_path(),
-        "logic.swamp".as_ref(),
+        "logic.swamp",
         &["logic".to_string()],
         &mut resolved_program,
         &mut external_functions,
@@ -394,17 +405,15 @@ pub fn boot(source_map: &mut SourceMapResource, now: Millis) -> Result<ScriptLog
         None,
     )?;
 
-    let logic_struct_type_ref = if let Value::Struct(struct_type_ref, _) = &logic_value {
-        struct_type_ref
-    } else {
+    let Value::Struct(logic_struct_type_ref, _) = &logic_value else {
         return Err(MangroveError::Other("needs to be logic struct".to_string()));
     };
 
-    let logic_fn = get_impl_func(&logic_struct_type_ref, "tick");
+    let logic_fn = get_impl_func(logic_struct_type_ref, "tick");
     let gamepad_axis_changed_fn =
-        get_impl_func_optional(&logic_struct_type_ref, "gamepad_axis_changed");
+        get_impl_func_optional(logic_struct_type_ref, "gamepad_axis_changed");
     let gamepad_button_changed_fn =
-        get_impl_func_optional(&logic_struct_type_ref, "gamepad_button_changed");
+        get_impl_func_optional(logic_struct_type_ref, "gamepad_button_changed");
 
     // Convert it to a mutable (reference), so it can be mutated in update ticks
     let logic_value_ref = Rc::new(RefCell::new(logic_value));
@@ -417,8 +426,7 @@ pub fn boot(source_map: &mut SourceMapResource, now: Millis) -> Result<ScriptLog
         external_functions,
         constants,
         resolved_program,
-        // axis_enum_type,
-        input_module_ref.clone(),
+        input_module_ref,
         now,
     ))
 }
@@ -459,10 +467,10 @@ impl Plugin for ScriptLogicPlugin {
         // HACK: Just add a completely zeroed out ScriptLogic and wait for reload message.
         // TODO: Should not try to call updates with params that are not available yet.
         app.insert_local_resource(ScriptLogic {
-            logic_value_ref: Rc::new(RefCell::new(Default::default())),
+            logic_value_ref: Rc::new(RefCell::new(Value::default())),
             logic_fn: Rc::new(ResolvedInternalFunctionDefinition {
-                body: ResolvedExpression::Break(Default::default()),
-                name: ResolvedLocalIdentifier(Default::default()),
+                body: ResolvedExpression::Break(ResolvedNode::default()),
+                name: ResolvedLocalIdentifier(ResolvedNode::default()),
                 signature: FunctionTypeSignature {
                     first_parameter_is_self: false,
                     parameters: vec![],
@@ -481,12 +489,12 @@ impl Plugin for ScriptLogicPlugin {
                     number: 0,
                     external_function_number: 0,
                 },
-                modules: Default::default(),
+                modules: ResolvedModules::default(),
             },
             input_module: Rc::new(RefCell::new(ResolvedModule {
                 definitions: vec![],
                 expression: None,
-                namespace: Rc::new(RefCell::new(ResolvedModuleNamespace::new(&vec![]))),
+                namespace: Rc::new(RefCell::new(ResolvedModuleNamespace::new(&[]))),
             })),
             next_time: now,
         });

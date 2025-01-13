@@ -269,6 +269,10 @@ impl GameAssetsWrapper {
     }
 }
 
+/// # Errors
+///
+/// # Panics
+///
 #[allow(clippy::too_many_lines)]
 pub fn register_color_struct_type(
     namespace: &mut ResolvedModuleNamespace,
@@ -449,6 +453,8 @@ pub fn register_gfx_types(
     })
 }
 
+/// # Errors
+///
 pub fn register_gfx_sprite_params(
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
@@ -1050,8 +1056,9 @@ pub struct ScriptRender {
 }
 
 impl ScriptRender {
+    /// # Errors
+    ///
     pub fn new(
-        //resource_storage: &mut ResourceStorage,
         render_value_ref: ValueRef,
         render_struct_type_ref: &ResolvedStructTypeRef,
         externals: ExternalFunctions<ScriptRenderContext>,
@@ -1069,6 +1076,8 @@ impl ScriptRender {
         })
     }
 
+    /// # Errors
+    ///
     pub fn render(
         &mut self,
         wgpu_render: &mut Render,
@@ -1100,6 +1109,8 @@ impl ScriptRender {
     }
 }
 
+/// # Errors
+///
 pub fn create_render_module(
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
@@ -1199,6 +1210,10 @@ pub fn create_render_module(
     ))
 }
 
+/// # Errors
+///
+/// # Panics
+///
 pub fn boot(
     resource_storage: &mut ResourceStorage,
     logic_main_module: &ResolvedModuleRef,
@@ -1300,6 +1315,8 @@ pub fn boot(
     )
 }
 
+/// # Panics
+///
 pub fn render_tick(
     mut script: LoReM<ScriptRender>,
     logic: LoRe<ScriptLogic>,

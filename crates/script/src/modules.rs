@@ -17,7 +17,7 @@ pub struct ScriptModulesPlugin;
 impl Plugin for ScriptModulesPlugin {
     fn build(&self, app: &mut App) {
         let script_modules = ScriptModules {
-            modules: Default::default(),
+            modules: ResolvedModules::default(),
         };
         app.insert_local_resource(script_modules);
     }

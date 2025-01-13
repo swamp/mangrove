@@ -6,7 +6,7 @@ use limnus_message::prelude::Message;
 use mangrove_script::{ErrorResource, ScriptMessage};
 use message_channel::{Channel, Receiver};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::{Duration, Instant};
 use swamp::prelude::{App, LoReM, LocalResource, MsgM, Plugin, ReM, UpdatePhase};
 
@@ -18,8 +18,13 @@ pub struct FileWatcher {
 
 impl FileWatcher {}
 
+/// # Errors
+///
+/// # Panics
+///
+///
 pub fn start_watch(
-    watch_path: PathBuf,
+    watch_path: &Path,
 ) -> notify::Result<(RecommendedWatcher, Receiver<SaveDetectorMessage>)> {
     let (sender, receiver) = Channel::create();
 
@@ -36,11 +41,11 @@ pub fn start_watch(
                 last_event = now;
             }
         }
-        Err(e) => println!("watch error: {:?}", e),
+        Err(e) => println!("watch error: {e:?}"),
     })?;
 
     // Start watching the directory
-    watcher.watch(&watch_path, RecursiveMode::Recursive)?;
+    watcher.watch(watch_path, RecursiveMode::Recursive)?;
 
     Ok((watcher, receiver))
 }
@@ -66,8 +71,7 @@ pub struct SaveDetectorPlugin;
 impl Plugin for SaveDetectorPlugin {
     fn build(&self, app: &mut App) {
         app.create_message_type::<SaveDetectorMessage>();
-        let (watcher, receiver) =
-            start_watch(Path::new("scripts/").to_path_buf()).expect("TODO: panic message");
+        let (watcher, receiver) = start_watch(Path::new("scripts/")).expect("TODO: panic message");
 
         let file_watcher = FileWatcher { receiver, watcher };
         app.insert_local_resource(file_watcher);
