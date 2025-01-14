@@ -21,6 +21,14 @@ struct Shot {
 struct Player {
     fire: Bool,
     fire_cooldown: Int,
+    assigned_ship_index: std::SparseId?,
+    direction: Position,
+}
+
+struct Ship {
+    pos: Position,
+    direction: Position,
+    size: Size,
 }
 
 enum EnemyType {
@@ -73,8 +81,7 @@ struct BonusItem {
 
 struct Logic {
     tick_count: Int, /// how many ticks have passed
-    direction: Float, /// which direction the player ship
-    pos: Position, /// the position of the player ship
+    ships: std::Sparse<Ship>,
     shots: std::Sparse<Shot>,
     enemies: std::Sparse<Enemy>,
     explosions: std::Sparse<Explosion>,
@@ -143,14 +150,30 @@ impl Logic {
         }
     }
 
+    fn check_bonus_vs_ships(mut self) {
+        for bonus_item_id, bonus_item in self.bonus_items {
+            bonus_item_rect = Rect { pos: Position { x: bonus_item.pos.x, y: bonus_item.pos.y }, size: Size { width: 1.0, height: 2.0 } }
+
+            for ships in self.ships {
+                ship_rect = Rect { pos: ships.pos, size: ships.size }
+                if !bonus_item_rect.intersects(ship_rect) {
+                    continue
+                }
+                self.bonus_items.remove(bonus_item_id)
+            }
+        }
+    }
+
     fn tick_explosions(mut self) {
         for explosion_id, mut explosion in self.explosions {
             // This is just to show off the guard expression syntax
-            | explosion.tick >= 30 -> 
+            | explosion.tick >= 30 -> {
                 self.explosions.remove(explosion_id)
+                0.0
+                }
             | _ -> {
                 explosion.tick += 1
-                explosion.pos.x -= 1.5
+                explosion.pos.x += 0.9
             }
         }
     }
@@ -179,13 +202,29 @@ impl Logic {
 
     fn check_player_input(mut self) {
         for mut player in self.players {
-            if player.fire && player.fire_cooldown == 0 {
-                self.shots.add(Shot {
-                    x: self.pos.x + 12.0, 
-                    y: self.pos.y + 4.0,
-                })
-                player.fire_cooldown = self.cooldown_settings[ 1 ]
-                self.cooldown = player.fire_cooldown
+            if player.fire && player.assigned_ship_index == none {
+                // continue
+                // HACK
+                ship2 = Ship {
+                    pos: Position { x: 20.0, y: 80.0 },
+                    direction: Position { x: 0.0, y: 0.0 },
+                    size: Size { width: 16.0, height: 16.0 },
+                }
+                ship_id = self.ships.add(ship2)
+                player.assigned_ship_index = ship_id
+            }
+            if ship_index = player.assigned_ship_index? {
+                ship = self.ships[ship_index]
+                if ship? {
+                    if player.fire && player.fire_cooldown == 0 {
+                        self.shots.add(Shot {
+                            x: ship.pos.x + 12.0, 
+                            y: ship.pos.y + 4.0,
+                        })
+                        player.fire_cooldown = self.cooldown_settings[ 1 ]
+                        self.cooldown = player.fire_cooldown
+                    }
+                }
             }
         }
     }
@@ -260,14 +299,34 @@ impl Logic {
         position.y = position.y.clamp(SHIP_Y_MARGIN, SCREEN_HEIGHT_F - SHIP_Y_MARGIN)
     }
 
+    fn move_ships(mut self) {
+        for mut ship in self.ships {
+            self.move_in_y_with_direction(mut ship.pos, ship.direction)
+        }
+    }
+
+    fn player_input_to_ship_direction(mut self, player: Player) {
+        if ship_index = player.assigned_ship_index? {
+            mut ship = self.ships[ship_index]
+            if ship? {
+//                ship.direction = player.direction
+            } else {
+                print('ship not found')
+            }
+        }
+    }
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.tick_count += 1
 
+        for player in self.players {
+          //  self.player_input_to_ship_direction(player)
+        }
+
         z = Something::new(5)
         a = some_utility_function(5)
 
-        Logic::move_in_y_with_direction(mut self.pos, self.direction)
+        //self.move_ships()
 
         if current_cooldown = self.cooldown? {
         }
@@ -279,7 +338,7 @@ impl Logic {
         if cooldown? {
         }
 
-        if self.tick_count % 157 == 0 {
+        if self.tick_count % 257 == 0 {
             self.create_formation()
         }
 
@@ -310,6 +369,7 @@ impl Logic {
 
         self.tick_explosions()
         self.tick_score_bonus()
+        self.check_bonus_vs_ships()
         self.tick_bonus_items()
         self.check_shots_vs_enemies()
         self.check_player_input()
@@ -323,9 +383,12 @@ impl Logic {
 
     /// Called by the mangrove engine when a gamepad axis changes
     fn gamepad_axis_changed(mut self, player_id: Int, axis: input::Axis, value: Float) {
-        match axis {
-            LeftStickY => self.direction = value * 1.1,
-            _ => {},
+        mut player = self.players[player_id]
+        if new_player = player? { // BUG: does not keep its mutability
+            match axis {
+                LeftStickY => new_player.direction.y = value,
+                _ => {},
+            }
         }
     }
 
@@ -348,14 +411,13 @@ fn main() -> Logic {
 
     Logic {
         tick_count: 0,
-        direction: 0.0,
-        pos: STARTING_POS,
         shots: std::Sparse<Shot>::new(),
         enemies: std::Sparse<Enemy>::new(),
         explosions: std::Sparse<Explosion>::new(),
         score_bonus: std::Sparse<ScoreBonus>::new(),
         bonus_items: std::Sparse<BonusItem>::new(),
-        players: [ 0: Player { fire: false, fire_cooldown: 0 } ],
+        players: [ 0: Player { fire: false, fire_cooldown: 0, assigned_ship_index: none, direction: Position { x: 0.0, y: 0.0 } } ],
+        ships: std::Sparse<Ship>::new(),
         cooldown_settings: [ 10, FIRE_COOLDOWN, 30 ],
         cooldown: none,
         formations: [],

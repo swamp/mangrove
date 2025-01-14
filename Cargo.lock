@@ -882,8 +882,6 @@ checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 [[package]]
 name = "eira"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2762ee978f04835cc6b03265f60b8ea343cd8e4095be78a14cbc8ed72d9331d8"
 dependencies = [
  "yansi",
 ]
@@ -3741,8 +3739,6 @@ dependencies = [
 [[package]]
 name = "swamp-script"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cd78a48f0e7ea11c6daa76d95ca478e08be52afe28c48296607a51722807e36"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3760,8 +3756,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-analyzer"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5008742d5c7e38d26e500b69f872499f31de44be6b41a6cf034cb6ba08ff21d5"
 dependencies = [
  "seq-map",
  "seq-set 0.0.2",
@@ -3774,14 +3768,10 @@ dependencies = [
 [[package]]
 name = "swamp-script-ast"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4f0d9652372105604e836167d2f3638ac0d6dc1611d4272b3e3a7f67abbdba0"
 
 [[package]]
 name = "swamp-script-core"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "006db7b08f450a14d367f268cfeb18e53eb9520f705b025990e46734b7b2e821"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3793,8 +3783,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-dep-loader"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33d99e15b292684faa53d01621b652688fa142993dacd6a9cf4af7d177bbf6fa"
 dependencies = [
  "seq-map",
  "swamp-script-ast",
@@ -3806,8 +3794,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-error-report"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37519043cf0a4f0f79ac065e5f04a4a53f99a85e16565d15c0652e1b579a8062"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
@@ -3820,8 +3806,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-eval"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "958562d22b52ab29e69ff3c2694b6b34d1b8bf1ff0c6605c20449cbbcecad520"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3836,8 +3820,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-eval-loader"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7d378a3b8a44cc3c345a29c8b9ea6cfe369d125b89953affdfe237323df6c55"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-ast",
@@ -3850,8 +3832,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-parser"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d88adc9d1b10e5a6945fd5d479610576f13bd9e37164b061f8aa4b04be8f4fa"
 dependencies = [
  "pest",
  "pest_derive",
@@ -3862,8 +3842,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-semantic"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a123748f113f9f1d4ccaeb19270fe15465c9a814b171503961781dbef93edb9"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3874,8 +3852,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-source-map"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0575e5b2099e892e085c8ed4323eac9101bce2b938b1546ad7ab20b42878888"
 dependencies = [
  "pathdiff",
  "seq-map",
@@ -3886,8 +3862,6 @@ dependencies = [
 [[package]]
 name = "swamp-script-std"
 version = "0.0.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a243e9e64fcb757cfccb44a26cbcf4f19581889156adad9c4a80e6edcee685e1"
 dependencies = [
  "swamp-script-semantic",
 ]

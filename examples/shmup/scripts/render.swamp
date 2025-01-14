@@ -64,19 +64,33 @@ impl Render {
         }
     }
 
+    fn render_ships(self, mut gfx: mangrove::render::Gfx, bonuses: std::Sparse<logic::Ship>) {
+        const STANDARD_ROTATE = 3
+
+        const SHIP_SPRITE_PARAMS = SpriteParams {
+            rotate: STANDARD_ROTATE,
+            ..
+        }
+
+        for id, ship in bonuses {
+            ship_pos = (ship.pos.x.floor(), ship.pos.y.floor(), 0)
+            ship_frame = match ship.direction.y.sign() {
+                1.0 => 0,
+                -1.0 => 2,
+                _ => 1,
+            }
+
+            
+            gfx.sprite_atlas_frame_ex(ship_pos, self.player_ship_material, ship_frame, SHIP_SPRITE_PARAMS)
+        }
+    }
+
     /// Called by the mangrove engine every render tick
     fn render(mut self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
         self.tick += 1
-        x, y = logic.pos.floor()
+        self.render_ships(gfx, logic.ships)
 
-        player_ship_pos = (x, y, 10)
         sprite_size = (16, 16)
-
-        ship_frame = match logic.direction.sign() {
-            1.0 => 0,
-            -1.0 => 2,
-            _ => 1,
-        }
 
         background_x = (logic.tick_count.to_float() * 0.5).floor() % 512
 
@@ -89,15 +103,6 @@ impl Render {
             uv: (background_x, 0),
             ..
         })
-
-        const STANDARD_ROTATE = 3
-
-        const SHIP_SPRITE_PARAMS = SpriteParams {
-            rotate: STANDARD_ROTATE,
-            ..
-        }
-
-        gfx.sprite_atlas_frame_ex(player_ship_pos, self.player_ship_material, ship_frame, SHIP_SPRITE_PARAMS)
 
         self.render_score_bonus(gfx, logic.score_bonus)
 
