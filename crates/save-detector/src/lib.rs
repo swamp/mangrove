@@ -8,7 +8,7 @@ use message_channel::{Channel, Receiver};
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::Path;
 use std::time::{Duration, Instant};
-use swamp::prelude::{App, LoReM, LocalResource, MsgM, Plugin, ReM, UpdatePhase};
+use swamp::prelude::{App, LoReM, LocalResource, MsgM, Plugin, ReM, Update};
 
 #[derive(LocalResource, Debug)]
 pub struct FileWatcher {
@@ -75,6 +75,6 @@ impl Plugin for SaveDetectorPlugin {
 
         let file_watcher = FileWatcher { receiver, watcher };
         app.insert_local_resource(file_watcher);
-        app.add_system(UpdatePhase::Update, tick);
+        app.add_system(Update, tick);
     }
 }

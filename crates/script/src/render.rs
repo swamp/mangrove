@@ -19,8 +19,8 @@ use std::fmt::{Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
     App, Assets, Color, FixedAtlas, FontAndMaterial, FrameLookup, GameAssets, Gfx, LoRe, LoReM,
-    LocalResource, MaterialRef, Msg, Plugin, Re, ReAll, ReM, Render, ResourceStorage, SpriteParams,
-    UVec2, UpdatePhase, Vec3,
+    LocalResource, MaterialRef, Msg, Plugin, Re, ReAll, ReM, Render, RenderUpdate, ResourceStorage,
+    SpriteParams, UVec2, Update, Vec3,
 };
 use swamp_script::prelude::*;
 use tracing::error;
@@ -1366,8 +1366,8 @@ pub struct ScriptRenderPlugin;
 
 impl Plugin for ScriptRenderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(UpdatePhase::Update, detect_reload_tick);
-        app.add_system(UpdatePhase::Update, render_tick);
+        app.add_system(Update, detect_reload_tick);
+        app.add_system(RenderUpdate, render_tick);
         // HACK: Just add a completely zeroed out ScriptRender and wait for reload message.
         // TODO: Should not try to call updates with params that are not available yet.
         app.insert_local_resource(ScriptRender {

@@ -7,12 +7,12 @@ use crate::err::show_mangrove_error;
 use crate::script::{compile, MangroveError};
 use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
-use limnus_clock::Clock;
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
-use monotonic_time_rs::{Millis, MillisDuration};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, Re, ReM, UpdatePhase};
+use swamp::prelude::{
+    App, FixedUpdate, Fp, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update,
+};
 use swamp_script::prelude::*;
 
 /// # Panics
@@ -20,15 +20,8 @@ use swamp_script::prelude::*;
 pub fn logic_tick(
     mut script: LoReM<ScriptLogic>,
     _source_map: Re<SourceMapResource>,
-    clock: LoRe<Clock>,
     error: Re<ErrorResource>,
 ) {
-    if clock.clock.now() < script.next_time {
-        return;
-    }
-
-    script.next_time += MillisDuration::from_millis(16);
-
     //let lookup: &dyn SourceMapLookup = &source_map.wrapper;
     if error.has_errors {
         return;
@@ -56,7 +49,6 @@ pub struct ScriptLogic {
     script_context: ScriptLogicContext,
     resolved_program: ResolvedProgram,
     input_module: ResolvedModuleRef,
-    next_time: Millis,
 }
 
 impl ScriptLogic {
@@ -69,7 +61,6 @@ impl ScriptLogic {
         constants: Constants,
         resolved_program: ResolvedProgram,
         input_module: ResolvedModuleRef,
-        now: Millis,
     ) -> Self {
         Self {
             logic_value_ref,
@@ -81,7 +72,6 @@ impl ScriptLogic {
             constants,
             resolved_program,
             input_module,
-            next_time: now,
         }
     }
 
@@ -347,7 +337,7 @@ pub fn input_module(
 ///
 /// # Panics
 ///
-pub fn boot(source_map: &mut SourceMapResource, now: Millis) -> Result<ScriptLogic, MangroveError> {
+pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveError> {
     let mut resolved_program = ResolvedProgram::new();
     let mut external_functions = ExternalFunctions::<ScriptLogicContext>::new();
 
@@ -427,7 +417,6 @@ pub fn boot(source_map: &mut SourceMapResource, now: Millis) -> Result<ScriptLog
         constants,
         resolved_program,
         input_module_ref,
-        now,
     ))
 }
 
@@ -435,12 +424,11 @@ pub fn detect_reload_tick(
     script_messages: Msg<ScriptMessage>,
     mut script_logic: LoReM<ScriptLogic>,
     mut source_map_resource: ReM<SourceMapResource>,
-    clock: LoRe<Clock>,
     mut err: ReM<ErrorResource>,
 ) {
     for msg in script_messages.iter_previous() {
         match msg {
-            ScriptMessage::Reload => match boot(&mut source_map_resource, clock.clock.now()) {
+            ScriptMessage::Reload => match boot(&mut source_map_resource) {
                 Ok(new_logic) => *script_logic = new_logic,
                 Err(mangrove_error) => {
                     show_mangrove_error(&mangrove_error, &source_map_resource.wrapper.source_map);
@@ -458,11 +446,9 @@ pub struct ScriptLogicPlugin;
 
 impl Plugin for ScriptLogicPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(UpdatePhase::Update, detect_reload_tick);
-        app.add_system(UpdatePhase::Update, logic_tick);
-        app.add_system(UpdatePhase::Update, input_tick);
-
-        let now = app.local_resources().fetch::<Clock>().clock.now();
+        app.add_system(PreUpdate, detect_reload_tick);
+        app.add_system(FixedUpdate, logic_tick);
+        app.add_system(Update, input_tick);
 
         // HACK: Just add a completely zeroed out ScriptLogic and wait for reload message.
         // TODO: Should not try to call updates with params that are not available yet.
@@ -496,7 +482,6 @@ impl Plugin for ScriptLogicPlugin {
                 expression: None,
                 namespace: Rc::new(RefCell::new(ResolvedModuleNamespace::new(&[]))),
             })),
-            next_time: now,
         });
     }
 }
