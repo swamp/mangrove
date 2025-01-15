@@ -387,7 +387,7 @@ impl Logic {
 
     /// Called by the mangrove engine when a gamepad axis changes
     fn gamepad_axis_changed(mut self, player_id: Int, axis: input::Axis, value: Float) {
-        player = self.players[player_id] // TODO: Implement `mut self.players[player_id]`
+        mut player = mut self.players[player_id]
     
         if mut new_player = player? { // BUG: does not keep its mutability
             match axis {
@@ -395,8 +395,6 @@ impl Logic {
                     print('value {value}')
                     new_player.direction.y = value
                     print('player direction: {new_player.direction}')
-                    self.players.remove(player_id)
-                    self.players[player_id] = new_player
                     },
                 _ => {},
             }
