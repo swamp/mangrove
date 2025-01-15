@@ -7,8 +7,8 @@ description = "Swamp Script plugin for Mangrove"
 repository = "https://github.com/swamp/mangrove"
 
 [dependencies]
-swamp = "0.0.16-alpha.1"
-#swamp = { path = "../../../swamp/crates/swamp", version="0.0.16-alpha.1" }
+#swamp = "0.0.16-alpha.1"
+swamp = { path = "../../../swamp/crates/swamp", version="0.0.16-alpha.1" }
 
 #swamp-script = "0.0.12"
 swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.12" }

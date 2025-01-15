@@ -11,8 +11,8 @@ name = "mangrove"
 path = "src/main.rs"
 
 [dependencies]
-swamp = "0.0.16-alpha.1"
-#swamp = { path = "../../../swamp/crates/swamp", version = "0.0.16-alpha.1" }
+#swamp = "0.0.16-alpha.1"
+swamp = { path = "../../../swamp/crates/swamp", version = "0.0.16-alpha.1" }
 
 mangrove-script = { path = "../script", version = "0.0.6" }
 mangrove-save-detector = { path = "../save-detector", version = "0.0.6" }
