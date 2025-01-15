@@ -2228,7 +2228,6 @@ dependencies = [
 name = "mangrove-script"
 version = "0.0.6"
 dependencies = [
- "limnus-clock",
  "limnus-gamepad",
  "limnus-message",
  "monotonic-time-rs",

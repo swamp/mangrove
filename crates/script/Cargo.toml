@@ -15,7 +15,6 @@ swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.12
 
 limnus-message = "0.0.16"
 limnus-gamepad = "0.0.16"
-limnus-clock = "0.0.16"
 
 tracing = "0.1.41"
 seq-map = "0.0.13"
