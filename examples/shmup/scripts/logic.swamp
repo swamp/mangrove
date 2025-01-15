@@ -12,6 +12,7 @@ use math {
 const SCREEN_HEIGHT = 180
 const SCREEN_HEIGHT_F = 180.to_float()
 const SCREEN_WIDTH = 320
+const SCREEN_WIDTH_F = 320.to_float()
 
 struct Shot {
     x: Float,
@@ -300,9 +301,18 @@ impl Logic {
         position.y = position.y.clamp(SHIP_Y_MARGIN, SCREEN_HEIGHT_F - SHIP_Y_MARGIN)
     }
 
+    fn move_in_x_with_direction(mut position: Position, direction: Float) {
+        const SHIP_X_MARGIN = 20.0
+
+        position.x += direction * 1.3
+        position.x = position.x.clamp(SHIP_X_MARGIN, SCREEN_WIDTH_F - SHIP_X_MARGIN)
+    }
+
+
     fn move_ships(mut self) {
         for mut ship in self.ships {
             Logic::move_in_y_with_direction(mut ship.pos, ship.direction.y) // Bug didn't check mutability
+            Logic::move_in_x_with_direction(mut ship.pos, ship.direction.x) // Bug didn't check mutability
         }
     }
 
@@ -392,6 +402,9 @@ impl Logic {
             match axis {
                 LeftStickY => {
                     new_player.direction.y = value
+                    },
+                LeftStickX => {
+                    new_player.direction.x = value
                     },
                 _ => {},
             }
