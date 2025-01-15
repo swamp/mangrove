@@ -6,6 +6,14 @@ use mangrove.render {
 const SCREEN_HEIGHT = 180
 const SCREEN_HEIGHT_F = 180.to_float()
 const SCREEN_WIDTH = 320
+const SIZE = 16
+const SHIP_TEXTURE_SIZE = (SIZE*3, SIZE)
+const CELL_SIZE = (SIZE, SIZE)
+const STANDARD_ROTATE = 3
+const SHIP_SPRITE_PARAMS = SpriteParams {
+    rotate: STANDARD_ROTATE,
+    ..
+}
 
 /// Handles the rendering of the game
 struct Render {
@@ -21,14 +29,9 @@ struct Render {
     tick: Int,
 }
 
-
 impl Render {
 
     fn new(mut assets: mangrove::render::Assets) -> Render {
-        const SIZE = 16
-        const SHIP_TEXTURE_SIZE = (SIZE*3, SIZE)
-        const CELL_SIZE = (SIZE, SIZE)
-
         player_ship_material = assets.frame_fixed_grid_material_png('player/ship_16x16', CELL_SIZE, SHIP_TEXTURE_SIZE)
 
         Render {
@@ -65,13 +68,6 @@ impl Render {
     }
 
     fn render_ships(self, mut gfx: mangrove::render::Gfx, bonuses: std::Sparse<logic::Ship>) {
-        const STANDARD_ROTATE = 3
-
-        const SHIP_SPRITE_PARAMS = SpriteParams {
-            rotate: STANDARD_ROTATE,
-            ..
-        }
-
         for id, ship in bonuses {
             ship_pos = (ship.pos.x.floor(), ship.pos.y.floor(), 0)
             ship_frame = match ship.direction.y.sign() {

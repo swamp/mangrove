@@ -464,7 +464,6 @@ impl Plugin for ScriptLogicPlugin {
                     parameters: vec![],
                     return_type: Box::from(ResolvedType::Any),
                 },
-                constants: vec![],
             }),
             gamepad_axis_changed_fn: None,
             gamepad_button_changed_fn: None,

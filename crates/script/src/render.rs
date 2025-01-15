@@ -1399,7 +1399,6 @@ impl Plugin for ScriptRenderPlugin {
                     parameters: vec![],
                     return_type: Box::from(ResolvedType::Any),
                 },
-                constants: vec![],
             }),
             externals: ExternalFunctions::new(),
             constants: Constants { values: vec![] },

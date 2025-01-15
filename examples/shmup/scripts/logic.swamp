@@ -13,6 +13,13 @@ const SCREEN_HEIGHT = 180
 const SCREEN_HEIGHT_F = 180.to_float()
 const SCREEN_WIDTH = 320
 const SCREEN_WIDTH_F = 320.to_float()
+const ENEMY_MARGIN = 20
+const SHIP_Y_MARGIN = 20.0
+const SHIP_X_MARGIN = 20.0
+const MAGNITUDE = 8.0
+const STARTING_POS = Position::new(20.0, 80.0)
+const FIRE_COOLDOWN = 15
+
 
 struct Shot {
     x: Float,
@@ -255,7 +262,6 @@ impl Logic {
 
         count_in_formation = Logic::random_range_int(self.tick_count, 3, 5)
 
-        const ENEMY_MARGIN = 20
 
         for offset_index in 0..count_in_formation {
             random_y = Logic::random_range_int(self.tick_count, ENEMY_MARGIN, SCREEN_HEIGHT - ENEMY_MARGIN)
@@ -295,15 +301,12 @@ impl Logic {
     // This is not normally how you structure the code
     // it is just to test mut arguments
     fn move_in_y_with_direction(mut position: Position, direction: Float) {
-        const SHIP_Y_MARGIN = 20.0
-
         position.y += direction
         position.y = position.y.clamp(SHIP_Y_MARGIN, SCREEN_HEIGHT_F - SHIP_Y_MARGIN)
     }
 
-    fn move_in_x_with_direction(mut position: Position, direction: Float) {
-        const SHIP_X_MARGIN = 20.0
 
+    fn move_in_x_with_direction(mut position: Position, direction: Float) {
         position.x += direction * 1.3
         position.x = position.x.clamp(SHIP_X_MARGIN, SCREEN_WIDTH_F - SHIP_X_MARGIN)
     }
@@ -354,8 +357,6 @@ impl Logic {
         if self.tick_count % 257 == 0 {
             self.create_formation()
         }
-
-        const MAGNITUDE = 8.0
 
         for id, mut enemy in self.enemies {
             enemy.rect.pos.x += enemy.direction * 1.0
@@ -414,6 +415,7 @@ impl Logic {
     fn some_guard() -> Bool {
         true
     }
+
     /// Called by the mangrove engine when a gamepad button changes
     fn gamepad_button_changed(mut self, player_id: Int, button: input::Button, value: Float) {
         match button {
@@ -425,9 +427,6 @@ impl Logic {
 
 /// Called by the mangrove engine at startup
 fn main() -> Logic {
-    const STARTING_POS = Position::new(20.0, 80.0)
-    const FIRE_COOLDOWN = 15
-
     Logic {
         tick_count: 0,
         shots: std::Sparse<Shot>::new(),
