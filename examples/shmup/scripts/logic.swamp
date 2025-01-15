@@ -308,15 +308,14 @@ impl Logic {
 
     fn player_input_to_ship_direction(mut self, player: Player) {
         if ship_index = player.assigned_ship_index? {
-            mut ship = self.ships[ship_index]
+            mut ship = mut self.ships[ship_index]
             if ship? {
                 ship.direction = player.direction
-                print('ship direction: {player.direction} -> {ship.direction}')
             } else {
-                print('ship not found')
+                print('ship not found!!')
             }
         } else {
-            print('ship not assigned')
+            print('ship not assigned yet, press fire to assign')
         }
     }
     /// Called by the mangrove engine every logic tick
@@ -392,9 +391,7 @@ impl Logic {
         if mut new_player = player? { // BUG: does not keep its mutability
             match axis {
                 LeftStickY => {
-                    print('value {value}')
                     new_player.direction.y = value
-                    print('player direction: {new_player.direction}')
                     },
                 _ => {},
             }
