@@ -15,7 +15,7 @@ use crate::util::get_impl_func;
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use monotonic_time_rs::Millis;
 use std::cell::RefCell;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
     App, Assets, Color, FixedAtlas, FontAndMaterial, FrameLookup, GameAssets, Gfx, LoRe, LoReM,
@@ -126,6 +126,8 @@ pub struct FixedAtlasWrapper {
     pub fixed_atlas: FixedAtlas,
 }
 
+impl QuickSerialize for FixedAtlasWrapper {}
+
 impl Display for FixedAtlasWrapper {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -140,6 +142,8 @@ impl Display for FixedAtlasWrapper {
 pub struct FontAndMaterialWrapper {
     pub font_and_material: FontAndMaterial,
 }
+
+impl QuickSerialize for FontAndMaterialWrapper {}
 impl Display for FontAndMaterialWrapper {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -164,6 +168,21 @@ pub struct GfxTypes {
     pub color: ResolvedType,
     pub sprite_params: ResolvedType,
 }
+
+pub struct MaterialWrapper(pub MaterialRef);
+
+impl Display for MaterialWrapper {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl Debug for MaterialWrapper {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+impl QuickSerialize for MaterialWrapper {}
 
 impl GameAssetsWrapper {
     pub fn new(
@@ -191,7 +210,7 @@ impl GameAssetsWrapper {
     fn material_handle(&self, material_ref: MaterialRef) -> Value {
         let material_ref_value = Rc::new(RefCell::new(Value::RustValue(
             self.material_rust_type_ref.clone(),
-            Rc::new(RefCell::new(Box::new(material_ref))),
+            Rc::new(RefCell::new(Box::new(MaterialWrapper(material_ref)))),
         )));
 
         Value::Struct(
@@ -648,13 +667,13 @@ pub fn register_gfx_struct_value_with_members(
             //let _self_value = &params[0]; // the Gfx struct is empty by design.
             let position = vec3_like(&params[1])?;
 
-            let material_ref = params[2].downcast_hidden_rust::<MaterialRef>().unwrap();
+            let material_ref = params[2].downcast_hidden_rust::<MaterialWrapper>().unwrap();
 
             context
                 .render
                 .as_mut()
                 .unwrap()
-                .push_sprite(position, &material_ref.borrow());
+                .push_sprite(position, &material_ref.borrow().0);
 
             Ok(Value::Unit)
         },
@@ -690,13 +709,13 @@ pub fn register_gfx_struct_value_with_members(
             //let _self_value = &params[0]; // the Gfx struct is empty by design.
             let position = vec3_like(&params[1])?;
 
-            let material_ref = params[2].downcast_hidden_rust::<MaterialRef>().unwrap();
+            let material_ref = params[2].downcast_hidden_rust::<MaterialWrapper>().unwrap();
 
             let props = sprite_params(&params[3])?;
 
             context.render.as_mut().unwrap().push_sprite_ex(
                 position,
-                &material_ref.borrow(),
+                &material_ref.borrow().0,
                 props,
             );
 

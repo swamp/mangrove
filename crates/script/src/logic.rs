@@ -256,7 +256,7 @@ pub fn input_module(
         let axis_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent_ref)?;
 
         let variant_names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
-        for variant_name in variant_names {
+        for (container_index, variant_name) in variant_names.iter().enumerate() {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
             let variant = ResolvedEnumVariantType::new(
                 axis_enum_type_ref.clone(),
@@ -266,6 +266,7 @@ pub fn input_module(
                 variant_name,
                 ResolvedEnumVariantContainerType::Nothing,
                 variant_type_id,
+                container_index as u8,
             );
             module
                 .namespace
@@ -309,7 +310,7 @@ pub fn input_module(
             "DPadRight",
         ];
 
-        for button_variant_name in button_names {
+        for (container_index, button_variant_name) in button_names.iter().enumerate() {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
             let variant = ResolvedEnumVariantType {
                 owner: button_enum_type_ref.clone(),
@@ -319,6 +320,7 @@ pub fn input_module(
                 }),
                 assigned_name: button_variant_name.to_string(),
                 number: variant_type_id,
+                container_index: container_index as u8,
             };
 
             module.namespace.borrow_mut().add_enum_variant(
