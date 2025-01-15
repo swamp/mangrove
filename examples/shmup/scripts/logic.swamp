@@ -212,6 +212,7 @@ impl Logic {
                 }
                 ship_id = self.ships.add(ship2)
                 player.assigned_ship_index = ship_id
+                print('player assigned to ship: {ship_id}')
             }
             if ship_index = player.assigned_ship_index? {
                 ship = self.ships[ship_index]
@@ -301,7 +302,7 @@ impl Logic {
 
     fn move_ships(mut self) {
         for mut ship in self.ships {
-            self.move_in_y_with_direction(mut ship.pos, ship.direction)
+            Logic::move_in_y_with_direction(mut ship.pos, ship.direction.y) // Bug didn't check mutability
         }
     }
 
@@ -309,10 +310,13 @@ impl Logic {
         if ship_index = player.assigned_ship_index? {
             mut ship = self.ships[ship_index]
             if ship? {
-//                ship.direction = player.direction
+                ship.direction = player.direction
+                print('ship direction: {player.direction} -> {ship.direction}')
             } else {
                 print('ship not found')
             }
+        } else {
+            print('ship not assigned')
         }
     }
     /// Called by the mangrove engine every logic tick
@@ -320,13 +324,13 @@ impl Logic {
         self.tick_count += 1
 
         for player in self.players {
-          //  self.player_input_to_ship_direction(player)
+            self.player_input_to_ship_direction(player)
         }
 
         z = Something::new(5)
         a = some_utility_function(5)
 
-        //self.move_ships()
+        self.move_ships()
 
         if current_cooldown = self.cooldown? {
         }
@@ -383,10 +387,17 @@ impl Logic {
 
     /// Called by the mangrove engine when a gamepad axis changes
     fn gamepad_axis_changed(mut self, player_id: Int, axis: input::Axis, value: Float) {
-        mut player = self.players[player_id]
-        if new_player = player? { // BUG: does not keep its mutability
+        player = self.players[player_id] // TODO: Implement `mut self.players[player_id]`
+    
+        if mut new_player = player? { // BUG: does not keep its mutability
             match axis {
-                LeftStickY => new_player.direction.y = value,
+                LeftStickY => {
+                    print('value {value}')
+                    new_player.direction.y = value
+                    print('player direction: {new_player.direction}')
+                    self.players.remove(player_id)
+                    self.players[player_id] = new_player
+                    },
                 _ => {},
             }
         }
