@@ -3759,6 +3759,7 @@ dependencies = [
  "seq-map",
  "sparse-slot 0.0.3",
  "swamp-script-semantic",
+ "tracing",
 ]
 
 [[package]]
