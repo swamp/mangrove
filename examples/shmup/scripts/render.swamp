@@ -63,6 +63,7 @@ impl Render {
             y_offset = bonus.tick.to_float() / 2.0
             pos_3d = (bonus.pos.x.round(), bonus.pos.y.round() + y_offset.round(), 0)
             power = (20 - bonus.tick).max(0).to_float() / 30.0
+
             gfx.text(pos_3d, score_string, self.font_and_material, Color::new(0.5, 0.5, 1.0, power))
         }
     }
@@ -75,7 +76,6 @@ impl Render {
                 -1.0 => 2,
                 _ => 1,
             }
-
             
             gfx.sprite_atlas_frame_ex(ship_pos, self.player_ship_material, ship_frame, SHIP_SPRITE_PARAMS)
         }
@@ -84,21 +84,25 @@ impl Render {
     /// Called by the mangrove engine every render tick
     fn render(mut self, logic: logic::Logic, mut gfx: mangrove::render::Gfx) {
         self.tick += 1
+
         self.render_ships(gfx, logic.ships)
 
-        sprite_size = (16, 16)
+        // Render score
+        with score=logic.score, mut gfx, font_mat=self.font_and_material {
+            score_string = Render::fill_zeroes('{score}', 6)
+            gfx.text((SCREEN_WIDTH-60, SCREEN_HEIGHT-30, 0), 'SCORE {score_string}', font_mat, Color::new(1.0, 0.8, 1.0, 0.5))
+        }
 
-        background_x = (logic.tick_count.to_float() * 0.5).floor() % 512
+        // Render scrolling background
+        with tick_count=logic.tick_count, mut gfx, mat=self.background_material {
+            background_x = (tick_count.to_float() * 0.5).floor() % 512
 
-        score_string = Render::fill_zeroes('{logic.score}', 6)
-
-        gfx.text((SCREEN_WIDTH-60, SCREEN_HEIGHT-30, 0), 'SCORE {score_string}', self.font_and_material, Color::new(1.0, 0.8, 1.0, 0.5))
-
-        gfx.sprite_ex((0, 0, -100), self.background_material, SpriteParams {
-            color: Color::new(1.0, 1.0, 1.0, 0.5),
-            uv: (background_x, 0),
-            ..
-        })
+            gfx.sprite_ex((0, 0, -100), mat, SpriteParams {
+                color: Color::new(1.0, 1.0, 1.0, 0.5),
+                uv: (background_x, 0),
+                ..
+            })
+        }
 
         self.render_score_bonus(gfx, logic.score_bonus)
 
@@ -121,7 +125,6 @@ impl Render {
         // Render enemies
         with enemies=logic.enemies, mut gfx, self {
             for id, enemy in enemies {
-                
                 z = match enemy.enemy {
                     Alan => 1,
                     BonBon => 2,
