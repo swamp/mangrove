@@ -44,7 +44,6 @@ fn serialize(mut logic: LoReM<ScriptLogic>, mut rewind: LoReM<Rewind>) {
 fn set_velocity(rewind: &mut Rewind, new_velocity: f32) {
     if let Some(ref mut velocity) = rewind.tick_velocity {
         *velocity = (new_velocity * new_velocity) * 5.0 * new_velocity.signum();
-        info!(index=%*velocity, "new_velocity");
     } else {
         rewind.tick_velocity = Some(new_velocity);
         rewind.tick_float = (rewind.snapshots.len() - 1) as f32;
