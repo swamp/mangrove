@@ -80,6 +80,10 @@ impl ScriptLogic {
         self.logic_value_ref.borrow().clone()
     }
 
+    pub fn debug_set_logic_value(&mut self, value: Value) {
+        self.logic_value_ref = Rc::new(RefCell::new(value));
+    }
+
     /// # Panics
     ///
     #[must_use]
@@ -161,14 +165,20 @@ impl ScriptLogic {
                 Axis::RightStickY => "RightStickY",
             };
 
-            let variant = input_module_ref
+            let axis_enum = input_module_ref
                 .namespace
                 .borrow()
-                .get_enum_variant_type_str("Axis", axis_str)
+                .get_enum("Axis")
                 .expect("axis")
                 .clone();
 
-            Value::EnumVariantSimple(variant)
+            let variant = axis_enum
+                .borrow()
+                .get_variant(axis_str)
+                .expect("should be there")
+                .clone();
+
+            Value::EnumVariantSimple(variant.clone())
         };
 
         if let Some(found_fn) = &self.gamepad_axis_changed_fn {
@@ -205,11 +215,17 @@ impl ScriptLogic {
                 Button::DPadRight => "DPadRight",
             };
 
-            let variant = input_module_ref
+            let button_enum = input_module_ref
                 .namespace
                 .borrow()
-                .get_enum_variant_type_str("Button", button_str)
+                .get_enum("Button")
                 .expect("button name failed")
+                .clone();
+
+            let variant = button_enum
+                .borrow()
+                .get_variant(button_str)
+                .expect("should exist")
                 .clone();
 
             Value::EnumVariantSimple(variant)
@@ -250,12 +266,13 @@ pub fn input_module(
             assigned_name: "Axis".to_string(),
             module_path: Vec::from(module_path.clone()),
             number: axis_enum_type_id,
+            variants: SeqMap::default(),
         };
-        let parent_ref = Rc::new(parent);
 
-        let axis_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent_ref)?;
+        let axis_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent)?;
 
         let variant_names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
+        let mut resolved_variants = SeqMap::new();
         for (container_index, variant_name) in variant_names.iter().enumerate() {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
             let variant = ResolvedEnumVariantType::new(
@@ -268,11 +285,11 @@ pub fn input_module(
                 variant_type_id,
                 container_index as u8,
             );
-            module
-                .namespace
-                .borrow_mut()
-                .add_enum_variant("Axis", variant_name, variant)?;
+
+            resolved_variants.insert(variant_name.to_string(), variant.into())?
         }
+
+        axis_enum_type_ref.borrow_mut().variants = resolved_variants;
         axis_enum_type_ref
     };
 
@@ -286,9 +303,9 @@ pub fn input_module(
             assigned_name: "Button".to_string(),
             module_path: Vec::from(module_path),
             number: button_enum_type_id,
+            variants: Default::default(),
         };
-        let parent_ref = Rc::new(parent);
-        let button_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent_ref)?;
+        let button_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent)?;
 
         let button_names = [
             "South",
@@ -323,11 +340,10 @@ pub fn input_module(
                 container_index: container_index as u8,
             };
 
-            module.namespace.borrow_mut().add_enum_variant(
-                "Button",
-                button_variant_name,
-                variant,
-            )?;
+            module
+                .namespace
+                .borrow_mut()
+                .add_enum_variant(button_enum_type_ref.clone(), variant)?;
         }
         button_enum_type_ref
     };

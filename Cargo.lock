@@ -1674,9 +1674,9 @@ dependencies = [
 
 [[package]]
 name = "limnus"
-version = "0.0.17-alpha.1"
+version = "0.0.17-alpha.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "352ed79d4ce50d8f6ad9bc2b716090b4e836bb99973d89d19bd5e2760a4a0d0f"
+checksum = "93ba0620ae2d6c353c5193958c3d17b5b69c44970f2cf6a48e66eade9fed3555"
 dependencies = [
  "limnus-app",
  "limnus-asset-id",
@@ -1768,7 +1768,7 @@ dependencies = [
  "limnus-asset-id",
  "limnus-macros",
  "limnus-resource",
- "sparse-slot",
+ "sparse-slot 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
@@ -2208,6 +2208,7 @@ dependencies = [
 name = "mangrove-engine"
 version = "0.0.6"
 dependencies = [
+ "limnus",
  "mangrove-save-detector",
  "mangrove-script",
  "swamp",
@@ -3491,6 +3492,10 @@ dependencies = [
 [[package]]
 name = "sparse-slot"
 version = "0.0.3"
+
+[[package]]
+name = "sparse-slot"
+version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ece15de81f5776fd7731176cfa9c617d3f965542e9799717cde7a352ace66e5a"
 
@@ -3751,9 +3756,8 @@ name = "swamp-script-core"
 version = "0.0.12"
 dependencies = [
  "fixed32",
- "seq-fmt",
  "seq-map",
- "sparse-slot",
+ "sparse-slot 0.0.3",
  "swamp-script-semantic",
 ]
 

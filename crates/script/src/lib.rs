@@ -13,6 +13,7 @@ pub mod logic;
 mod modules;
 pub mod render;
 mod script;
+pub mod serialize;
 pub mod source_map;
 mod util;
 
