@@ -1,8 +1,7 @@
 use crate::logic::ScriptLogic;
-use limnus_gamepad::{Axis, Button, GamepadMessage};
-use swamp::prelude::{App, FixedPostUpdate, LoRe, LoReM, LocalResource, Msg, Plugin, PostUpdate};
+use limnus_gamepad::{Button, GamepadMessage};
+use swamp::prelude::{App, FixedPostUpdate, LoReM, LocalResource, Msg, Plugin};
 use swamp_script::prelude::{quick_deserialize, ResolvedType, Value};
-use tracing::info;
 
 fn serialize(mut logic: LoReM<ScriptLogic>, mut rewind: LoReM<Rewind>) {
     let mut buf = [0u8; 2048];
@@ -62,42 +61,16 @@ fn change_tick(mut rewind: LoReM<Rewind>) {
 
 fn rewind(messages: Msg<GamepadMessage>, mut rewind: LoReM<Rewind>) {
     for gamepad in messages.iter_current() {
-        match gamepad {
-            GamepadMessage::Connected(_, _) => {}
-            GamepadMessage::Disconnected(_) => {}
-            GamepadMessage::Activated(_) => {}
-            GamepadMessage::ButtonChanged(gamepad_id, button, button_value) => match button {
-                Button::South => {}
-                Button::East => {}
-                Button::North => {}
-                Button::West => {}
-                Button::LeftTrigger => {}
+        if let GamepadMessage::ButtonChanged(_gamepad_id, button, button_value) = gamepad {
+            match button {
                 Button::LeftTrigger2 => {
                     set_velocity(&mut rewind, -*button_value);
                 }
-                Button::RightTrigger => {}
                 Button::RightTrigger2 => {
                     set_velocity(&mut rewind, *button_value);
                 }
-                Button::Select => {
-                    rewind.tick_to_show = None;
-                    rewind.tick_velocity = None;
-                }
-                Button::Start => {}
-                Button::Mode => {}
-                Button::LeftThumb => {}
-                Button::RightThumb => {}
-                Button::DPadUp => {}
-                Button::DPadDown => {}
-                Button::DPadLeft => {}
-                Button::DPadRight => {}
-            },
-            GamepadMessage::AxisChanged(gamepad_id, axis, value) => match axis {
-                Axis::LeftStickX => {}
-                Axis::LeftStickY => {}
-                Axis::RightStickX => {}
-                Axis::RightStickY => {}
-            },
+                _ => {}
+            }
         }
     }
 }
