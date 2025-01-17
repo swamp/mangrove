@@ -125,18 +125,17 @@ impl Render {
 
         self.render_score_bonus(gfx, logic.score_bonus)
 
-        power = (self.tick % 10).to_float() / 10.0
-        shot_sprite_params = SpriteParams {
-            rotate: 3, // Rotation is counterclockwise
-            color: Color::new(1.0, 1.0, 1.0, power),
-            ..
-        }
-
-
         // Render shots
-        with shots = logic.shots, mut gfx, shot_sprite_params, mat=self.player_shot_material {
+        with shots = logic.shots, mut gfx, mat=self.player_shot_material {
             for shot in shots {
                 shot_pos = (shot.x.floor(), shot.y.floor(), 0)
+                normalized = (shot.tick.to_float() / 3.0).sin() * 0.5 + 0.5
+                shot_power = normalized * 0.8 + 0.2
+                shot_sprite_params = SpriteParams {
+                    rotate: 3, // Rotation is counterclockwise
+                    color: Color::new(1.0, 1.0, 1.0, shot_power),
+                    ..
+                }
 
                 gfx.sprite_atlas_frame_ex(shot_pos, mat, 1, shot_sprite_params)
             }
@@ -167,17 +166,26 @@ impl Render {
             for explosion in explosions {
                 explosion_pos = (explosion.pos.x.floor() + 4, explosion.pos.y.floor(), 0)
                 adjusted_time = explosion.tick / 3
+                // Explosion animation has 6 frames
                 frame = 
                     | adjusted_time < 6 -> adjusted_time
                     | _ -> 5
-                gfx.sprite_atlas_frame(explosion_pos, mat, frame)
+
+                power = 1.0 - (explosion.tick.to_float() / 18.0).min(1.0)
+                explosion_sprite_params = SpriteParams {
+                    rotate: 3, // Rotation is counterclockwise
+                    color: Color::new(1.0, 1.0, 1.0, power),
+                    ..
+                }                    
+                gfx.sprite_atlas_frame_ex (   explosion_pos, mat, frame, explosion_sprite_params  )
             }
         }
 
         // Render bonus items
         with bonus_items = logic.bonus_items, mut gfx, mat = self.bonus_pickup_material {
             for bonus_item in bonus_items {
-                bonus_pos = (bonus_item.pos.x.floor() + 4, bonus_item.pos.y.floor(), 0)
+                pivot_x, pivot_y = (-3, -3) // bonus is a bit into the sprite frame
+                bonus_pos = (bonus_item.pos.x.floor() + pivot_x, bonus_item.pos.y.floor() + pivot_y, -1)
                 frame = 0
                 gfx.sprite_atlas_frame(bonus_pos, mat, frame)
             }

@@ -23,6 +23,7 @@ const FIRE_COOLDOWN = 15
 struct Shot {
     x: Float,
     y: Float,
+    tick: Int,
 }
 
 struct Player {
@@ -150,7 +151,8 @@ impl Logic {
                 self.score_bonus.add(ScoreBonus { pos: enemy.rect.pos, tick: 0, score: score_for_enemy })
                 self.score += score_for_enemy
                 if was_last_in_formation {
-                    _ = self.bonus_items.add(BonusItem { pos: enemy.rect.pos } )
+                    enemy_middle = enemy.rect.pos.add(Position { x: 4.0, y: 4.0 })
+                    _ = self.bonus_items.add(BonusItem { pos: enemy_middle } )
                 }
             }
         }
@@ -160,14 +162,23 @@ impl Logic {
         for bonus_item_id, bonus_item in self.bonus_items {
             bonus_item_rect = Rect { 
                 pos: Position { x: bonus_item.pos.x, y: bonus_item.pos.y }, 
-                size: Size { width: 1.0, height: 2.0 },
+                size: Size { width: 10.0, height: 10.0 },
             }
 
             for ships in self.ships {
-                ship_rect = Rect { pos: ships.pos, size: ships.size }
-                if !bonus_item_rect.intersects(ship_rect) {
+                ship_middle = Position { x: ships.pos.x + 8.0, y: ships.pos.y + 8.0 }
+                bonus_middle = Position { x: bonus_item_rect.pos.x + 5.0, y: bonus_item_rect.pos.y + 5.0 }
+
+                distance = bonus_middle.distance(ship_middle)
+
+                print('distance: {distance}')
+
+                if distance > 9.0 {
                     continue
                 }
+
+                self.score += 100
+                self.score_bonus.add(ScoreBonus { pos: bonus_item.pos, tick: 0, score: 100 })
                 self.bonus_items.remove(bonus_item_id)
             }
         }
@@ -229,6 +240,7 @@ impl Logic {
                         self.shots.add(Shot {
                             x: ship.pos.x + 12.0, 
                             y: ship.pos.y + 4.0,
+                            tick: 0,
                         })
                         player.fire_cooldown = self.cooldown_settings[ 1 ]
                     }
@@ -367,6 +379,7 @@ impl Logic {
                 if shot.x > SCREEN_WIDTH.to_float() {
                     shots.remove(shot_id)
                 } 
+                shot.tick += 1
             }
         }
 
@@ -409,7 +422,7 @@ impl Logic {
     fn gamepad_button_changed(mut self, player_id: Int, button: input::Button, value: Float) {
         match button {
             South | Logic::some_guard() && true => self.set_player_input_fire(player_id, value > 0.1),
-            _ => print('not handled button: {button} value: {value}'),
+            _ => {},
         }
     }
 }

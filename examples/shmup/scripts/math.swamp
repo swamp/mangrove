@@ -8,9 +8,29 @@ impl Position {
         Position { x: x, y: y }
     }
 
-    fn add(mut self, other: Position) {
+    fn add_mut(mut self, other: Position) {
         self.x = self.x + other.x
         self.y = self.y + other.y
+    }
+
+    fn add(self, other: Position) -> Position {
+        Position {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
+    }
+
+    fn distance(self, other: Position) -> Float {
+        x_diff = self.x - other.x
+        y_diff = self.y - other.y
+
+        // to avoid overflow
+        if x_diff.abs() > 100.0 || y_diff.abs() > 100.0 {
+            return 1000.0
+        }
+
+        x_pow = x_diff * x_diff
+        (x_pow + y_diff * y_diff).abs().sqrt()
     }
 
     fn floor(self) -> (Int, Int) {
