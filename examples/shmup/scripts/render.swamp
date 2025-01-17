@@ -23,6 +23,7 @@ struct Render {
     bon_bon_material: mangrove::render::FixedAtlasHandle,
     lips_material: mangrove::render::FixedAtlasHandle,
     bonus_pickup_material: mangrove::render::FixedAtlasHandle,
+    boosters_material: mangrove::render::FixedAtlasHandle,
     explosion_material: mangrove::render::FixedAtlasHandle,
     background_material: mangrove::render::MaterialHandle,
     font_and_material: mangrove::render::FontAndMaterialHandle,
@@ -42,6 +43,7 @@ impl Render {
             lips_material: assets.frame_fixed_grid_material_png('enemies/lips_16x16', CELL_SIZE, (SIZE*5, SIZE)),
             bonus_pickup_material: assets.frame_fixed_grid_material_png('items/pickups_16x16', CELL_SIZE, (SIZE*3, SIZE)),
             explosion_material: assets.frame_fixed_grid_material_png('effects/explosion_16x16', CELL_SIZE, (SIZE*6, SIZE)),
+            boosters_material: assets.frame_fixed_grid_material_png('player/boosters_16x16', CELL_SIZE, (SIZE*2, SIZE)),
             background_material: assets.material_png('blue_nebula_04-512x512'),
             font_and_material: assets.bm_font('font/hackman'),
             tick: 0,
@@ -76,8 +78,26 @@ impl Render {
                 -1.0 => 2,
                 _ => 1,
             }
-            
             gfx.sprite_atlas_frame_ex(ship_pos, self.player_ship_material, ship_frame, SHIP_SPRITE_PARAMS)
+
+            normalized_x_movement = ship.direction.x.abs() / 0.6
+
+            booster_value: Int? =
+                | ship.direction.x > 0.6 -> 0
+                | ship.direction.x > 0.0 -> 1
+                | _ -> none
+
+            // Render boosters
+            if booster_value? {
+                x, y = ship_pos
+                adjusted_pos = (x - 15, y, 0)
+                booster_sprite_params = SpriteParams {
+                    rotate: 3, // Rotation is counterclockwise
+                    color: Color::new(1.0, 1.0, 1.0, normalized_x_movement),
+                    ..
+                }
+                gfx.sprite_atlas_frame_ex(adjusted_pos, self.boosters_material, booster_value, booster_sprite_params)
+            }
         }
     }
 
@@ -86,7 +106,6 @@ impl Render {
         self.tick += 1
 
         self.render_ships(gfx, logic.ships)
-
         // Render score
         with score=logic.score, mut gfx, font_mat=self.font_and_material {
             score_string = Render::fill_zeroes('{score}', 6)
@@ -112,6 +131,7 @@ impl Render {
             color: Color::new(1.0, 1.0, 1.0, power),
             ..
         }
+
 
         // Render shots
         with shots = logic.shots, mut gfx, shot_sprite_params, mat=self.player_shot_material {
