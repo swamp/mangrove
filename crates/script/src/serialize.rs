@@ -55,7 +55,7 @@ fn change_tick(mut rewind: LoReM<Rewind>) {
         rewind.tick_float = rewind
             .tick_float
             .clamp(0.0, (rewind.snapshots.len() - 1) as f32);
-        rewind.tick_to_show = Some(rewind.tick_float as usize)
+        rewind.tick_to_show = Some(rewind.tick_float as usize);
     }
 }
 
@@ -68,6 +68,27 @@ fn rewind(messages: Msg<GamepadMessage>, mut rewind: LoReM<Rewind>) {
                 }
                 Button::RightTrigger2 => {
                     set_velocity(&mut rewind, *button_value);
+                }
+                Button::Select => {
+                    let currently_pushed_down = *button_value > 0.5;
+                    let was_pushed_now =
+                        !rewind.select_button_previous_state && currently_pushed_down;
+
+                    rewind.select_button_previous_state = currently_pushed_down;
+                    if was_pushed_now {
+                        match rewind.tick_to_show {
+                            None => {
+                                // Pause from the current tick index
+                                set_velocity(&mut rewind, 0.0);
+                            }
+                            Some(tick_index) => {
+                                // Continue from this tick, forget everything past this point
+                                rewind.snapshots.truncate(tick_index);
+                                rewind.tick_to_show = None;
+                                rewind.tick_velocity = None;
+                            }
+                        }
+                    }
                 }
                 _ => {}
             }
@@ -86,6 +107,7 @@ pub struct Rewind {
     pub tick_float: f32,
     pub snapshots: Vec<Snapshot>,
     pub tick_to_show: Option<usize>,
+    pub select_button_previous_state: bool,
 }
 
 pub struct SerializePlugin;
@@ -97,6 +119,7 @@ impl Plugin for SerializePlugin {
             tick_to_show: None,
             tick_float: 0.0,
             snapshots: vec![],
+            select_button_previous_state: false,
         });
         app.add_system(FixedPostUpdate, serialize);
         app.add_system(FixedPostUpdate, rewind);
