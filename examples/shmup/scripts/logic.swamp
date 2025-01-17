@@ -150,7 +150,7 @@ impl Logic {
                 self.score_bonus.add(ScoreBonus { pos: enemy.rect.pos, tick: 0, score: score_for_enemy })
                 self.score += score_for_enemy
                 if was_last_in_formation {
-                    self.bonus_items.add(BonusItem { pos: enemy.rect.pos } )
+                    _ = self.bonus_items.add(BonusItem { pos: enemy.rect.pos } )
                 }
             }
         }
@@ -177,8 +177,7 @@ impl Logic {
         for explosion_id, mut explosion in self.explosions {
             // This is just to show off the guard expression syntax
             | explosion.tick >= 30 -> {
-                self.explosions.remove(explosion_id)
-                0.0
+                _ = self.explosions.remove(explosion_id)
                 }
             | _ -> {
                 explosion.tick += 1
@@ -270,7 +269,7 @@ impl Logic {
                 size: Size { width: 16.0, height: 16.0 } 
             }
 
-            self.enemies.add(Enemy {
+            _ = self.enemies.add(Enemy {
                 rect: rect, 
                 base_y: rect.pos.y,
                 enemy: enemy_type, 
