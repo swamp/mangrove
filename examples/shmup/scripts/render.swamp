@@ -25,6 +25,7 @@ struct Render {
     bonus_pickup_material: mangrove::render::FixedAtlasHandle,
     boosters_material: mangrove::render::FixedAtlasHandle,
     explosion_material: mangrove::render::FixedAtlasHandle,
+    enemy_projectile: mangrove::render::FixedAtlasHandle,
     background_material: mangrove::render::MaterialHandle,
     font_and_material: mangrove::render::FontAndMaterialHandle,
     tick: Int,
@@ -44,6 +45,7 @@ impl Render {
             bonus_pickup_material: assets.frame_fixed_grid_material_png('items/pickups_16x16', CELL_SIZE, (SIZE*3, SIZE)),
             explosion_material: assets.frame_fixed_grid_material_png('effects/explosion_16x16', CELL_SIZE, (SIZE*6, SIZE)),
             boosters_material: assets.frame_fixed_grid_material_png('player/boosters_16x16', CELL_SIZE, (SIZE*2, SIZE)),
+            enemy_projectile: assets.frame_fixed_grid_material_png('projectiles/enemy_projectile', CELL_SIZE, (SIZE*4, SIZE)),
             background_material: assets.material_png('blue_nebula_04-512x512'),
             font_and_material: assets.bm_font('font/hackman'),
             tick: 0,
@@ -56,6 +58,36 @@ impl Render {
             x = "0" + x 
         }
         x
+    }
+
+    fn render_shot(self, mut gfx: mangrove::render::Gfx, shot: logic::Shot) {
+        shot_pos = (shot.x.floor(), shot.y.floor(), 0)
+        match shot.type {
+            Tiny => {
+                normalized = (shot.tick.to_float() / 3.0).sin() * 0.5 + 0.5
+                shot_power = normalized * 0.8 + 0.2
+                shot_sprite_params = SpriteParams {
+                    rotate: 3, // Rotation is counterclockwise
+                    color: Color::new(1.0, 1.0, 1.0, shot_power),
+                    ..
+                }
+
+                gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, shot_sprite_params)
+            },
+            Magentas => {
+                mag_normalized = (shot.tick.to_float() / 3.0).sin() * 0.5 + 0.5 // mag_ prefix since it conflicted with Tiny {} scope above
+                mag_shot_power = mag_normalized * 0.8 + 0.2
+                mag_index = (shot.tick / 10) % 2
+                mag_shot_sprite_params = SpriteParams {
+                    rotate: 3, // Rotation is counterclockwise
+                    color: Color::new(1.0, 1.0, 1.0, mag_shot_power),
+                    ..
+                }
+
+                gfx.sprite_atlas_frame_ex(shot_pos, self.enemy_projectile, mag_index, mag_shot_sprite_params) 
+            }
+        }
+
     }
 
     fn render_score_bonus(self, mut gfx: mangrove::render::Gfx, bonuses: std::Sparse<logic::ScoreBonus>) {
@@ -72,7 +104,7 @@ impl Render {
 
     fn render_ships(self, mut gfx: mangrove::render::Gfx, bonuses: std::Sparse<logic::Ship>) {
         for id, ship in bonuses {
-            ship_pos = (ship.pos.x.floor(), ship.pos.y.floor(), 0)
+            ship_pos = (ship.rect.pos.x.floor(), ship.rect.pos.y.floor(), 0)
             ship_frame = match ship.direction.y.sign() {
                 1.0 => 0,
                 -1.0 => 2,
@@ -126,18 +158,9 @@ impl Render {
         self.render_score_bonus(gfx, logic.score_bonus)
 
         // Render shots
-        with shots = logic.shots, mut gfx, mat=self.player_shot_material {
+        with shots = logic.shots, mut gfx, self {
             for shot in shots {
-                shot_pos = (shot.x.floor(), shot.y.floor(), 0)
-                normalized = (shot.tick.to_float() / 3.0).sin() * 0.5 + 0.5
-                shot_power = normalized * 0.8 + 0.2
-                shot_sprite_params = SpriteParams {
-                    rotate: 3, // Rotation is counterclockwise
-                    color: Color::new(1.0, 1.0, 1.0, shot_power),
-                    ..
-                }
-
-                gfx.sprite_atlas_frame_ex(shot_pos, mat, 1, shot_sprite_params)
+                self.render_shot(gfx, shot)
             }
         }
 

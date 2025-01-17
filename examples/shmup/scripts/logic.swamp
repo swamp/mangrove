@@ -20,11 +20,26 @@ const MAGNITUDE = 8.0
 const STARTING_POS = Position::new(20.0, 80.0)
 const FIRE_COOLDOWN = 15
 
+enum Faction {
+    Player,
+    Enemy,
+}
+
+
+enum ShotType {
+    Tiny,
+    Magentas,
+}
+
 struct Shot {
     x: Float,
     y: Float,
+    direction: Position,
     tick: Int,
+    faction: Faction,
+    type: ShotType,
 }
+
 
 struct Player {
     fire: Bool,
@@ -34,9 +49,8 @@ struct Player {
 }
 
 struct Ship {
-    pos: Position,
+    rect: Rect,
     direction: Position,
-    size: Size,
 }
 
 enum EnemyType {
@@ -58,6 +72,13 @@ struct Formation {
     movement: FormationMovement,
 }
 
+
+struct Brain {
+    time_until_attack: Int,
+}
+
+
+
 struct Enemy {
     rect: Rect,
     base_y: Float,
@@ -65,6 +86,7 @@ struct Enemy {
     enemy: EnemyType,
     formation: Int,
     time: Int,
+    brain: Brain,
 }
 
 enum ExplosionType {
@@ -101,9 +123,13 @@ struct Logic {
     score: Int,
     formation_id: Int,
     enemy_type: EnemyType,
+    prng_x: Int,
 }
 
-impl Logic {
+struct Prnd {
+}
+
+impl Prnd {
 
     fn random_range(value: Float, min: Int, max: Int) -> Int {
         min + (value.rnd() % (max - min))
@@ -111,6 +137,49 @@ impl Logic {
 
     fn random_range_int(value: Int, min: Int, max: Int) -> Int {
         min + (value.rnd() % (max - min + 1))
+    }
+
+}
+
+
+
+impl Brain {
+    fn think(mut self, rand_influence: Int) -> Bool {
+        if self.time_until_attack > 0 {
+            self.time_until_attack -= 1
+            return false
+        }
+
+        self.time_until_attack = Prnd::random_range_int(rand_influence, 200, 400)
+        true
+    }
+}
+
+impl Logic {
+    fn new() -> Logic {
+        player = Player { 
+            fire: false, 
+            fire_cooldown: 0, 
+            assigned_ship_index: none, 
+            direction: Position { x: 0.0, y: 0.0 }
+        }
+
+        Logic {
+            tick_count: 0,
+            shots: std::Sparse<Shot>::new(),
+            enemies: std::Sparse<Enemy>::new(),
+            explosions: std::Sparse<Explosion>::new(),
+            score_bonus: std::Sparse<ScoreBonus>::new(),
+            bonus_items: std::Sparse<BonusItem>::new(),
+            players: [ 0: player ],
+            ships: std::Sparse<Ship>::new(),
+            cooldown_settings: [ 10, FIRE_COOLDOWN, 30 ],
+            formations: [],
+            score: 0,
+            formation_id: 0,
+            enemy_type: EnemyType::Alan,
+            prng_x: 0,
+        }
     }
 
 
@@ -139,6 +208,9 @@ impl Logic {
 
     fn check_shots_vs_enemies(mut self) {
         for shot_id, shot in self.shots {
+            if shot.faction != Faction::Player {
+                continue
+            }
             for enemy_id, enemy in self.enemies {
                 shot_rect = Rect { pos: Position { x: shot.x, y: shot.y }, size: Size { width: 1.0, height: 2.0 } }
                 if !enemy.rect.intersects(shot_rect) {
@@ -158,6 +230,34 @@ impl Logic {
         }
     }
 
+
+    fn check_shots_vs_ships(mut self) {
+        for shot_id, shot in self.shots {
+            if shot.faction != Faction::Enemy {
+                continue
+            }
+            for ship_id, ship in self.ships {
+                shot_pos = Position { x: shot.x, y: shot.y }
+                if ship.rect.pos.distance(shot_pos) > 8.0 {
+                    continue
+                }
+                self.shots.remove(shot_id)
+                self.ships.remove(ship_id)
+
+                for mut player in self.players {
+                    if found_index = player.assigned_ship_index? {
+                        if found_index == ship_id {
+                            player.assigned_ship_index = none
+                            break
+                        }
+                    }
+                }
+                _ = self.explosions.add(Explosion { pos: ship.rect.pos, tick: 0, type: ExplosionType::Fire })
+                break
+            }
+        }
+    }
+
     fn check_bonus_vs_ships(mut self) {
         for bonus_item_id, bonus_item in self.bonus_items {
             bonus_item_rect = Rect { 
@@ -165,13 +265,11 @@ impl Logic {
                 size: Size { width: 10.0, height: 10.0 },
             }
 
-            for ships in self.ships {
-                ship_middle = Position { x: ships.pos.x + 8.0, y: ships.pos.y + 8.0 }
+            for ship in self.ships {
+                ship_middle = Position { x: ship.rect.pos.x + 8.0, y: ship.rect.pos.y + 8.0 }
                 bonus_middle = Position { x: bonus_item_rect.pos.x + 5.0, y: bonus_item_rect.pos.y + 5.0 }
 
                 distance = bonus_middle.distance(ship_middle)
-
-                print('distance: {distance}')
 
                 if distance > 9.0 {
                     continue
@@ -222,35 +320,71 @@ impl Logic {
     fn check_player_input(mut self) {
         for mut player in self.players {
             if player.fire && player.assigned_ship_index == none {
-                // continue
-                // HACK
                 ship2 = Ship {
-                    pos: Position { x: 20.0, y: 80.0 },
+                    rect: Rect {
+                        pos: Position { x: 20.0, y: 80.0 },
+                        size: Size { width: 16.0, height: 16.0 },
+                    },
                     direction: Position { x: 0.0, y: 0.0 },
-                    size: Size { width: 16.0, height: 16.0 },
                 }
-                ship_id = self.ships.add(ship2)
+                ship_id = self.ships.add(ship2) // BUG: Didn't check type
                 player.assigned_ship_index = ship_id
                 print('player assigned to ship: {ship_id}')
             }
+            
             if ship_index = player.assigned_ship_index? {
                 ship = self.ships[ship_index]
                 if ship? {
                     if player.fire && player.fire_cooldown == 0 {
-                        self.shots.add(Shot {
-                            x: ship.pos.x + 12.0, 
-                            y: ship.pos.y + 4.0,
-                            tick: 0,
-                        })
                         player.fire_cooldown = self.cooldown_settings[ 1 ]
+                        _ = self.shots.add(Shot {
+                            x: ship.rect.pos.x + 12.0, 
+                            y: ship.rect.pos.y + 4.0,
+                            direction: Position { x: 8.0, y: 0.0 },
+                            tick: 0,
+                            faction: Faction::Player,
+                            type: ShotType::Tiny,
+                        })
                     }
                 }
             }
         }
     }
 
-    fn next_enemy_type(e: EnemyType) -> EnemyType {
-        match e {
+    fn closest_ship(self) -> Ship? {
+        for ship in self.ships {
+            return ship // HACK: just return the first ship
+        }
+        none
+    }
+
+    fn enemies_think(mut self) {
+        for id, mut enemy in self.enemies {
+            mut m_brain = mut enemy.brain // BUG: Should not be needed
+            want_to_attack = m_brain.think(enemy.time + self.tick_count + self.prng_x) 
+            if want_to_attack {
+                target_ship = self.closest_ship() // BUG: didn't check return value
+                if target_ship? {
+                    direction_to_ship = target_ship.rect.pos.sub(enemy.rect.pos).normalize()
+                    print('fire shot at ship {target_ship} direction:{direction_to_ship}!')
+                    
+                    initial_projectile_pos = enemy.rect.pos.add(direction_to_ship.scale(4.0))
+
+                    _ = self.shots.add(Shot {
+                            x: initial_projectile_pos.x, 
+                            y: initial_projectile_pos.y,
+                            direction: direction_to_ship.scale(1.5),
+                            tick: 0,
+                            faction: Faction::Enemy,
+                            type: ShotType::Magentas,
+                        })
+                }
+            }
+        }
+    }
+
+    fn next_enemy_type(enemy_type: EnemyType) -> EnemyType {
+        match enemy_type {
             Alan => EnemyType::BonBon,
             BonBon => EnemyType::Lips,
             Lips => EnemyType::Alan,
@@ -271,10 +405,10 @@ impl Logic {
 
         self.formations[formation_id] = Formation { movement: FormationMovement::Sine }
 
-        count_in_formation = Logic::random_range_int(self.tick_count, 3, 5)
+        count_in_formation = Prnd::random_range_int(self.prng_x + self.tick_count, 3, 5)
 
         for offset_index in 0..count_in_formation {
-            random_y = Logic::random_range_int(self.tick_count, ENEMY_MARGIN, SCREEN_HEIGHT - ENEMY_MARGIN)
+            random_y = Prnd::random_range_int(self.tick_count, ENEMY_MARGIN, SCREEN_HEIGHT - ENEMY_MARGIN)
             x_offset = offset_index * 32
             rect = Rect { 
                 pos: Position { x: SCREEN_WIDTH.to_float() + 32.0 + x_offset.to_float(), y: random_y.to_float() }, 
@@ -288,6 +422,7 @@ impl Logic {
                 direction: -1.2,
                 formation: formation_id,
                 time: x_offset,
+                brain: Brain { time_until_attack: Prnd::random_range_int(self.prng_x + self.tick_count + x_offset, 100, 500) },
             })
         }
     }
@@ -320,8 +455,9 @@ impl Logic {
 
     fn move_ships(mut self) {
         for mut ship in self.ships {
-            Logic::move_in_y_with_direction(mut ship.pos, ship.direction.y) // Bug didn't check mutability
-            Logic::move_in_x_with_direction(mut ship.pos, ship.direction.x) // Bug didn't check mutability
+            Logic::move_in_y_with_direction(mut ship.rect.pos, ship.direction.y) // Bug didn't check mutability
+            Logic::move_in_x_with_direction(mut ship.rect.pos, ship.direction.x) // Bug didn't check mutability
+            self.prng_x = ship.rect.pos.x.floor()
         }
     }
 
@@ -341,6 +477,7 @@ impl Logic {
     /// Called by the mangrove engine every logic tick
     fn tick(mut self) {
         self.tick_count += 1
+
 
         // Input from players to ships
         for player in self.players {
@@ -374,11 +511,22 @@ impl Logic {
 
         // Update shots
         with mut shots = mut self.shots {
+            screen_rect = Rect {
+                pos: Position {
+                    x: 0.0,
+                    y: 0.0,
+                },
+                size: Size {
+                    width: SCREEN_WIDTH_F,
+                    height: SCREEN_HEIGHT_F,
+                },
+            }
             for shot_id, mut shot in shots {
-                shot.x = shot.x + 8.0
-                if shot.x > SCREEN_WIDTH.to_float() {
+                shot.x += shot.direction.x
+                shot.y += shot.direction.y
+                if !screen_rect.contains_xy(shot.x, shot.y) {
                     shots.remove(shot_id)
-                } 
+                }
                 shot.tick += 1
             }
         }
@@ -387,7 +535,9 @@ impl Logic {
         self.tick_score_bonus()
         self.check_bonus_vs_ships()
         self.tick_bonus_items()
+        self.enemies_think()
         self.check_shots_vs_enemies()
+        self.check_shots_vs_ships()
         self.check_player_input()
         self.players_fire_cooldown()
     }
@@ -405,10 +555,10 @@ impl Logic {
             match axis {
                 LeftStickY => {
                     new_player.direction.y = value
-                    },
+                },
                 LeftStickX => {
                     new_player.direction.x = value
-                    },
+                },
                 _ => {},
             }
         }
@@ -427,28 +577,8 @@ impl Logic {
     }
 }
 
+
 /// Called by the mangrove engine at startup
 fn main() -> Logic {
-    player = Player { 
-        fire: false, 
-        fire_cooldown: 0, 
-        assigned_ship_index: none, 
-        direction: Position { x: 0.0, y: 0.0 }
-    }
-
-    Logic {
-        tick_count: 0,
-        shots: std::Sparse<Shot>::new(),
-        enemies: std::Sparse<Enemy>::new(),
-        explosions: std::Sparse<Explosion>::new(),
-        score_bonus: std::Sparse<ScoreBonus>::new(),
-        bonus_items: std::Sparse<BonusItem>::new(),
-        players: [ 0: player ],
-        ships: std::Sparse<Ship>::new(),
-        cooldown_settings: [ 10, FIRE_COOLDOWN, 30 ],
-        formations: [],
-        score: 0,
-        formation_id: 0,
-        enemy_type: EnemyType::Alan,
-    }
+    Logic::new()
 }

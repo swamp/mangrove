@@ -20,17 +20,47 @@ impl Position {
         }
     }
 
+    fn mul(self, other: Position) -> Position {
+        Position {
+            x: self.x * other.x,
+            y: self.y * other.y,
+        }
+    }
+
+    fn scale(self, scalar: Float) -> Position {
+        Position {
+            x: self.x * scalar,
+            y: self.y * scalar,
+        }
+    }
+
+    fn sub(self, other: Position) -> Position {
+        Position {
+            x: self.x - other.x,
+            y: self.y - other.y,
+        }
+    }
+
+    fn magnitude(self) -> Float {
+        tuple = (self.x, self.y)
+        tuple.magnitude()
+    }
+
+    fn normalize(self) -> Position {
+        tuple = (self.x, self.y)
+        magnitude = tuple.magnitude()
+        if magnitude < 0.005 {
+            return Position { x: 0.0, y: 0.0 }
+        }
+        Position { x: self.x / magnitude, y: self.y / magnitude }
+    }
+
     fn distance(self, other: Position) -> Float {
         x_diff = self.x - other.x
         y_diff = self.y - other.y
 
-        // to avoid overflow
-        if x_diff.abs() > 100.0 || y_diff.abs() > 100.0 {
-            return 1000.0
-        }
-
-        x_pow = x_diff * x_diff
-        (x_pow + y_diff * y_diff).abs().sqrt()
+        tuple = (x_diff, y_diff)
+        tuple.magnitude()
     }
 
     fn floor(self) -> (Int, Int) {
@@ -58,5 +88,19 @@ impl Rect {
         self.pos.x + self.size.width > other.pos.x &&
         self.pos.y < other.pos.y + other.size.height &&
         self.pos.y + self.size.height > other.pos.y
+    }
+
+    fn contains(self, other: Position) -> Bool {
+        other.x >= self.pos.x &&
+        other.x <= self.pos.x + self.size.width &&
+        other.y >= self.pos.y &&
+        other.y <= self.pos.y + self.size.height
+    }
+
+    fn contains_xy(self, x: Float, y: Float) -> Bool {
+        x >= self.pos.x &&
+        x <= self.pos.x + self.size.width &&
+        y >= self.pos.y &&
+        y <= self.pos.y + self.size.height
     }
 }
