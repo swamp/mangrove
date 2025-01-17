@@ -763,7 +763,7 @@ pub fn register_gfx_struct_value_with_members(
                 color_parameter,
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Int),
+            return_type: Box::from(ResolvedType::Unit),
         },
         id: text_external_fn_id,
     };
@@ -819,7 +819,7 @@ pub fn register_gfx_struct_value_with_members(
                 frame.clone(),
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Int),
+            return_type: Box::from(ResolvedType::Unit),
         },
         id: sprite_atlas_frame_external_fn_id,
     };
@@ -869,7 +869,7 @@ pub fn register_gfx_struct_value_with_members(
                 sprite_params_parameter,
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Int),
+            return_type: Box::from(ResolvedType::Unit),
         },
         id: sprite_atlas_frame_ex_external_fn_id,
     };
