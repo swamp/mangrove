@@ -121,7 +121,7 @@ pub struct GameAssetsWrapper {
     font_and_material_rust_type_ref: ResolvedRustTypeRef,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FixedAtlasWrapper {
     pub fixed_atlas: FixedAtlas,
 }
@@ -138,7 +138,7 @@ impl Display for FixedAtlasWrapper {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FontAndMaterialWrapper {
     pub font_and_material: FontAndMaterial,
 }
@@ -169,6 +169,7 @@ pub struct GfxTypes {
     pub sprite_params: ResolvedType,
 }
 
+#[derive(PartialEq)]
 pub struct MaterialWrapper(pub MaterialRef);
 
 impl Display for MaterialWrapper {
