@@ -8,6 +8,7 @@ use std::path::Path;
 use swamp::prelude::{App, Plugin, Resource};
 
 mod audio;
+pub mod convert;
 pub mod err;
 pub mod logic;
 mod modules;

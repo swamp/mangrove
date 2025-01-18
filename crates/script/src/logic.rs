@@ -80,6 +80,10 @@ impl ScriptLogic {
         self.logic_value_ref.borrow().clone()
     }
 
+    pub fn mutable_logic_value_ref(&mut self) -> &ValueRef {
+        &self.logic_value_ref
+    }
+
     pub fn debug_set_logic_value(&mut self, value: Value) {
         self.logic_value_ref = Rc::new(RefCell::new(value));
     }

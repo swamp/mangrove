@@ -3,6 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use mangrove_save_detector::SaveDetectorPlugin;
+use mangrove_script::convert::ConvertPlugin;
 use mangrove_script::err::ErrorPlugin;
 use mangrove_script::logic::ScriptLogicPlugin;
 use mangrove_script::render::ScriptRenderPlugin;
@@ -37,8 +38,9 @@ fn main() {
         .add_plugins(SourceMapPlugin)
         .add_plugins(ErrorPlugin)
         .add_plugins(ScriptPlugin)
-        .add_plugins(SerializePlugin)
+        //.add_plugins(SerializePlugin)
         .add_plugins(ScriptLogicPlugin)
+        .add_plugins(ConvertPlugin)
         .add_plugins(ScriptRenderPlugin)
         .add_plugins(SaveDetectorPlugin)
         .run();
