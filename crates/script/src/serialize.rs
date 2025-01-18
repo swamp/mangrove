@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
+ * Licensed under the MIT License. See LICENSE in the project root for license information.
+ */
+
 use crate::logic::ScriptLogic;
 use limnus_gamepad::{Button, GamepadMessage};
 use swamp::prelude::{App, FixedPostUpdate, LoReM, LocalResource, Msg, Plugin};

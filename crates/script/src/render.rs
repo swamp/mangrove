@@ -2,7 +2,6 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-
 use crate::err::show_mangrove_error;
 use crate::logic::ScriptLogic;
 use crate::script::{

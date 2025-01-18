@@ -1,14 +1,13 @@
-use crate::err::show_mangrove_error;
-use crate::logic::{boot, ScriptLogic};
-use crate::{ErrorResource, ScriptMessage, SourceMapResource};
-use limnus_gamepad::{Button, GamepadMessage};
-use seq_map::SeqMap;
-use std::cell::RefCell;
-use std::rc::Rc;
-use swamp::prelude::{App, FixedPostUpdate, LoRe, LoReM, LocalResource, Msg, Plugin, ReM};
+/*
+ * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
+ * Licensed under the MIT License. See LICENSE in the project root for license information.
+ */
+
+use crate::logic::ScriptLogic;
+use crate::ScriptMessage;
+use swamp::prelude::{App, FixedPostUpdate, LoRe, LoReM, LocalResource, Msg, Plugin};
 use swamp_script::prelude::{
-    overwrite_struct, overwrite_value, quick_deserialize, ResolvedAnonymousStructType,
-    ResolvedNode, ResolvedStructType, ResolvedStructTypeRef, ResolvedType, Value, ValueRef,
+    overwrite_value, quick_deserialize, ResolvedStructTypeRef, ResolvedType, Value,
 };
 use tracing::info;
 
@@ -56,7 +55,6 @@ pub fn store_tick(script_logic: LoRe<ScriptLogic>, mut previous_logic: LoReM<Pre
         .quick_serialize(&mut buf, 0);
 
     previous_logic.payload = buf[..size].to_vec();
-    //info!(%size, "store payload");
 }
 
 #[derive(Debug, LocalResource)]

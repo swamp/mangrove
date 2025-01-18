@@ -38,9 +38,9 @@ fn main() {
         .add_plugins(SourceMapPlugin)
         .add_plugins(ErrorPlugin)
         .add_plugins(ScriptPlugin)
-        //.add_plugins(SerializePlugin)
         .add_plugins(ScriptLogicPlugin)
         .add_plugins(ConvertPlugin)
+        .add_plugins(SerializePlugin)
         .add_plugins(ScriptRenderPlugin)
         .add_plugins(SaveDetectorPlugin)
         .run();

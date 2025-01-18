@@ -126,11 +126,9 @@ struct Logic {
     prng_x: Int,
 }
 
-struct Prnd {
-}
+struct Prnd
 
 impl Prnd {
-
     fn random_range(value: Float, min: Int, max: Int) -> Int {
         min + (value.rnd() % (max - min))
     }
@@ -138,10 +136,7 @@ impl Prnd {
     fn random_range_int(value: Int, min: Int, max: Int) -> Int {
         min + (value.rnd() % (max - min + 1))
     }
-
 }
-
-
 
 impl Brain {
     fn think(mut self, rand_influence: Int) -> Bool {
@@ -327,6 +322,7 @@ impl Logic {
                     },
                     direction: Position { x: 0.0, y: 0.0 },
                 }
+
                 ship_id = self.ships.add(ship2) // BUG: Didn't check type
                 player.assigned_ship_index = ship_id
                 print('player assigned to ship: {ship_id}')
@@ -360,8 +356,7 @@ impl Logic {
 
     fn enemies_think(mut self) {
         for id, mut enemy in self.enemies {
-            mut m_brain = mut enemy.brain // BUG: Should not be needed
-            want_to_attack = m_brain.think(enemy.time + self.tick_count + self.prng_x) 
+            want_to_attack = enemy.brain.think(enemy.time + self.tick_count + self.prng_x) 
             if want_to_attack {
                 target_ship = self.closest_ship() // BUG: didn't check return value
                 if target_ship? {
