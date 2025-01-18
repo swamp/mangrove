@@ -1,6 +1,6 @@
 [package]
 name = "mangrove-engine"
-version = "0.0.6"
+version = "0.0.7-alpha.1"
 edition = "2021"
 license = "MIT"
 description = "2D game engine powered by swamp-script"
@@ -16,5 +16,5 @@ swamp = "0.0.16-alpha.2"
 
 #limnus = "0.0.17-alpha.2"
 
-mangrove-script = { path = "../script", version = "0.0.6" }
-mangrove-save-detector = { path = "../save-detector", version = "0.0.6" }
+mangrove-script = { path = "../script", version = "0.0.7-alpha.1" }
+mangrove-save-detector = { path = "../save-detector", version = "0.0.7-alpha.1" }
