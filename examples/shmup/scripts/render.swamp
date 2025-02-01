@@ -64,8 +64,7 @@ impl Render {
         shot_pos = (shot.x.floor(), shot.y.floor(), 0)
         match shot.type {
             Tiny => {
-                something = shot.tick.to_float() / 3.0
-                normalized = something.sin() * 0.5 + 0.5
+                normalized = (shot.tick.to_float() / 3.0).sin() * 0.5 + 0.5
                 shot_power = normalized * 0.8 + 0.2
                 shot_sprite_params = SpriteParams {
                     rotate: 3, // Rotation is counterclockwise
@@ -76,8 +75,7 @@ impl Render {
                 gfx.sprite_atlas_frame_ex(shot_pos, self.player_shot_material, 1, shot_sprite_params)
             },
             Magentas => {
-                something2 = (shot.tick.to_float() / 3.0)
-                mag_normalized = something2.sin() * 0.5 + 0.5 // mag_ prefix since it conflicted with Tiny {} scope above
+                mag_normalized = (shot.tick.to_float() / 3.0).sin() * 0.5 + 0.5 // mag_ prefix since it conflicted with Tiny {} scope above
                 mag_shot_power = mag_normalized * 0.8 + 0.2
                 mag_index = (shot.tick / 10) % 2
                 mag_shot_sprite_params = SpriteParams {
@@ -98,8 +96,7 @@ impl Render {
 
             y_offset = bonus.tick.to_float() / 2.0
             pos_3d = (bonus.pos.x.floor(), bonus.pos.y.floor() + y_offset.floor(), 0)
-            something =  (20 - bonus.tick)
-            power = something.max(0).to_float() / 30.0
+            power = (20 - bonus.tick).max(0).to_float() / 30.0
 
             gfx.text(pos_3d, score_string, self.font_and_material, Color::new(0.5, 0.5, 1.0, power))
         }
@@ -149,8 +146,7 @@ impl Render {
 
         // Render scrolling background
         with tick_count=logic.tick_count, mut gfx, mat=self.background_material {
-            something = (tick_count.to_float() * 0.5)
-            background_x = something.floor() % 512
+            background_x = (tick_count.to_float() * 0.5).floor() % 512
 
             gfx.sprite_ex((0, 0, -100), mat, SpriteParams {
                 color: Color::new(1.0, 1.0, 1.0, 0.5),
@@ -198,8 +194,7 @@ impl Render {
                     | adjusted_time < 6 -> adjusted_time
                     | _ -> 5
 
-                something = (explosion.tick.to_float() / 18.0)
-                power = 1.0 - something.min(1.0)
+                power = 1.0 - (explosion.tick.to_float() / 18.0).min(1.0)
                 explosion_sprite_params = SpriteParams {
                     rotate: 3, // Rotation is counterclockwise
                     color: Color::new(1.0, 1.0, 1.0, power),
