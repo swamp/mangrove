@@ -16,7 +16,6 @@ use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
     ResolveError,
 };
-use tracing::trace;
 
 #[derive(Debug)]
 pub enum MangroveError {
@@ -294,7 +293,7 @@ fn parse_module(
         })
     })?;
 
-    trace!("ast_program:\n{:#?}", ast_module);
+    //trace!("ast_program:\n{:#?}", ast_module);
 
     let parse_module = ParseModule {
         ast_module,
