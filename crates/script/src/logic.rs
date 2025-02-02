@@ -9,9 +9,7 @@ use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{
-    App, FixedUpdate, Fp, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update,
-};
+use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update};
 use swamp_script::prelude::*;
 
 /// # Panics
@@ -480,7 +478,7 @@ pub struct ScriptLogicPlugin;
 impl Plugin for ScriptLogicPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(PreUpdate, detect_reload_tick);
-        //app.add_system(Update, logic_tick);
+        app.add_system(Update, logic_tick);
         app.add_system(Update, input_tick);
 
         // HACK: Just add a completely zeroed out ScriptLogic and wait for reload message.
