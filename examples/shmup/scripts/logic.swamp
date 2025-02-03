@@ -361,7 +361,6 @@ impl Logic {
                 target_ship = self.closest_ship() // BUG: didn't check return value
                 when target_ship {
                     direction_to_ship = target_ship.rect.pos.sub(enemy.rect.pos).normalize()
-                    print('fire shot at ship {target_ship} direction:{direction_to_ship}!')
 
                     initial_projectile_pos = enemy.rect.pos.add(direction_to_ship.scale(4.0))
 
@@ -459,13 +458,13 @@ impl Logic {
     fn player_input_to_ship_direction(mut self, player: Player) {
         when ship_index = player.assigned_ship_index {
             mut ship = mut self.ships[ship_index]
-            when ship {
+            when mut ship {
                 ship.direction = player.direction
             } else {
                 print('ship not found!!')
             }
         } else {
-            print('ship not assigned yet, press fire to assign')
+            // print('ship not assigned yet, press fire to assign')
         }
     }
 
@@ -538,7 +537,10 @@ impl Logic {
     }
 
     fn set_player_input_fire(mut self, player_id: Int, fire: Bool) {
-        self.players[player_id].fire = fire
+        when mut player = mut self.players[player_id] {
+            player.fire = fire
+        } else {
+        }
         Logic::change_cooldown_setting(mut self.cooldown_settings[ 1 ], 20)
     }
 
@@ -546,7 +548,7 @@ impl Logic {
     fn gamepad_axis_changed(mut self, player_id: Int, axis: input::Axis, value: Float) {
         mut new_player = mut self.players[player_id]
 
-        //when mut new_player = mut player {
+        when mut new_player {
             match axis {
                 LeftStickY => {
                     new_player.direction.y = value
@@ -556,7 +558,7 @@ impl Logic {
                 },
                 _ => {},
             }
-        //}
+        }
     }
 
     fn some_guard() -> Bool {
