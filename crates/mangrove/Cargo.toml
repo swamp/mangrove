@@ -15,6 +15,14 @@ swamp = "0.0.16-alpha.2"
 # swamp = { path = "../../../swamp/crates/swamp", version = "0.0.16-alpha.1" }
 
 #limnus = "0.0.17-alpha.2"
+seq-map = "0.0.13"
 
 mangrove-script = { path = "../script", version = "0.0.7-alpha.1" }
 mangrove-save-detector = { path = "../save-detector", version = "0.0.7-alpha.1" }
+
+limnus-steamworks = { path = "../limnus-steamworks", version = "0.0.16", optional = true }
+limnus-steam-input = { path = "../limnus-steam-input", version = "0.0.16", optional = true }
+
+[features]
+steam = ["limnus-steamworks", "limnus-steam-input"]
+default = ["steam"]
