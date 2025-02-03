@@ -1292,14 +1292,14 @@ pub fn boot(
         &mut script_context,
     )?;
 
-    let source_map = resource_storage.fetch::<SourceMapResource>();
+    //let source_map = resource_storage.fetch::<SourceMapResource>();
     let render_struct_value = util_execute_function(
         &external_functions,
         &constants,
         main_fn,
         &[assets_value],
         &mut script_context,
-        Some(&source_map.wrapper),
+        None, //Some(&source_map.wrapper),
     )?;
 
     let Value::Struct(render_struct_type_ref, _) = render_struct_value.clone() else {
