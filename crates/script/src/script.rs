@@ -278,8 +278,6 @@ fn parse_module(
 ) -> Result<ParseModule, MangroveError> {
     let parser = AstParser {};
 
-    //let path_buf = resolve_swamp_file(Path::new(&path))?;
-
     let (file_id, main_swamp) = source_map.read_file_relative(relative_path)?;
 
     let ast_module = parser.parse_module(&main_swamp).map_err(|parse_err| {
@@ -292,8 +290,6 @@ fn parse_module(
             specific: parse_err.specific,
         })
     })?;
-
-    //trace!("ast_program:\n{:#?}", ast_module);
 
     let parse_module = ParseModule {
         ast_module,
