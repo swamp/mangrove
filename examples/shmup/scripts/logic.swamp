@@ -1,5 +1,5 @@
-use gameplay { 
-    some_utility_function, 
+use gameplay {
+    some_utility_function,
     Something,
 }
 
@@ -17,7 +17,7 @@ const ENEMY_MARGIN = 20
 const SHIP_Y_MARGIN = 20.0
 const SHIP_X_MARGIN = 20.0
 const MAGNITUDE = 8.0
-const STARTING_POS = Position::new(20.0, 80.0)
+// const STARTING_POS = Position::new(20.0, 80.0)
 const FIRE_COOLDOWN = 15
 
 enum Faction {
@@ -152,10 +152,10 @@ impl Brain {
 
 impl Logic {
     fn new() -> Logic {
-        player = Player { 
-            fire: false, 
-            fire_cooldown: 0, 
-            assigned_ship_index: none, 
+        player = Player {
+            fire: false,
+            fire_cooldown: 0,
+            assigned_ship_index: none,
             direction: Position { x: 0.0, y: 0.0 }
         }
 
@@ -190,7 +190,7 @@ impl Logic {
 
     fn remove_enemy(mut self, id: std::SparseId) -> Bool {
         enemy = self.enemies[id]
-        if enemy? {
+        when enemy {
             self.enemies.remove(id)
 
             if self.formations.has(enemy.formation) && !self.has_enemies_in_formation(enemy.formation) {
@@ -240,7 +240,7 @@ impl Logic {
                 self.ships.remove(ship_id)
 
                 for mut player in self.players {
-                    if found_index = player.assigned_ship_index? {
+                    when found_index = player.assigned_ship_index {
                         if found_index == ship_id {
                             player.assigned_ship_index = none
                             break
@@ -255,8 +255,8 @@ impl Logic {
 
     fn check_bonus_vs_ships(mut self) {
         for bonus_item_id, bonus_item in self.bonus_items {
-            bonus_item_rect = Rect { 
-                pos: Position { x: bonus_item.pos.x, y: bonus_item.pos.y }, 
+            bonus_item_rect = Rect {
+                pos: Position { x: bonus_item.pos.x, y: bonus_item.pos.y },
                 size: Size { width: 10.0, height: 10.0 },
             }
 
@@ -281,7 +281,7 @@ impl Logic {
         for explosion_id, mut explosion in self.explosions {
             // This is just to show off the guard expression syntax
             | explosion.tick >= 30 -> {
-                _ = self.explosions.remove(explosion_id)
+                self.explosions.remove(explosion_id)
                 }
             | _ -> {
                 explosion.tick += 1
@@ -294,7 +294,7 @@ impl Logic {
         for bonus_id, mut bonus in self.score_bonus {
             // This is just to show that the scope is not needed for if statements
             // But it is strongly recommended with '{' '}' for easier reading
-            if bonus.tick >= 30 
+            if bonus.tick >= 30
                 self.score_bonus.remove(bonus_id)
              else {
                 bonus.tick += 1
@@ -314,7 +314,7 @@ impl Logic {
 
     fn check_player_input(mut self) {
         for mut player in self.players {
-            if player.fire && player.assigned_ship_index == none {
+            if player.fire && !player.assigned_ship_index {
                 ship2 = Ship {
                     rect: Rect {
                         pos: Position { x: 20.0, y: 80.0 },
@@ -327,14 +327,14 @@ impl Logic {
                 player.assigned_ship_index = ship_id
                 print('player assigned to ship: {ship_id}')
             }
-            
-            if ship_index = player.assigned_ship_index? {
+
+            when ship_index = player.assigned_ship_index {
                 ship = self.ships[ship_index]
-                if ship? {
+                when ship {
                     if player.fire && player.fire_cooldown == 0 {
                         player.fire_cooldown = self.cooldown_settings[ 1 ]
                         _ = self.shots.add(Shot {
-                            x: ship.rect.pos.x + 12.0, 
+                            x: ship.rect.pos.x + 12.0,
                             y: ship.rect.pos.y + 4.0,
                             direction: Position { x: 8.0, y: 0.0 },
                             tick: 0,
@@ -356,17 +356,16 @@ impl Logic {
 
     fn enemies_think(mut self) {
         for id, mut enemy in self.enemies {
-            want_to_attack = enemy.brain.think(enemy.time + self.tick_count + self.prng_x) 
+            want_to_attack = enemy.brain.think(enemy.time + self.tick_count + self.prng_x)
             if want_to_attack {
                 target_ship = self.closest_ship() // BUG: didn't check return value
-                if target_ship? {
+                when target_ship {
                     direction_to_ship = target_ship.rect.pos.sub(enemy.rect.pos).normalize()
-                    print('fire shot at ship {target_ship} direction:{direction_to_ship}!')
-                    
+
                     initial_projectile_pos = enemy.rect.pos.add(direction_to_ship.scale(4.0))
 
                     _ = self.shots.add(Shot {
-                            x: initial_projectile_pos.x, 
+                            x: initial_projectile_pos.x,
                             y: initial_projectile_pos.y,
                             direction: direction_to_ship.scale(1.5),
                             tick: 0,
@@ -405,15 +404,15 @@ impl Logic {
         for offset_index in 0..count_in_formation {
             random_y = Prnd::random_range_int(self.tick_count, ENEMY_MARGIN, SCREEN_HEIGHT - ENEMY_MARGIN)
             x_offset = offset_index * 32
-            rect = Rect { 
-                pos: Position { x: SCREEN_WIDTH.to_float() + 32.0 + x_offset.to_float(), y: random_y.to_float() }, 
-                size: Size { width: 16.0, height: 16.0 } 
+            rect = Rect {
+                pos: Position { x: SCREEN_WIDTH.to_float() + 32.0 + x_offset.to_float(), y: random_y.to_float() },
+                size: Size { width: 16.0, height: 16.0 }
             }
 
             _ = self.enemies.add(Enemy {
-                rect: rect, 
+                rect: rect,
                 base_y: rect.pos.y,
-                enemy: enemy_type, 
+                enemy: enemy_type,
                 direction: -1.2,
                 formation: formation_id,
                 time: x_offset,
@@ -438,7 +437,7 @@ impl Logic {
 
     // This is not normally how you structure the code
     // it is just to test mut arguments
-    fn move_in_y_with_direction(mut position: Position, direction: Float) { 
+    fn move_in_y_with_direction(mut position: Position, direction: Float) {
         position.y += direction // BUG: doesn't check mutability
         position.y = position.y.clamp(SHIP_Y_MARGIN, SCREEN_HEIGHT_F - SHIP_Y_MARGIN)
     }
@@ -457,15 +456,15 @@ impl Logic {
     }
 
     fn player_input_to_ship_direction(mut self, player: Player) {
-        if ship_index = player.assigned_ship_index? {
+        when ship_index = player.assigned_ship_index {
             mut ship = mut self.ships[ship_index]
-            if ship? {
+            when mut ship {
                 ship.direction = player.direction
             } else {
                 print('ship not found!!')
             }
         } else {
-            print('ship not assigned yet, press fire to assign')
+            // print('ship not assigned yet, press fire to assign')
         }
     }
 
@@ -482,7 +481,7 @@ impl Logic {
         self.move_ships()
 
         // print('cooldown: {cooldown ?? -1} is the value \n\xF0\x9F\x90\x8A\u(1F40A)NEXT LINE (🐊)')
-    
+
         if self.tick_count % 257 == 0 {
             self.create_formation()
         }
@@ -538,15 +537,18 @@ impl Logic {
     }
 
     fn set_player_input_fire(mut self, player_id: Int, fire: Bool) {
-        self.players[player_id].fire = fire
+        when mut player = mut self.players[player_id] {
+            player.fire = fire
+        } else {
+        }
         Logic::change_cooldown_setting(mut self.cooldown_settings[ 1 ], 20)
     }
 
     /// Called by the mangrove engine when a gamepad axis changes
     fn gamepad_axis_changed(mut self, player_id: Int, axis: input::Axis, value: Float) {
-        mut player = mut self.players[player_id]
-    
-        if mut new_player = player? {
+        mut new_player = mut self.players[player_id]
+
+        when mut new_player {
             match axis {
                 LeftStickY => {
                     new_player.direction.y = value

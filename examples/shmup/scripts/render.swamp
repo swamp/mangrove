@@ -55,7 +55,7 @@ impl Render {
     fn fill_zeroes(s: String, len: Int) -> String {
         mut x = s
         while x.len() < len {
-            x = "0" + x 
+            x = "0" + x
         }
         x
     }
@@ -84,7 +84,7 @@ impl Render {
                     ..
                 }
 
-                gfx.sprite_atlas_frame_ex(shot_pos, self.enemy_projectile, mag_index, mag_shot_sprite_params) 
+                gfx.sprite_atlas_frame_ex(shot_pos, self.enemy_projectile, mag_index, mag_shot_sprite_params)
             }
         }
 
@@ -95,7 +95,7 @@ impl Render {
             score_string = Render::fill_zeroes('{bonus.score}', 2)
 
             y_offset = bonus.tick.to_float() / 2.0
-            pos_3d = (bonus.pos.x.round(), bonus.pos.y.round() + y_offset.round(), 0)
+            pos_3d = (bonus.pos.x.floor(), bonus.pos.y.floor() + y_offset.floor(), 0)
             power = (20 - bonus.tick).max(0).to_float() / 30.0
 
             gfx.text(pos_3d, score_string, self.font_and_material, Color::new(0.5, 0.5, 1.0, power))
@@ -120,7 +120,7 @@ impl Render {
                 | _ -> none
 
             // Render boosters
-            if booster_value? {
+            when booster_value {
                 x, y = ship_pos
                 adjusted_pos = (x - 15, y, 0)
                 booster_sprite_params = SpriteParams {
@@ -174,7 +174,7 @@ impl Render {
                     }
                 enemy_pos = (enemy.rect.pos.x.floor(), enemy.rect.pos.y.floor(), z)
                 pulsating_time = enemy.time % 53
-                frame = if pulsating_time < 40  pulsating_time/10  else  0 
+                frame = if pulsating_time < 40  pulsating_time/10  else  0
                 match enemy.enemy {
                     Alan => gfx.sprite_atlas_frame(enemy_pos, self.alan_material, frame),
                     BonBon => gfx.sprite_atlas_frame(enemy_pos, self.bon_bon_material, frame),
@@ -190,7 +190,7 @@ impl Render {
                 explosion_pos = (explosion.pos.x.floor() + 4, explosion.pos.y.floor(), 0)
                 adjusted_time = explosion.tick / 3
                 // Explosion animation has 6 frames
-                frame = 
+                frame =
                     | adjusted_time < 6 -> adjusted_time
                     | _ -> 5
 
@@ -199,8 +199,8 @@ impl Render {
                     rotate: 3, // Rotation is counterclockwise
                     color: Color::new(1.0, 1.0, 1.0, power),
                     ..
-                }                    
-                gfx.sprite_atlas_frame_ex (   explosion_pos, mat, frame, explosion_sprite_params  )
+                }
+                gfx.sprite_atlas_frame_ex(explosion_pos, mat, frame, explosion_sprite_params)
             }
         }
 

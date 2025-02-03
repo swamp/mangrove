@@ -2,7 +2,6 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::source_map::SourceMapWrapper;
 use limnus_message::prelude::Message;
 use std::path::Path;
 use swamp::prelude::{App, Plugin, Resource};
@@ -17,6 +16,8 @@ mod script;
 pub mod serialize;
 pub mod source_map;
 mod util;
+
+use swamp_script::prelude::SourceMapWrapper;
 
 #[derive(Message, Debug)]
 pub enum ScriptMessage {

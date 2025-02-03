@@ -16,7 +16,6 @@ use swamp_script::prelude::{
     parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
     ResolveError,
 };
-use tracing::trace;
 
 #[derive(Debug)]
 pub enum MangroveError {
@@ -96,7 +95,7 @@ pub fn create_empty_struct_type(
     namespace: &mut ResolvedModuleNamespace,
     name: &str,
 ) -> Result<ResolvedStructTypeRef, ResolveError> {
-    Ok(namespace.add_generated_struct(name, &[("hidden", ResolvedType::Any)])?)
+    Ok(namespace.add_generated_struct(name, &[("hidden", ResolvedType::Unit)])?)
 }
 
 pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
@@ -228,7 +227,7 @@ fn prepare_main_module<C>(
 
     let any_parameter = ResolvedTypeForParameter {
         name: String::default(),
-        resolved_type: ResolvedType::Any,
+        resolved_type: None,
         is_mutable: false,
         node: None,
     };
@@ -239,7 +238,6 @@ fn prepare_main_module<C>(
         name: None,
         assigned_name: "print".to_string(),
         signature: FunctionTypeSignature {
-            first_parameter_is_self: false,
             parameters: [any_parameter].to_vec(),
             return_type: Box::from(ResolvedType::Unit),
         },
@@ -257,7 +255,10 @@ fn prepare_main_module<C>(
                 println!("{display_value}");
                 Ok(Value::Unit)
             } else {
-                Err("print requires at least one argument".to_string())?
+                Err(ValueError::WrongNumberOfArguments {
+                    expected: 1,
+                    got: 0,
+                })?
             }
         })
         .expect("should work to register");
@@ -277,8 +278,6 @@ fn parse_module(
 ) -> Result<ParseModule, MangroveError> {
     let parser = AstParser {};
 
-    //let path_buf = resolve_swamp_file(Path::new(&path))?;
-
     let (file_id, main_swamp) = source_map.read_file_relative(relative_path)?;
 
     let ast_module = parser.parse_module(&main_swamp).map_err(|parse_err| {
@@ -291,8 +290,6 @@ fn parse_module(
             specific: parse_err.specific,
         })
     })?;
-
-    trace!("ast_program:\n{:#?}", ast_module);
 
     let parse_module = ParseModule {
         ast_module,

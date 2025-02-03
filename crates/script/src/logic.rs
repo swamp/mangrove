@@ -9,9 +9,7 @@ use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{
-    App, FixedUpdate, Fp, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update,
-};
+use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update};
 use swamp_script::prelude::*;
 
 /// # Panics
@@ -105,8 +103,7 @@ impl ScriptLogic {
         &mut self,
         debug_source_map: Option<&dyn SourceMapLookup>,
     ) -> Result<(), ExecuteError> {
-        let variable_value_ref =
-            VariableValue::Reference(ValueReference(self.logic_value_ref.clone()));
+        let variable_value_ref = VariableValue::Reference(self.logic_value_ref.clone());
         let _ = util_execute_function(
             &self.external_functions,
             &self.constants,
@@ -125,9 +122,7 @@ impl ScriptLogic {
         arguments: &[Value],
     ) -> Result<(), ExecuteError> {
         let mut complete_arguments = Vec::new();
-        complete_arguments.push(VariableValue::Reference(ValueReference(
-            self.logic_value_ref.clone(),
-        ))); // push logic self first
+        complete_arguments.push(VariableValue::Reference(self.logic_value_ref.clone())); // push logic self first
         for arg in arguments {
             complete_arguments.push(VariableValue::Value(arg.clone()));
         }
@@ -181,7 +176,11 @@ impl ScriptLogic {
                 .expect("should be there")
                 .clone();
 
-            Value::EnumVariantSimple(variant.clone())
+            if let ResolvedEnumVariantType::Nothing(simple) = &*variant {
+                Value::EnumVariantSimple(simple.clone())
+            } else {
+                panic!("variant axis problem");
+            }
         };
 
         if let Some(found_fn) = &self.gamepad_axis_changed_fn {
@@ -231,7 +230,11 @@ impl ScriptLogic {
                 .expect("should exist")
                 .clone();
 
-            Value::EnumVariantSimple(variant)
+            if let ResolvedEnumVariantType::Nothing(simple) = &*variant {
+                Value::EnumVariantSimple(simple.clone())
+            } else {
+                panic!("variant axis problem");
+            }
         };
 
         if let Some(found_fn) = &self.gamepad_button_changed_fn {
@@ -278,18 +281,23 @@ pub fn input_module(
         let mut resolved_variants = SeqMap::new();
         for (container_index, variant_name) in variant_names.iter().enumerate() {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
-            let variant = ResolvedEnumVariantType::new(
-                axis_enum_type_ref.clone(),
-                ResolvedLocalTypeIdentifier(ResolvedNode {
-                    span: Span::default(),
-                }),
-                variant_name,
-                ResolvedEnumVariantContainerType::Nothing,
-                variant_type_id,
-                container_index as u8,
-            );
+            let variant = ResolvedEnumVariantSimpleType {
+                common: ResolvedEnumVariantCommon {
+                    name: ResolvedLocalTypeIdentifier(ResolvedNode {
+                        span: Span::default(),
+                    }),
+                    assigned_name: variant_name.to_string(),
+                    container_index: container_index as u8,
+                    number: variant_type_id,
+                    owner: axis_enum_type_ref.clone(),
+                },
+            };
 
-            resolved_variants.insert(variant_name.to_string(), variant.into())?
+            let complete_variant = ResolvedEnumVariantType::Nothing(variant.into());
+
+            resolved_variants
+                .insert(variant_name.to_string(), Rc::new(complete_variant))
+                .expect("works")
         }
 
         axis_enum_type_ref.borrow_mut().variants = resolved_variants;
@@ -332,21 +340,23 @@ pub fn input_module(
 
         for (container_index, button_variant_name) in button_names.iter().enumerate() {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
-            let variant = ResolvedEnumVariantType {
-                owner: button_enum_type_ref.clone(),
-                data: ResolvedEnumVariantContainerType::Nothing,
-                name: ResolvedLocalTypeIdentifier(ResolvedNode {
-                    span: Span::default(),
-                }),
-                assigned_name: button_variant_name.to_string(),
-                number: variant_type_id,
-                container_index: container_index as u8,
+            let variant = ResolvedEnumVariantSimpleType {
+                common: ResolvedEnumVariantCommon {
+                    name: ResolvedLocalTypeIdentifier(ResolvedNode {
+                        span: Span::default(),
+                    }),
+                    assigned_name: button_variant_name.to_string(),
+                    container_index: container_index as u8,
+                    number: variant_type_id,
+                    owner: button_enum_type_ref.clone(),
+                },
             };
 
+            let complete_variant = ResolvedEnumVariantType::Nothing(Rc::new(variant));
             module
                 .namespace
                 .borrow_mut()
-                .add_enum_variant(button_enum_type_ref.clone(), variant)?;
+                .add_enum_variant(button_enum_type_ref.clone(), complete_variant)?;
         }
         button_enum_type_ref
     };
@@ -468,7 +478,7 @@ pub struct ScriptLogicPlugin;
 impl Plugin for ScriptLogicPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(PreUpdate, detect_reload_tick);
-        app.add_system(FixedUpdate, logic_tick);
+        app.add_system(Update, logic_tick);
         app.add_system(Update, input_tick);
 
         // HACK: Just add a completely zeroed out ScriptLogic and wait for reload message.
@@ -476,12 +486,15 @@ impl Plugin for ScriptLogicPlugin {
         app.insert_local_resource(ScriptLogic {
             logic_value_ref: Rc::new(RefCell::new(Value::default())),
             logic_fn: Rc::new(ResolvedInternalFunctionDefinition {
-                body: ResolvedExpression::Break(ResolvedNode::default()),
+                body: ResolvedExpression {
+                    ty: ResolvedType::Int,
+                    node: Default::default(),
+                    kind: ResolvedExpressionKind::Break,
+                },
                 name: ResolvedLocalIdentifier(ResolvedNode::default()),
                 signature: FunctionTypeSignature {
-                    first_parameter_is_self: false,
                     parameters: vec![],
-                    return_type: Box::from(ResolvedType::Any),
+                    return_type: Box::from(ResolvedType::Int),
                 },
             }),
             gamepad_axis_changed_fn: None,
