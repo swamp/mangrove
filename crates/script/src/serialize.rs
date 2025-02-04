@@ -3,14 +3,14 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 
-use crate::logic::ScriptLogic;
+use crate::simulation::ScriptSimulation;
 use limnus_gamepad::{Button, GamepadMessage};
 use swamp::prelude::{App, FixedPostUpdate, LoReM, LocalResource, Msg, Plugin};
 use swamp_script::prelude::{quick_deserialize, ResolvedType, Value};
 
-fn serialize(mut logic: LoReM<ScriptLogic>, mut rewind: LoReM<Rewind>) {
+fn serialize(mut logic: LoReM<ScriptSimulation>, mut rewind: LoReM<Rewind>) {
     let mut buf = [0u8; 2048];
-    let logic_val = logic.immutable_logic_value();
+    let logic_val = logic.immutable_simulation_value();
     if let Value::Struct(found_struct_type, _values) = &logic_val {
         if rewind.tick_to_show.is_none() {
             let serialized_octet_size = logic_val.quick_serialize(&mut buf, 0);
@@ -39,7 +39,7 @@ fn serialize(mut logic: LoReM<ScriptLogic>, mut rewind: LoReM<Rewind>) {
         let (deserialized_payload_value, _deserialized_octet_size) =
             quick_deserialize(&ResolvedType::Struct(found_struct_type.clone()), payload, 0);
 
-        logic.debug_set_logic_value(deserialized_payload_value);
+        logic.debug_set_simulation_value(deserialized_payload_value);
     } else {
         panic!("logic has wrong type")
     }

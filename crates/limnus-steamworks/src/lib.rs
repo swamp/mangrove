@@ -2,7 +2,7 @@ use limnus_app::prelude::{App, Plugin};
 use limnus_default_stages::PreUpdate;
 use limnus_local_resource::prelude::LocalResource;
 use limnus_resource::prelude::Resource;
-use limnus_system_params::LoReM;
+use limnus_system_params::LoRe;
 use std::fmt::{Debug, Formatter};
 use steamworks::{Client, SingleClient};
 
@@ -28,7 +28,7 @@ impl Debug for SteamworksClientSingleThread {
     }
 }
 
-pub fn run_callbacks(mut single_threaded: LoReM<SteamworksClientSingleThread>) {
+pub fn run_callbacks(single_threaded: LoRe<SteamworksClientSingleThread>) {
     single_threaded.single.run_callbacks();
 }
 

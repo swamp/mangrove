@@ -9,11 +9,13 @@ use swamp::prelude::{App, Plugin, Resource};
 mod audio;
 pub mod convert;
 pub mod err;
-pub mod logic;
+pub mod flow;
+pub mod input;
 mod modules;
 pub mod render;
 mod script;
 pub mod serialize;
+pub mod simulation;
 pub mod source_map;
 mod util;
 

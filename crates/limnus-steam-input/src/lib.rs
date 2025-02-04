@@ -30,7 +30,7 @@ pub fn debug_tick(input: LoRe<SteamworksInput>, bindings: Re<SteamworksInputBind
     let controllers = input.manager.get_connected_controllers();
     for controller_id in controllers {
         info!(?controller_id, "active controller");
-        for (action_set_name, bindings) in &bindings.action_sets.sets {
+        for (_action_set_name, bindings) in &bindings.action_sets.sets {
             // TODO: Find out how to get action sets to work
             /*
             input

@@ -220,9 +220,8 @@ pub fn uvec2_like(v: &Value) -> Result<UVec2, ValueError> {
 fn prepare_main_module<C>(
     state: &mut ResolvedProgramState,
     externals: &mut ExternalFunctions<C>,
-    module_name: &str,
+    root_module_path: &[String],
 ) -> Result<ResolvedModule, ResolveError> {
-    let root_module_path = &[module_name.to_string()].to_vec();
     let main_module = ResolvedModule::new(root_module_path);
 
     let any_parameter = ResolvedTypeForParameter {
@@ -301,21 +300,17 @@ fn parse_module(
 
 pub fn compile<C>(
     base_path: &Path,
-    relative_path: &str,
     module_path: &[String],
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-    module_name: &str,
 ) -> Result<(), MangroveError> {
     if let Err(found_err) = compile_internal(
         base_path,
-        relative_path,
         module_path,
         resolved_program,
         externals,
         source_map,
-        module_name,
     ) {
         Err(found_err)
     } else {
@@ -325,16 +320,15 @@ pub fn compile<C>(
 
 pub fn compile_internal<C>(
     base_path: &Path,
-    relative_path: &str,
     module_path: &[String],
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-    module_name: &str,
 ) -> Result<(), MangroveError> {
-    let parsed_module = parse_module(relative_path, source_map)?;
+    let relative_path = module_path_to_relative_swamp_file_string(module_path);
+    let parsed_module = parse_module(&*relative_path, source_map)?;
 
-    let main_module = prepare_main_module(&mut resolved_program.state, externals, module_name)?;
+    let main_module = prepare_main_module(&mut resolved_program.state, externals, module_path)?;
 
     let main_path = module_path;
 

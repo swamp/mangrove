@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::err::show_mangrove_error;
-use crate::logic::ScriptLogic;
+use crate::simulation::ScriptSimulation;
 use crate::script::{
     color_like, compile, create_default_color_value, create_default_sprite_params,
     create_empty_struct_value_util, sprite_params, uvec2_like, value_to_value_ref, vec3_like,
@@ -1086,7 +1086,7 @@ impl ScriptRender {
     pub fn render(
         &mut self,
         wgpu_render: &mut Render,
-        logic_value_ref: &Value,
+        simulation_value_ref: &Value,
         _source_map_wrapper: &SourceMapWrapper,
     ) -> Result<(), ExecuteError> {
         let mut script_context = ScriptRenderContext {
@@ -1102,7 +1102,7 @@ impl ScriptRender {
             &self.render_fn,
             [
                 self_mut_ref, //   self.render_value_ref.clone()
-                VariableValue::Value(logic_value_ref.clone()),
+                VariableValue::Value(simulation_value_ref.clone()),
                 VariableValue::Reference(self.gfx_struct_ref.clone()),
             ]
             .as_ref(),
@@ -1221,7 +1221,7 @@ pub fn create_render_module(
 ///
 pub fn boot(
     resource_storage: &mut ResourceStorage,
-    logic_main_module: &ResolvedModuleRef,
+    simulation_main_module: &ResolvedModuleRef,
 ) -> Result<ScriptRender, MangroveError> {
     let mut resolved_program = ResolvedProgram::new();
     let mut external_functions = ExternalFunctions::<ScriptRenderContext>::new();
@@ -1240,19 +1240,17 @@ pub fn boot(
 
     let render_module_ref = Rc::new(RefCell::new(render_module));
     resolved_program.modules.add(render_module_ref);
-    resolved_program.modules.add(logic_main_module.clone());
+    resolved_program.modules.add(simulation_main_module.clone());
 
     {
         let source_map = resource_storage.fetch_mut::<SourceMapResource>();
         let base_path = { source_map.base_path().to_path_buf() };
         compile(
             base_path.as_path(),
-            "render.swamp",
             &["render".to_string()],
             &mut resolved_program,
             &mut external_functions,
             &mut source_map.wrapper.source_map,
-            "render",
         )?;
     };
 
@@ -1283,7 +1281,6 @@ pub fn boot(
         render: None,
     };
 
-    resolved_program.modules.finalize()?;
     let mut constants = Constants::new();
     eval_constants(
         &external_functions,
@@ -1303,7 +1300,7 @@ pub fn boot(
     )?;
 
     let Value::Struct(render_struct_type_ref, _) = render_struct_value.clone() else {
-        return Err(MangroveError::Other("needs to be logic struct".to_string()));
+        return Err(MangroveError::Other("needs to be simulation struct".to_string()));
     };
 
     // let render_fn = get_impl_func(&render_struct_type_ref, "render");
@@ -1324,7 +1321,7 @@ pub fn boot(
 ///
 pub fn render_tick(
     mut script: LoReM<ScriptRender>,
-    logic: LoRe<ScriptLogic>,
+    simulation: LoRe<ScriptSimulation>,
     mut wgpu_render: ReM<Render>,
     error: Re<ErrorResource>,
     source_map: Re<SourceMapResource>,
@@ -1335,7 +1332,7 @@ pub fn render_tick(
     script
         .render(
             &mut wgpu_render,
-            &logic.immutable_logic_value(),
+            &simulation.immutable_simulation_value(),
             &source_map.wrapper,
         )
         .expect("script.render() crashed");
@@ -1344,7 +1341,7 @@ pub fn render_tick(
 pub fn detect_reload_tick(
     script_messages: Msg<ScriptMessage>,
     mut script_render: LoReM<ScriptRender>,
-    script_logic: LoRe<ScriptLogic>, // it is important that reload is done in correct order, so the new logic should exist
+    script_simulation: LoRe<ScriptSimulation>, // it is important that reload is done in correct order, so the new simulation should exist
     source_map: Re<SourceMapResource>,
     mut all_resources: ReAll,
     mut err: ReM<ErrorResource>,
@@ -1354,7 +1351,7 @@ pub fn detect_reload_tick(
     }
     for msg in script_messages.iter_previous() {
         match msg {
-            ScriptMessage::Reload => match boot(&mut all_resources, &script_logic.main_module()) {
+            ScriptMessage::Reload => match boot(&mut all_resources, &script_simulation.main_module()) {
                 Ok(new_render) => *script_render = new_render,
                 Err(mangrove_error) => {
                     err.has_errors = true;

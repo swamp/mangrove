@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 
-use crate::logic::ScriptLogic;
+use crate::simulation::ScriptSimulation;
 use crate::ScriptMessage;
 use swamp::prelude::{App, FixedPostUpdate, LoRe, LoReM, LocalResource, Msg, Plugin};
 use swamp_script::prelude::{
@@ -13,8 +13,8 @@ use tracing::info;
 
 pub fn detect_reload_tick(
     script_messages: Msg<ScriptMessage>,
-    mut script_logic: LoReM<ScriptLogic>,
-    mut previous_logic: LoReM<PreviousLogic>,
+    mut script_logic: LoReM<ScriptSimulation>,
+    mut previous_logic: LoReM<PreviousSimulation>,
 ) {
     for msg in script_messages.iter_previous() {
         match msg {
@@ -29,14 +29,14 @@ pub fn detect_reload_tick(
                     previous_logic.type_ref = Some(previous_struct_type_ref.clone());
                     info!(%deserialized_value, %deserialized_octet_size, "deserialized value");
                     let overwritten_value = {
-                        let overwrite_ref = script_logic.mutable_logic_value_ref();
+                        let overwrite_ref = script_logic.mutable_simulation_value_ref();
                         overwrite_value(overwrite_ref, deserialized_value);
                         overwrite_ref.borrow().clone()
                     };
                     info!(%overwritten_value, "overwritten value");
-                    script_logic.debug_set_logic_value(overwritten_value);
+                    script_logic.debug_set_simulation_value(overwritten_value);
                 } else {
-                    match script_logic.immutable_logic_value() {
+                    match script_logic.immutable_simulation_value() {
                         Value::Struct(first_time_struct_ref, _) => {
                             previous_logic.type_ref = Some(first_time_struct_ref.clone());
                         }
@@ -48,17 +48,17 @@ pub fn detect_reload_tick(
     }
 }
 
-pub fn store_tick(script_logic: LoRe<ScriptLogic>, mut previous_logic: LoReM<PreviousLogic>) {
+pub fn store_tick(script_logic: LoRe<ScriptSimulation>, mut previous_logic: LoReM<PreviousSimulation>) {
     let mut buf = [0u8; 2048];
     let size = script_logic
-        .immutable_logic_value()
+        .immutable_simulation_value()
         .quick_serialize(&mut buf, 0);
 
     previous_logic.payload = buf[..size].to_vec();
 }
 
 #[derive(Debug, LocalResource)]
-pub struct PreviousLogic {
+pub struct PreviousSimulation {
     type_ref: Option<ResolvedStructTypeRef>,
     payload: Vec<u8>,
 }
@@ -67,7 +67,7 @@ pub struct ConvertPlugin;
 
 impl Plugin for ConvertPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_local_resource(PreviousLogic {
+        app.insert_local_resource(PreviousSimulation {
             type_ref: None,
             payload: vec![],
         });

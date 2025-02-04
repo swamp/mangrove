@@ -14,8 +14,8 @@ use swamp_script::prelude::*;
 
 /// # Panics
 ///
-pub fn logic_tick(
-    mut script: LoReM<ScriptLogic>,
+pub fn simulation_tick(
+    mut script: LoReM<ScriptSimulation>,
     _source_map: Re<SourceMapResource>,
     error: Re<ErrorResource>,
 ) {
@@ -26,46 +26,46 @@ pub fn logic_tick(
     script.tick(None).expect("script.tick() crashed");
 }
 
-pub fn input_tick(mut script: LoReM<ScriptLogic>, gamepad_messages: Msg<GamepadMessage>) {
+pub fn input_tick(mut script: LoReM<ScriptSimulation>, gamepad_messages: Msg<GamepadMessage>) {
     for gamepad_message in gamepad_messages.iter_current() {
         script.gamepad(gamepad_message);
     }
 }
 
 #[derive(Debug)]
-pub struct ScriptLogicContext {}
+pub struct ScriptSimulationContext {}
 
 #[derive(LocalResource, Debug)]
-pub struct ScriptLogic {
-    logic_value_ref: ValueRef,
-    logic_fn: ResolvedInternalFunctionDefinitionRef,
+pub struct ScriptSimulation {
+    simulation_value_ref: ValueRef,
+    simulation_fn: ResolvedInternalFunctionDefinitionRef,
     gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
     gamepad_button_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
-    external_functions: ExternalFunctions<ScriptLogicContext>,
+    external_functions: ExternalFunctions<ScriptSimulationContext>,
     constants: Constants,
-    script_context: ScriptLogicContext,
+    script_context: ScriptSimulationContext,
     resolved_program: ResolvedProgram,
     input_module: ResolvedModuleRef,
 }
 
-impl ScriptLogic {
+impl ScriptSimulation {
     pub fn new(
-        logic_value_ref: ValueRef,
-        logic_fn: ResolvedInternalFunctionDefinitionRef,
+        simulation_value_ref: ValueRef,
+        simulation_fn: ResolvedInternalFunctionDefinitionRef,
         gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
         gamepad_button_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
-        external_functions: ExternalFunctions<ScriptLogicContext>,
+        external_functions: ExternalFunctions<ScriptSimulationContext>,
         constants: Constants,
         resolved_program: ResolvedProgram,
         input_module: ResolvedModuleRef,
     ) -> Self {
         Self {
-            logic_value_ref,
-            logic_fn,
+            simulation_value_ref,
+            simulation_fn,
             gamepad_axis_changed_fn,
             gamepad_button_changed_fn,
             external_functions,
-            script_context: ScriptLogicContext {},
+            script_context: ScriptSimulationContext {},
             constants,
             resolved_program,
             input_module,
@@ -73,28 +73,28 @@ impl ScriptLogic {
     }
 
     #[must_use]
-    pub fn immutable_logic_value(&self) -> Value {
-        self.logic_value_ref.borrow().clone()
+    pub fn immutable_simulation_value(&self) -> Value {
+        self.simulation_value_ref.borrow().clone()
     }
 
-    pub fn mutable_logic_value_ref(&mut self) -> &ValueRef {
-        &self.logic_value_ref
+    pub fn mutable_simulation_value_ref(&mut self) -> &ValueRef {
+        &self.simulation_value_ref
     }
 
-    pub fn debug_set_logic_value(&mut self, value: Value) {
-        self.logic_value_ref = Rc::new(RefCell::new(value));
+    pub fn debug_set_simulation_value(&mut self, value: Value) {
+        self.simulation_value_ref = Rc::new(RefCell::new(value));
     }
 
     /// # Panics
     ///
     #[must_use]
     pub fn main_module(&self) -> ResolvedModuleRef {
-        let root_module_path = &["logic".to_string()].to_vec();
+        let root_module_path = &["simulation".to_string()].to_vec();
 
         self.resolved_program
             .modules
             .get(root_module_path)
-            .expect("logic module should exist in logic")
+            .expect("simulation module should exist in simulation")
     }
 
     /// # Errors
@@ -103,11 +103,11 @@ impl ScriptLogic {
         &mut self,
         debug_source_map: Option<&dyn SourceMapLookup>,
     ) -> Result<(), ExecuteError> {
-        let variable_value_ref = VariableValue::Reference(self.logic_value_ref.clone());
+        let variable_value_ref = VariableValue::Reference(self.simulation_value_ref.clone());
         let _ = util_execute_function(
             &self.external_functions,
             &self.constants,
-            &self.logic_fn,
+            &self.simulation_fn,
             &[variable_value_ref],
             &mut self.script_context,
             debug_source_map,
@@ -122,7 +122,7 @@ impl ScriptLogic {
         arguments: &[Value],
     ) -> Result<(), ExecuteError> {
         let mut complete_arguments = Vec::new();
-        complete_arguments.push(VariableValue::Reference(self.logic_value_ref.clone())); // push logic self first
+        complete_arguments.push(VariableValue::Reference(self.simulation_value_ref.clone())); // push simulation self first
         for arg in arguments {
             complete_arguments.push(VariableValue::Value(arg.clone()));
         }
@@ -368,9 +368,9 @@ pub fn input_module(
 ///
 /// # Panics
 ///
-pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveError> {
+pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, MangroveError> {
     let mut resolved_program = ResolvedProgram::new();
-    let mut external_functions = ExternalFunctions::<ScriptLogicContext>::new();
+    let mut external_functions = ExternalFunctions::<ScriptSimulationContext>::new();
 
     let (input_module, _axis_enum_type, _button_enum_type) =
         input_module(&mut resolved_program.state)?;
@@ -381,15 +381,13 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
 
     compile(
         base_path.as_path(),
-        "logic.swamp",
-        &["logic".to_string()],
+        &["simulation".to_string()],
         &mut resolved_program,
         &mut external_functions,
         &mut source_map.wrapper.source_map,
-        "logic",
     )?;
 
-    let root_module_path = &["logic".to_string()];
+    let root_module_path = &["simulation".to_string()];
     let main_fn = {
         let main_module = resolved_program
             .modules
@@ -407,8 +405,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
         Rc::clone(&function_ref) // Clone the Rc, not the inner value
     };
 
-    let mut script_context = ScriptLogicContext {};
-    resolved_program.modules.finalize()?;
+    let mut script_context = ScriptSimulationContext {};
     let mut constants = Constants::new();
     eval_constants(
         &external_functions,
@@ -417,7 +414,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
         &mut script_context,
     )?;
 
-    let logic_value = util_execute_function(
+    let simulation_value = util_execute_function(
         &external_functions,
         &constants,
         &main_fn,
@@ -426,22 +423,22 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
         None,
     )?;
 
-    let Value::Struct(logic_struct_type_ref, _) = &logic_value else {
-        return Err(MangroveError::Other("needs to be logic struct".to_string()));
+    let Value::Struct(simulation_struct_type_ref, _) = &simulation_value else {
+        return Err(MangroveError::Other("needs to be simulation struct".to_string()));
     };
 
-    let logic_fn = get_impl_func(logic_struct_type_ref, "tick");
+    let simulation_fn = get_impl_func(simulation_struct_type_ref, "tick");
     let gamepad_axis_changed_fn =
-        get_impl_func_optional(logic_struct_type_ref, "gamepad_axis_changed");
+        get_impl_func_optional(simulation_struct_type_ref, "gamepad_axis_changed");
     let gamepad_button_changed_fn =
-        get_impl_func_optional(logic_struct_type_ref, "gamepad_button_changed");
+        get_impl_func_optional(simulation_struct_type_ref, "gamepad_button_changed");
 
     // Convert it to a mutable (reference), so it can be mutated in update ticks
-    let logic_value_ref = Rc::new(RefCell::new(logic_value));
+    let simulation_value_ref = Rc::new(RefCell::new(simulation_value));
 
-    Ok(ScriptLogic::new(
-        logic_value_ref,
-        logic_fn,
+    Ok(ScriptSimulation::new(
+        simulation_value_ref,
+        simulation_fn,
         gamepad_axis_changed_fn,
         gamepad_button_changed_fn,
         external_functions,
@@ -453,39 +450,39 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptLogic, MangroveE
 
 pub fn detect_reload_tick(
     script_messages: Msg<ScriptMessage>,
-    mut script_logic: LoReM<ScriptLogic>,
+    mut script_simulation: LoReM<ScriptSimulation>,
     mut source_map_resource: ReM<SourceMapResource>,
     mut err: ReM<ErrorResource>,
 ) {
     for msg in script_messages.iter_previous() {
         match msg {
             ScriptMessage::Reload => match boot(&mut source_map_resource) {
-                Ok(new_logic) => *script_logic = new_logic,
+                Ok(new_simulation) => *script_simulation = new_simulation,
                 Err(mangrove_error) => {
                     show_mangrove_error(&mangrove_error, &source_map_resource.wrapper.source_map);
                     err.has_errors = true;
 
-                    //                    eprintln!("script logic failed: {}", mangrove_error);
-                    //                    error!(error=?mangrove_error, "script logic compile failed");
+                    //                    eprintln!("script simulation failed: {}", mangrove_error);
+                    //                    error!(error=?mangrove_error, "script simulation compile failed");
                 }
             },
         }
     }
 }
 
-pub struct ScriptLogicPlugin;
+pub struct ScriptSimulationPlugin;
 
-impl Plugin for ScriptLogicPlugin {
+impl Plugin for ScriptSimulationPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(PreUpdate, detect_reload_tick);
-        app.add_system(Update, logic_tick);
+        app.add_system(Update, simulation_tick);
         app.add_system(Update, input_tick);
 
-        // HACK: Just add a completely zeroed out ScriptLogic and wait for reload message.
+        // HACK: Just add a completely zeroed out ScriptSimulation and wait for reload message.
         // TODO: Should not try to call updates with params that are not available yet.
-        app.insert_local_resource(ScriptLogic {
-            logic_value_ref: Rc::new(RefCell::new(Value::default())),
-            logic_fn: Rc::new(ResolvedInternalFunctionDefinition {
+        app.insert_local_resource(ScriptSimulation {
+            simulation_value_ref: Rc::new(RefCell::new(Value::default())),
+            simulation_fn: Rc::new(ResolvedInternalFunctionDefinition {
                 body: ResolvedExpression {
                     ty: ResolvedType::Int,
                     node: Default::default(),
@@ -501,7 +498,7 @@ impl Plugin for ScriptLogicPlugin {
             gamepad_button_changed_fn: None,
             external_functions: ExternalFunctions::new(),
             constants: Constants { values: vec![] },
-            script_context: ScriptLogicContext {},
+            script_context: ScriptSimulationContext {},
             resolved_program: ResolvedProgram {
                 state: ResolvedProgramState {
                     array_types: vec![],
