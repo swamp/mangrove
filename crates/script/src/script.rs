@@ -304,18 +304,14 @@ pub fn compile<C>(
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-) -> Result<(), MangroveError> {
-    if let Err(found_err) = compile_internal(
+) -> Result<ResolvedModuleRef, MangroveError> {
+    compile_internal(
         base_path,
         module_path,
         resolved_program,
         externals,
         source_map,
-    ) {
-        Err(found_err)
-    } else {
-        Ok(())
-    }
+    )
 }
 
 pub fn compile_internal<C>(
@@ -324,16 +320,16 @@ pub fn compile_internal<C>(
     resolved_program: &mut ResolvedProgram,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-) -> Result<(), MangroveError> {
+) -> Result<ResolvedModuleRef, MangroveError> {
     let relative_path = module_path_to_relative_swamp_file_string(module_path);
-    let parsed_module = parse_module(&*relative_path, source_map)?;
+    let parsed_module = parse_module(&relative_path, source_map)?;
 
     let main_module = prepare_main_module(&mut resolved_program.state, externals, module_path)?;
 
     let main_path = module_path;
 
     let main_module_ref = Rc::new(RefCell::new(main_module));
-    resolved_program.modules.add(main_module_ref);
+    resolved_program.modules.add(main_module_ref.clone());
 
     resolved_program
         .modules
@@ -361,5 +357,5 @@ pub fn compile_internal<C>(
         &dependency_parser,
     )?;
 
-    Ok(())
+    Ok(main_module_ref)
 }

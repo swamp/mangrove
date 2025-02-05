@@ -680,16 +680,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "core-foundation"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b55271e5c8c478ad3f38ad24ef34923091e0548492a266d19b3c0b4d82574c63"
-dependencies = [
- "core-foundation-sys",
- "libc",
-]
-
-[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -702,7 +692,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c07782be35f9e1140080c6b96f0d44b739e2278479f64e02fdab4e32dfd8b081"
 dependencies = [
  "bitflags 1.3.2",
- "core-foundation 0.9.4",
+ "core-foundation",
  "core-graphics-types",
  "foreign-types",
  "libc",
@@ -715,7 +705,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "45390e6114f68f718cc7a830514a96f903cccd70d02a8f6d9f643ac4ba45afaf"
 dependencies = [
  "bitflags 1.3.2",
- "core-foundation 0.9.4",
+ "core-foundation",
  "libc",
 ]
 
@@ -1023,12 +1013,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fnv"
-version = "1.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
-
-[[package]]
 name = "foreign-types"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1216,40 +1200,6 @@ checksum = "3fb2d69b19215e18bb912fa30f7ce15846e301408695e44e0ef719f1da9e19f2"
 dependencies = [
  "color_quant",
  "weezl",
-]
-
-[[package]]
-name = "gilrs"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbb2c998745a3c1ac90f64f4f7b3a54219fd3612d7705e7798212935641ed18f"
-dependencies = [
- "fnv",
- "gilrs-core",
- "log",
- "uuid",
- "vec_map",
-]
-
-[[package]]
-name = "gilrs-core"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "495af945e45efd6386227613cd9fb7bd7c43d3c095040e30c5304c489e6abed5"
-dependencies = [
- "core-foundation 0.10.0",
- "inotify",
- "io-kit-sys",
- "js-sys",
- "libc",
- "libudev-sys",
- "log",
- "nix",
- "uuid",
- "vec_map",
- "wasm-bindgen",
- "web-sys",
- "windows 0.58.0",
 ]
 
 [[package]]
@@ -1496,16 +1446,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "io-kit-sys"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "617ee6cf8e3f66f3b4ea67a4058564628cde41901316e19f559e14c7c72c5e7b"
-dependencies = [
- "core-foundation-sys",
- "mach2",
-]
-
-[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1663,16 +1603,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libudev-sys"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c8469b4a23b962c1396b9b451dda50ef5b283e8dd309d69033475fa9b334324"
-dependencies = [
- "libc",
- "pkg-config",
-]
-
-[[package]]
 name = "limnus"
 version = "0.0.17-alpha.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1693,8 +1623,6 @@ dependencies = [
  "limnus-default-schedulers",
  "limnus-default-stages",
  "limnus-default-stages-plugin",
- "limnus-gamepad",
- "limnus-gamepad-gilrs",
  "limnus-loader",
  "limnus-local-resource",
  "limnus-log",
@@ -1932,19 +1860,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "limnus-gamepad-gilrs"
+name = "limnus-input-binding"
 version = "0.0.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30592164d3d9c72fa7187f294f8ab72a8c7f437e3ea0b0d0b5f2138665a26e32"
 dependencies = [
- "gilrs",
  "limnus-app",
  "limnus-default-stages",
- "limnus-gamepad",
  "limnus-local-resource",
- "limnus-message",
+ "limnus-resource",
  "limnus-system-params",
- "tracing",
+ "seq-map",
 ]
 
 [[package]]
@@ -2063,6 +1987,7 @@ version = "0.0.16"
 dependencies = [
  "limnus-app",
  "limnus-default-stages",
+ "limnus-input-binding",
  "limnus-local-resource",
  "limnus-resource",
  "limnus-steamworks",
@@ -2260,6 +2185,7 @@ name = "mangrove-script"
 version = "0.0.7-alpha.1"
 dependencies = [
  "limnus-gamepad",
+ "limnus-input-binding",
  "limnus-message",
  "monotonic-time-rs",
  "seq-map",
@@ -2447,18 +2373,6 @@ name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "650eef8c711430f1a879fdd01d4745a7deea475becfb90269c06775983bbf086"
-
-[[package]]
-name = "nix"
-version = "0.29.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71e2746dc3a24dd78b3cfcb7be93368c6de9963d30f43a6a73998a9cf4b17b46"
-dependencies = [
- "bitflags 2.7.0",
- "cfg-if",
- "cfg_aliases 0.2.1",
- "libc",
-]
 
 [[package]]
 name = "nom"
@@ -3571,8 +3485,6 @@ checksum = "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731"
 [[package]]
 name = "swamp"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7f319a0a43a8fcb61b588185a2dd8b7b24341851038917ed2a5dc4c8854355b"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3603,8 +3515,6 @@ dependencies = [
 [[package]]
 name = "swamp-advanced-game"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2901097d6337527cad49c7f68d7a7a8809c76e99acf3b983174a19bbf025d0ea"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3630,8 +3540,6 @@ dependencies = [
 [[package]]
 name = "swamp-boot-advanced-game"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12abbdffedf54cec9777040809d62b512264521f7869d7edec74b6abbb6c7b71"
 dependencies = [
  "int_math",
  "limnus",
@@ -3644,8 +3552,6 @@ dependencies = [
 [[package]]
 name = "swamp-boot-game"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19814a72def3d90d4037a74bba7ff295126a3f8034792683ea09cf226810baae"
 dependencies = [
  "int_math",
  "limnus",
@@ -3658,8 +3564,6 @@ dependencies = [
 [[package]]
 name = "swamp-font"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eaf26bfe566fab5475cd57b3070db3d4e786de10768f50f38e2292a058969d5e"
 dependencies = [
  "bmf-parser",
  "int_math",
@@ -3674,8 +3578,6 @@ dependencies = [
 [[package]]
 name = "swamp-game"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fdb4b66b09bc73438a17c4bd6c97d2feb08ff7e4d3af19c0628c3172550cc057"
 dependencies = [
  "fixed32",
  "int_math",
@@ -3701,8 +3603,6 @@ dependencies = [
 [[package]]
 name = "swamp-game-assets"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbe86a920871fe918b5e679fe160910676faef98c62ee531064e230a4070ca12"
 dependencies = [
  "int_math",
  "limnus-asset-id",
@@ -3718,8 +3618,6 @@ dependencies = [
 [[package]]
 name = "swamp-game-audio"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "975c7d8ca7d50379ada4e91e4c1b2b9b564a8e71ecb7f79406c2a9d328f70d5c"
 dependencies = [
  "limnus-assets",
  "limnus-audio-mixer",
@@ -3729,8 +3627,6 @@ dependencies = [
 [[package]]
 name = "swamp-material"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b61a2884f195df666d67de26705a79d0303eda1c2217b77bcef4a3d8c7c2742"
 dependencies = [
  "image",
  "limnus-app",
@@ -3749,8 +3645,6 @@ dependencies = [
 [[package]]
 name = "swamp-render"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "911e93c1bc56f4cea93b598bb4e4c7307e458bcf8f6a05b68611ba7bcf4685b0"
 dependencies = [
  "int_math",
  "monotonic-time-rs",
@@ -3759,8 +3653,6 @@ dependencies = [
 [[package]]
 name = "swamp-render-wgpu"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "593919f226f37163637788241aeb487ccbce0cbb1ad44634e32a5fc1d9eaac3c"
 dependencies = [
  "bytemuck",
  "int_math",
@@ -3926,8 +3818,6 @@ dependencies = [
 [[package]]
 name = "swamp-wgpu"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b988d57f8bf44e9a3b41a7fa6775fcaba09f8a5f564a4f0250b9a7d8d470b64c"
 dependencies = [
  "wgpu",
 ]
@@ -3935,8 +3825,6 @@ dependencies = [
 [[package]]
 name = "swamp-wgpu-sprites"
 version = "0.0.16-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed7c369d9ed1790ca879c33a8aadd3dbd1b6964b96d1dd1908d1907b7ced29f2"
 dependencies = [
  "bytemuck",
  "image",
@@ -4247,12 +4135,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
-name = "uuid"
-version = "1.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8c5f0a0af699448548ad1a2fbf920fb4bee257eae39953ba95cb84891a0446a"
-
-[[package]]
 name = "v_frame"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4274,12 +4156,6 @@ name = "value-bag"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ef4c4aa54d5d05a279399bfa921ec387b7aba77caf7a682ae8d86785b8fdad2"
-
-[[package]]
-name = "vec_map"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
 
 [[package]]
 name = "version-compare"
@@ -4964,7 +4840,7 @@ dependencies = [
  "calloop",
  "cfg_aliases 0.2.1",
  "concurrent-queue",
- "core-foundation 0.9.4",
+ "core-foundation",
  "core-graphics",
  "cursor-icon",
  "dpi",

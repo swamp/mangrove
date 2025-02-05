@@ -113,6 +113,28 @@ impl<C: Default> Default for ScriptModule<C> {
     }
 }
 
+pub fn compile_types<C>(
+    modules: Vec<&ResolvedModuleRef>,
+    root_module_path: &[String],
+    source_map: &mut SourceMapResource,
+) -> Result<ResolvedModuleRef, MangroveError> {
+    let mut resolved_program = ResolvedProgram::new();
+    let mut external_functions = ExternalFunctions::<C>::new();
+    let base_path = source_map.base_path().to_path_buf();
+
+    for module in modules {
+        resolved_program.modules.add(module.clone());
+    }
+
+    compile(
+        base_path.as_path(),
+        root_module_path,
+        &mut resolved_program,
+        &mut external_functions,
+        &mut source_map.wrapper.source_map,
+    )
+}
+
 pub fn boot<C>(
     modules: Vec<&ResolvedModuleRef>,
     root_module_path: &[String],

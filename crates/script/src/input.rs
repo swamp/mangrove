@@ -4,108 +4,177 @@
  */
 use crate::err::show_mangrove_error;
 use crate::script::MangroveError;
-use crate::simulation::ScriptSimulation;
-use crate::util::ScriptModule;
-use crate::{util, ErrorResource, SourceMapResource};
-use swamp::prelude::{App, LoRe, LoReM, LocalResource, Plugin, PreUpdate, Re};
+use crate::{util, SourceMapResource};
+use limnus_input_binding::{ActionSets, Actions, AnalogAction, DigitalAction, InputConfig};
+use swamp::prelude::{App, LocalResource, Plugin};
 use swamp_script::prelude::*;
-
-/// # Panics
-///
-pub fn input_tick(
-    mut script: LoReM<ScriptInput>,
-    simulation: LoRe<ScriptSimulation>,
-    _source_map: Re<SourceMapResource>,
-    error: Re<ErrorResource>,
-) {
-    //let lookup: &dyn SourceMapLookup = &source_map.wrapper;
-    if error.has_errors {
-        return;
-    }
-    script.tick(simulation.immutable_simulation_value(), None);
-}
+use tracing::info;
 
 #[derive(Debug)]
 pub struct ScriptInputContext {}
 
+#[derive(Debug)]
+pub enum BindingKind {
+    Digital,
+    Analog,
+}
+
+#[derive(Debug)]
+pub struct Binding {
+    pub name: String,
+    pub struct_field_index: usize,
+    pub kind: BindingKind,
+}
+
+#[derive(Debug)]
+pub struct BindingsInSet {
+    pub bindings_in_source_order: Vec<Binding>,
+}
+
 #[derive(LocalResource, Debug)]
 pub struct ScriptInput {
-    pub script_updater: ScriptModule<ScriptInputContext>,
-    pub converted_simulation_value: Value,
+    pub sets: SeqMap<String, BindingsInSet>,
+    pub main_module: ResolvedModuleRef,
 }
 
 impl ScriptInput {
-    pub fn new(script_module: ScriptModule<ScriptInputContext>) -> Self {
-        Self {
-            script_updater: script_module,
-            converted_simulation_value: Value::Unit,
-        }
+    pub fn new(main_module: ResolvedModuleRef, sets: SeqMap<String, BindingsInSet>) -> Self {
+        Self { sets, main_module }
     }
 
     /// # Panics
     ///
     #[must_use]
     pub fn main_module(&self) -> ResolvedModuleRef {
-        self.script_updater.main_module()
+        self.main_module.clone()
+    }
+}
+
+fn scan_struct(struct_type: &ResolvedStructTypeRef) -> Result<BindingsInSet, MangroveError> {
+    let mut bindings_in_source_order = Vec::new();
+    for (index, (field_name, field_type)) in struct_type
+        .borrow()
+        .anon_struct_type
+        .defined_fields
+        .iter()
+        .enumerate()
+    {
+        info!(ty=?field_type.field_type, "found_field");
+        let binding_kind = match &field_type.field_type {
+            ResolvedType::Bool => BindingKind::Digital,
+
+            ResolvedType::Tuple(tuple_type) => {
+                if tuple_type.0.len() != 2 {
+                    return Err(MangroveError::Other("strange field type".into()));
+                }
+                if tuple_type.0[0] != ResolvedType::Float && tuple_type.0[1] != ResolvedType::Float
+                {
+                    return Err(MangroveError::Other("strange field type tuple".into()));
+                }
+                BindingKind::Analog
+            }
+            _ => {
+                return Err(MangroveError::Other("strange field type".into()));
+            }
+        };
+
+        let binding = Binding {
+            name: field_name.clone(),
+            struct_field_index: index,
+            kind: binding_kind,
+        };
+
+        bindings_in_source_order.push(binding);
     }
 
-    pub fn tick(
-        &mut self,
-        simulation_value: Value,
-        debug_source_map: Option<&dyn SourceMapLookup>,
-    ) {
-        self.simulation_input(simulation_value, debug_source_map)
-            .expect("simulation input failed");
-    }
-
-    /// # Errors
-    ///
-    pub fn simulation_input(
-        &mut self,
-        logic: Value,
-        debug_source_map: Option<&dyn SourceMapLookup>,
-    ) -> Result<(), ExecuteError> {
-        let _ = self
-            .script_updater
-            .update(&[logic.clone()], debug_source_map);
-
-        Ok(())
-    }
+    let bindings_in_set = BindingsInSet {
+        bindings_in_source_order,
+    };
+    Ok(bindings_in_set)
 }
 
 /// # Errors
 ///
 /// # Panics
 ///
-pub fn boot(
-    simulation_main_module: &ResolvedModuleRef,
-    flow_main_module: &ResolvedModuleRef,
-    source_map: &mut SourceMapResource,
-) -> Result<ScriptInput, MangroveError> {
-    let updater = util::boot(
-        vec![simulation_main_module, flow_main_module],
-        &["input".to_string()],
-        "update",
-        ScriptInputContext {},
-        source_map,
-    )?;
+pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptInput, MangroveError> {
+    let input_types = util::compile_types::<i32>(vec![], &["input".to_string()], source_map)?;
+    let mut mapping = SeqMap::new();
+    info!(len=?input_types.borrow().definitions.len(), "definitions");
+    for (name, struct_type) in input_types.borrow().namespace.borrow().structs() {
+        let bindings_in_set = scan_struct(struct_type)?;
 
-    Ok(ScriptInput::new(updater))
+        mapping.insert(name.clone(), bindings_in_set)?;
+    }
+
+    let script_input = ScriptInput {
+        sets: mapping,
+        main_module: input_types,
+    };
+
+    Ok(script_input)
+}
+
+pub fn convert_to_input_bindings(sets: &SeqMap<String, BindingsInSet>) -> InputConfig {
+    let mut all_sets = SeqMap::new();
+
+    for (script_set_name, script_bindings) in sets {
+        let mut digital_actions = Vec::new();
+        let mut analog_actions = Vec::new();
+        for script_binding in &script_bindings.bindings_in_source_order {
+            match script_binding.kind {
+                BindingKind::Digital => digital_actions.push(DigitalAction {
+                    name: script_binding.name.clone(),
+                }),
+                BindingKind::Analog => analog_actions.push(AnalogAction {
+                    name: script_binding.name.clone(),
+                }),
+            };
+        }
+
+        let actions = Actions {
+            digital: digital_actions,
+            analog: analog_actions,
+        };
+
+        all_sets.insert(script_set_name.clone(), actions).unwrap();
+    }
+
+    let steam_input_config = InputConfig {
+        action_sets: ActionSets { sets: all_sets },
+    };
+
+    steam_input_config
 }
 
 pub struct ScriptInputPlugin;
 
 impl Plugin for ScriptInputPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(PreUpdate, input_tick);
         let source_map_resource = app
             .get_resource_mut::<SourceMapResource>()
             .expect("must have source map resource");
 
-        let script_input = boot(source_map_resource);
-        if let Err(mangrove_error) = &script_input {
-            show_mangrove_error(mangrove_error, &source_map_resource.wrapper.source_map);
+        let script_input_result = boot(source_map_resource);
+        match script_input_result {
+            Err(mangrove_error) => {
+                show_mangrove_error(&mangrove_error, &source_map_resource.wrapper.source_map);
+            }
+
+            Ok(script_input) => {
+                for (name, set) in &script_input.sets {
+                    info!(?name, "found set");
+                    for binding in &set.bindings_in_source_order {
+                        info!(?binding, "found binding");
+                    }
+                }
+
+                let converted = convert_to_input_bindings(&script_input.sets);
+                info!(?converted, "converted");
+                app.insert_resource(converted);
+
+                app.insert_local_resource(script_input);
+            }
         }
-        app.insert_local_resource(script_input.unwrap());
     }
 }

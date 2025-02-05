@@ -1,0 +1,12 @@
+[package]
+name = "limnus-input-binding"
+version = "0.0.16"
+edition = "2021"
+
+[dependencies]
+seq-map = "0.0.13"
+limnus-app = "0.0.16"
+limnus-local-resource = "0.0.16"
+limnus-resource = "0.0.16"
+limnus-system-params = "0.0.16"
+limnus-default-stages = "0.0.16"

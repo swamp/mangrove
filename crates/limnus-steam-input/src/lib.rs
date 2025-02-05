@@ -1,5 +1,6 @@
 use limnus_app::prelude::{App, Plugin};
 use limnus_default_stages::Update;
+use limnus_input_binding::InputConfig;
 use limnus_local_resource::prelude::LocalResource;
 use limnus_resource::prelude::Resource;
 use limnus_steamworks::SteamworksClient;
@@ -8,10 +9,16 @@ use seq_map::SeqMap;
 use std::fmt::{Debug, Formatter};
 use steamworks::{ClientManager, Input};
 use tracing::info;
-
 // https://partner.steamgames.com/doc/api/isteaminput
 
 pub struct SteamworksGamepad {}
+
+fn lowercase_first(s: &str) -> String {
+    let mut chars = s.chars();
+    chars.next().map_or_else(String::new, |first| {
+        first.to_lowercase().collect::<String>() + chars.as_str()
+    })
+}
 
 #[derive(LocalResource)]
 pub struct SteamworksInput {
@@ -32,12 +39,9 @@ pub fn debug_tick(input: LoRe<SteamworksInput>, bindings: Re<SteamworksInputBind
         info!(?controller_id, "active controller");
         for (_action_set_name, bindings) in &bindings.action_sets.sets {
             // TODO: Find out how to get action sets to work
-            /*
             input
                 .manager
                 .activate_action_set_handle(controller_id, bindings.handle);
-
-             */
 
             for analog in &bindings.analog {
                 let data = input
@@ -63,32 +67,6 @@ pub fn debug_tick(input: LoRe<SteamworksInput>, bindings: Re<SteamworksInputBind
             }
         }
     }
-}
-
-#[derive(Debug)]
-pub struct DigitalAction {
-    pub name: String,
-}
-
-#[derive(Debug)]
-pub struct AnalogAction {
-    pub name: String,
-}
-
-#[derive(Debug)]
-pub struct Actions {
-    pub digital: Vec<DigitalAction>,
-    pub analog: Vec<AnalogAction>,
-}
-
-#[derive(Debug)]
-pub struct ActionSets {
-    pub sets: SeqMap<String, Actions>,
-}
-
-#[derive(Debug, Resource)]
-pub struct SteamworksInputConfig {
-    pub action_sets: ActionSets,
 }
 
 #[derive(Debug)]
@@ -122,6 +100,12 @@ pub struct SteamworksInputBindings {
 
 pub struct SteamworksInputPlugin;
 
+fn capitalize_first(s: &str) -> String {
+    let mut chars = s.chars();
+    chars.next().map_or_else(String::new, |first| {
+        first.to_uppercase().collect::<String>() + chars.as_str()
+    })
+}
 impl Plugin for SteamworksInputPlugin {
     fn build(&self, app: &mut App) {
         info!("booting up steam input");
@@ -129,7 +113,7 @@ impl Plugin for SteamworksInputPlugin {
         let client = app.get_resource_mut::<SteamworksClient>().unwrap();
         let input = client.client.input();
 
-        let config = app.get_resource_ref::<SteamworksInputConfig>().unwrap();
+        let config = app.get_resource_ref::<InputConfig>().unwrap();
 
         let mut bindings = SteamworksInputBindings {
             action_sets: ActionBindingSets {
@@ -139,31 +123,37 @@ impl Plugin for SteamworksInputPlugin {
 
         for (set_name, actions_in_set) in &config.action_sets.sets {
             // TODO: Find out how to get action sets to work
-            //let handle = input.get_action_set_handle(&*set_name);
+            let converted_set_name = lowercase_first(set_name);
+            let handle = input.get_action_set_handle(&converted_set_name);
+            info!(handle, converted_set_name, "set handle");
             //assert_ne!(handle, 0, "wrong action set handle {}", set_name);
 
             let mut binding_set = ActionBindings {
-                handle: 0,
+                handle,
                 digital: vec![],
                 analog: vec![],
             };
 
-            for action in &actions_in_set.analog {
-                info!(name = action.name, "binding analog");
-                let handle = input.get_analog_action_handle(&action.name);
+            for analog in &actions_in_set.analog {
+                let converted_name = capitalize_first(&analog.name.clone());
+                info!(converted_name, "binding analog");
+                let handle = input.get_analog_action_handle(&converted_name);
+                info!(handle, "analog handle");
                 //assert_ne!(handle, 0, "wrong analog action handle {}", action.name);
                 binding_set.analog.push(AnalogActionBinding {
-                    debug_name: action.name.clone(),
+                    debug_name: converted_name,
                     handle,
                 });
             }
 
             for digital in &actions_in_set.digital {
-                info!(name = digital.name, "binding digital");
-                let handle = input.get_digital_action_handle(&digital.name);
+                let converted_name = capitalize_first(&digital.name.clone());
+                info!(converted_name, "binding digital");
+                let handle = input.get_digital_action_handle(&converted_name);
+                info!(handle, "digital handle");
                 //assert_ne!(handle, 0, "wrong digital action handle {}", digital.name);
                 binding_set.digital.push(DigitalActionBinding {
-                    debug_name: digital.name.clone(),
+                    debug_name: converted_name,
                     handle,
                 });
             }
@@ -171,7 +161,7 @@ impl Plugin for SteamworksInputPlugin {
             bindings
                 .action_sets
                 .sets
-                .insert(set_name.clone(), binding_set)
+                .insert(converted_set_name, binding_set)
                 .unwrap();
         }
 

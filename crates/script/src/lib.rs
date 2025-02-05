@@ -18,6 +18,7 @@ pub mod serialize;
 pub mod simulation;
 pub mod source_map;
 mod util;
+mod sim_input;
 
 use swamp_script::prelude::SourceMapWrapper;
 
