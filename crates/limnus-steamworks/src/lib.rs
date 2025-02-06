@@ -39,7 +39,7 @@ impl Plugin for SteamworksPlugin {
         let (client, single) = Client::init().unwrap();
 
         app.add_system(PreUpdate, run_callbacks);
-
+        single.run_callbacks();
         app.insert_resource(SteamworksClient { client });
         app.insert_local_resource(SteamworksClientSingleThread { single });
     }

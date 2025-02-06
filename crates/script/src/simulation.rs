@@ -424,7 +424,9 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, Mang
     )?;
 
     let Value::Struct(simulation_struct_type_ref, _) = &simulation_value else {
-        return Err(MangroveError::Other("needs to be simulation struct".to_string()));
+        return Err(MangroveError::Other(
+            "needs to be simulation struct".to_string(),
+        ));
     };
 
     let simulation_fn = get_impl_func(simulation_struct_type_ref, "tick");

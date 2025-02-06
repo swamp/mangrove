@@ -4,7 +4,7 @@
  */
 use crate::SourceMapResource;
 use swamp::prelude::{App, Plugin};
-use swamp_script::prelude::{ SourceMap,  SourceMapWrapper};
+use swamp_script::prelude::{SourceMap, SourceMapWrapper};
 
 pub struct SourceMapPlugin;
 

@@ -3,12 +3,12 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::err::show_mangrove_error;
-use crate::simulation::ScriptSimulation;
 use crate::script::{
     color_like, compile, create_default_color_value, create_default_sprite_params,
     create_empty_struct_value_util, sprite_params, uvec2_like, value_to_value_ref, vec3_like,
     MangroveError,
 };
+use crate::simulation::ScriptSimulation;
 use crate::util::get_impl_func;
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use monotonic_time_rs::Millis;
@@ -1300,7 +1300,9 @@ pub fn boot(
     )?;
 
     let Value::Struct(render_struct_type_ref, _) = render_struct_value.clone() else {
-        return Err(MangroveError::Other("needs to be simulation struct".to_string()));
+        return Err(MangroveError::Other(
+            "needs to be simulation struct".to_string(),
+        ));
     };
 
     // let render_fn = get_impl_func(&render_struct_type_ref, "render");
@@ -1351,15 +1353,17 @@ pub fn detect_reload_tick(
     }
     for msg in script_messages.iter_previous() {
         match msg {
-            ScriptMessage::Reload => match boot(&mut all_resources, &script_simulation.main_module()) {
-                Ok(new_render) => *script_render = new_render,
-                Err(mangrove_error) => {
-                    err.has_errors = true;
-                    show_mangrove_error(&mangrove_error, &source_map.wrapper.source_map);
-                    eprintln!("script render failed: {mangrove_error}");
-                    error!(error=?mangrove_error, "script render failed");
+            ScriptMessage::Reload => {
+                match boot(&mut all_resources, &script_simulation.main_module()) {
+                    Ok(new_render) => *script_render = new_render,
+                    Err(mangrove_error) => {
+                        err.has_errors = true;
+                        show_mangrove_error(&mangrove_error, &source_map.wrapper.source_map);
+                        eprintln!("script render failed: {mangrove_error}");
+                        error!(error=?mangrove_error, "script render failed");
+                    }
                 }
-            },
+            }
         }
     }
 }

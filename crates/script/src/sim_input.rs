@@ -102,12 +102,12 @@ impl Plugin for ScriptInputPlugin {
             .get_resource_mut::<SourceMapResource>()
             .expect("must have source map resource");
 
-       /* let script_input = boot(source_map_resource);
+        /* let script_input = boot(source_map_resource);
         if let Err(mangrove_error) = &script_input {
             show_mangrove_error(mangrove_error, &source_map_resource.wrapper.source_map);
         }
         app.insert_local_resource(script_input.unwrap());
-        
+
         */
     }
 }

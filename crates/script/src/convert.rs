@@ -48,7 +48,10 @@ pub fn detect_reload_tick(
     }
 }
 
-pub fn store_tick(script_logic: LoRe<ScriptSimulation>, mut previous_logic: LoReM<PreviousSimulation>) {
+pub fn store_tick(
+    script_logic: LoRe<ScriptSimulation>,
+    mut previous_logic: LoReM<PreviousSimulation>,
+) {
     let mut buf = [0u8; 2048];
     let size = script_logic
         .immutable_simulation_value()

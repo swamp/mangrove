@@ -2,9 +2,7 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use limnus_steam_input::{
-    SteamworksInputPlugin,
-};
+use limnus_steam_input::SteamworksInputPlugin;
 #[cfg(feature = "steam")]
 use limnus_steamworks::SteamworksPlugin;
 use mangrove_save_detector::SaveDetectorPlugin;
@@ -57,7 +55,6 @@ fn main() {
 
     #[cfg(feature = "steam")]
     {
-
         app.add_plugins(SteamworksPlugin);
         app.add_plugins(SteamworksInputPlugin);
     }

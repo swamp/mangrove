@@ -15,10 +15,10 @@ mod modules;
 pub mod render;
 mod script;
 pub mod serialize;
+mod sim_input;
 pub mod simulation;
 pub mod source_map;
 mod util;
-mod sim_input;
 
 use swamp_script::prelude::SourceMapWrapper;
 

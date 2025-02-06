@@ -1,0 +1,10 @@
+[package]
+name = "limnus-input"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tracing = "0.1.41"
+limnus-resource = "0.0.16"
+limnus-message = "0.0.16"
+limnus-app = "0.0.16"

@@ -115,19 +115,31 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptInput, MangroveE
     Ok(script_input)
 }
 
+#[must_use]
+pub fn convert_set_name(s: &str) -> String {
+    s.to_lowercase()
+}
+
+#[must_use]
+pub fn convert_bind_name(s: &str) -> String {
+    s.to_lowercase()
+}
+
 pub fn convert_to_input_bindings(sets: &SeqMap<String, BindingsInSet>) -> InputConfig {
     let mut all_sets = SeqMap::new();
 
     for (script_set_name, script_bindings) in sets {
+        let converted_set_name = convert_set_name(script_set_name);
         let mut digital_actions = Vec::new();
         let mut analog_actions = Vec::new();
         for script_binding in &script_bindings.bindings_in_source_order {
+            let converted_name = convert_bind_name(&script_binding.name);
             match script_binding.kind {
                 BindingKind::Digital => digital_actions.push(DigitalAction {
-                    name: script_binding.name.clone(),
+                    name: converted_name,
                 }),
                 BindingKind::Analog => analog_actions.push(AnalogAction {
-                    name: script_binding.name.clone(),
+                    name: converted_name,
                 }),
             };
         }
@@ -137,14 +149,12 @@ pub fn convert_to_input_bindings(sets: &SeqMap<String, BindingsInSet>) -> InputC
             analog: analog_actions,
         };
 
-        all_sets.insert(script_set_name.clone(), actions).unwrap();
+        all_sets.insert(converted_set_name, actions).unwrap();
     }
 
-    let steam_input_config = InputConfig {
+    InputConfig {
         action_sets: ActionSets { sets: all_sets },
-    };
-
-    steam_input_config
+    }
 }
 
 pub struct ScriptInputPlugin;
