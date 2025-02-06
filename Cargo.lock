@@ -1861,7 +1861,7 @@ dependencies = [
 
 [[package]]
 name = "limnus-input"
-version = "0.1.0"
+version = "0.0.16"
 dependencies = [
  "limnus-app",
  "limnus-message",
@@ -1997,6 +1997,7 @@ version = "0.0.16"
 dependencies = [
  "limnus-app",
  "limnus-default-stages",
+ "limnus-input",
  "limnus-input-binding",
  "limnus-local-resource",
  "limnus-resource",

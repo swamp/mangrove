@@ -4,9 +4,18 @@
  */
 
 use limnus_app::prelude::{App, Plugin};
+use limnus_message::prelude::Message;
+use limnus_message::Messages;
 use limnus_resource::prelude::Resource;
 use std::collections::HashMap;
 use tracing::{debug, error, trace};
+
+#[derive(Debug, Message)]
+pub enum ControllerMessage {
+    Connected(ControllerId, String),
+    Disconnected(ControllerId),
+    Activated(ControllerId), // Sent when first button is pressed
+}
 
 pub type ControllerId = usize;
 
@@ -49,7 +58,7 @@ impl Controller {
 
 #[derive(Debug, Resource)]
 pub struct Controllers {
-    gamepads: HashMap<ControllerId, Controller>,
+    controllers: HashMap<ControllerId, Controller>,
 }
 
 impl Default for Controllers {
@@ -62,11 +71,12 @@ impl Controllers {
     /// Creates a new Controller instance
     ///
     /// # Arguments
-    /// * `id` - Unique identifier for this gamepad
-    /// * `name` - Human-readable name of the gamepad
+    /// * `id` - Unique identifier for this controller
+    /// * `name` - Human-readable name of the controller
+    #[must_use]
     pub fn new() -> Self {
         Self {
-            gamepads: HashMap::new(),
+            controllers: HashMap::new(),
         }
     }
     pub fn connected(
@@ -75,57 +85,51 @@ impl Controllers {
         name: &str,
         queue: &mut Messages<ControllerMessage>,
     ) {
-        debug!(id=%id, name=name, "connected gamepad");
-        self.gamepads.insert(id, Controller::new(id, name));
+        debug!(id=%id, name=name, "connected controller");
+        self.controllers.insert(id, Controller::new(id));
         queue.send(ControllerMessage::Connected(id, name.to_string()));
     }
 
     pub fn disconnected(&mut self, id: ControllerId, queue: &mut Messages<ControllerMessage>) {
-        if let Some(existing) = self.gamepads.remove(&id) {
-            debug!(id=%id, name=?existing.name, "disconnected gamepad");
+        if let Some(existing) = self.controllers.remove(&id) {
             queue.send(ControllerMessage::Disconnected(id));
         } else {
-            error!(id=%id, "gamepad not found");
+            error!(id=%id, "controller not found");
         }
     }
 
     #[must_use]
     pub fn controller(&self, id: ControllerId) -> Option<&Controller> {
-        self.gamepads.get(&id)
+        self.controllers.get(&id)
     }
 
-    /// Gets the axis value for a gamepad
+    /// Gets the axis value for a controller
     #[must_use]
     pub fn axis(&self, id: ControllerId, index: usize) -> Option<AxisValueType> {
-        self.gamepad(id).map(|pad| pad.axis[index as usize])
+        self.controller(id).map(|pad| pad.axis[index as usize])
     }
 
-    /// Gets the button value for a gamepad
+    /// Gets the button value for a controller
     #[must_use]
     pub fn button(&self, id: ControllerId, index: usize) -> Option<ButtonValueType> {
-        self.gamepad(id).map(|pad| pad.buttons[index as usize])
+        self.controller(id).map(|pad| pad.buttons[index as usize])
     }
 
     pub fn iter_active(&self) -> impl Iterator<Item = &Controller> {
-        self.gamepads.values().filter(|gamepad| gamepad.is_active)
+        self.controllers
+            .values()
+            .filter(|controller| controller.is_active)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Controller> {
-        self.gamepads.values()
+        self.controllers.values()
     }
 
-    pub fn set_axis(
-        &mut self,
-        id: ControllerId,
-        axis: usize,
-        value: AxisValueType,
-        queue: &mut Messages<ControllerMessage>,
-    ) -> Option<()> {
+    pub fn set_axis(&mut self, id: ControllerId, axis: usize, value: AxisValueType) -> Option<()> {
         trace!(id=?id, axis=?axis, value=?value, "set axis");
-        let gamepad = self.gamepads.get_mut(&id)?;
+        let controller = self.controllers.get_mut(&id)?;
 
-        queue.send(ControllerMessage::AxisChanged(id, axis, value));
-        gamepad.axis[axis as usize] = value;
+        controller.axis[axis] = value;
 
         Some(())
     }
@@ -139,23 +143,16 @@ impl Controllers {
     ) -> Option<()> {
         trace!(id=?id, button=?button, value=?value, "set button");
 
-        let gamepad = self.gamepads.get_mut(&id)?;
+        let controller = self.controllers.get_mut(&id)?;
 
-        if !gamepad.is_active && value > 0.1 {
-            debug!(id=%id, button=?button, name=%gamepad.name, "gamepad activated");
+        if !controller.is_active && value {
+            //debug!(id=%id, button=?button, name=%controller.name, "controller activated");
             queue.send(ControllerMessage::Activated(id));
-            gamepad.is_active = true;
+            controller.is_active = true;
         }
 
-        queue.send(ControllerMessage::ButtonChanged(id, button, value));
-        gamepad.buttons[button as usize] = value;
+        controller.buttons[button] = value;
         Some(())
-    }
-
-    /// Gets the name of a gamepad
-    #[must_use]
-    pub fn name(&self, id: ControllerId) -> Option<&str> {
-        self.gamepad(id).map(|pad| pad.name.as_str())
     }
 }
 

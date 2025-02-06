@@ -1,10 +1,11 @@
 use limnus_app::prelude::{App, Plugin};
 use limnus_default_stages::{PreUpdate, Update};
+use limnus_input::Controllers;
 use limnus_input_binding::InputConfig;
 use limnus_local_resource::prelude::LocalResource;
 use limnus_resource::prelude::Resource;
 use limnus_steamworks::SteamworksClient;
-use limnus_system_params::{LoRe, LoReM, Re, ReAll};
+use limnus_system_params::{LoRe, LoReM, Re, ReAll, ReM};
 use seq_map::SeqMap;
 use std::fmt::{Debug, Formatter};
 use steamworks::{ClientManager, Input};
@@ -65,23 +66,31 @@ pub fn get_action_set_for_controller(
     bindings
 }
 
-pub fn debug_tick(input: LoRe<SteamworksInput>, bindings: Re<SteamworksInputBindings>) {
+pub fn debug_tick(
+    input: LoRe<SteamworksInput>,
+    bindings: Re<SteamworksInputBindings>,
+    mut controllers: ReM<Controllers>,
+) {
     input.manager.run_frame();
-    let controllers = input.manager.get_connected_controllers();
-    for controller_id in controllers {
+    let connected_controllers = input.manager.get_connected_controllers();
+    for controller_id in &connected_controllers {
         //        info!(?controller_id, "active controller");
-        let bindings = get_action_set_for_controller(controller_id, &bindings);
+        let bindings = get_action_set_for_controller(*controller_id, &bindings);
+    }
 
-        // TODO: Find out how to get action sets to work
+    for controller_id in &connected_controllers {
+        //        info!(?controller_id, "active controller");
+        let bindings = get_action_set_for_controller(*controller_id, &bindings);
+
         // TODO: DO not set action set every frame
         input
             .manager
-            .activate_action_set_handle(controller_id, bindings.handle);
+            .activate_action_set_handle(*controller_id, bindings.handle);
 
         for analog in &bindings.analog {
             let data = input
                 .manager
-                .get_analog_action_data(controller_id, analog.handle);
+                .get_analog_action_data(*controller_id, analog.handle);
 
             // TODO: eMode: EInputSourceMode
             let x = data.x; // needed because it is packed
@@ -96,7 +105,7 @@ pub fn debug_tick(input: LoRe<SteamworksInput>, bindings: Re<SteamworksInputBind
         for digital in &bindings.digital {
             let data = input
                 .manager
-                .get_digital_action_data(controller_id, digital.handle);
+                .get_digital_action_data(*controller_id, digital.handle);
             let value = data.bState; // needed because it is packed
             let active = data.bActive; // needed because it is packed
             if value {
