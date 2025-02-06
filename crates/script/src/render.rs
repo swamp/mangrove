@@ -65,6 +65,16 @@ impl RenderWrapper {
         render.draw_sprite_ex(pos, material_ref, params);
     }
 
+    pub fn push_quad(&self, pos: Vec3, size: UVec2, color: Color) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.draw_quad(pos, size, color);
+    }
+
     pub fn sprite_atlas_frame(&mut self, position: Vec3, frame: u16, atlas: &impl FrameLookup) {
         // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
         let render: &mut Render;
@@ -642,7 +652,7 @@ pub fn register_gfx_struct_value_with_members(
                 mut_self_parameter.clone(),
                 position_param.clone(),
                 material_handle.clone(),
-                size_param,
+                size_param.clone(),
             ]
             .to_vec(),
             return_type: Box::from(ResolvedType::Int),
@@ -716,6 +726,56 @@ pub fn register_gfx_struct_value_with_members(
         },
     )?;
 
+    let color_parameter = ResolvedTypeForParameter {
+        name: "color".to_string(),
+        resolved_type: Some(gfx_types.color),
+        is_mutable: false,
+        node: None,
+    };
+
+    // quad() ---------------------------
+    let quad_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
+    let quad_fn = ResolvedExternalFunctionDefinition {
+        name: None,
+        assigned_name: "quad".to_string(),
+        signature: FunctionTypeSignature {
+            parameters: [
+                mut_self_parameter.clone(),
+                position_param.clone(),
+                size_param,
+                color_parameter.clone(),
+            ]
+            .to_vec(),
+            return_type: Box::from(ResolvedType::Unit),
+        },
+        id: quad_external_fn_id,
+    };
+
+    gfx_struct_type
+        .borrow_mut()
+        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(quad_fn))?;
+
+    externals.register_external_function(
+        quad_external_fn_id,
+        move |mem_val: &[VariableValue], context| {
+            let params = convert_to_values(mem_val).unwrap();
+            //let _self_value = &params[0]; // the Gfx struct is empty by design.
+            let position = vec3_like(&params[1])?;
+
+            let size = uvec2_like(&params[2])?;
+
+            let color = color_like(&params[3])?;
+
+            context
+                .render
+                .as_mut()
+                .unwrap()
+                .push_quad(position, size, color);
+
+            Ok(Value::Unit)
+        },
+    )?;
+
     let font_and_material_handle_ref = namespace
         .get_struct("FontAndMaterialHandle")
         .expect("FontAndMaterialHandle is missing");
@@ -723,13 +783,6 @@ pub fn register_gfx_struct_value_with_members(
     let font_and_material_handle = ResolvedTypeForParameter {
         name: "font_and_material_handle".to_string(),
         resolved_type: Some(ResolvedType::Struct(font_and_material_handle_ref.clone())),
-        is_mutable: false,
-        node: None,
-    };
-
-    let color_parameter = ResolvedTypeForParameter {
-        name: "color".to_string(),
-        resolved_type: Some(gfx_types.color),
         is_mutable: false,
         node: None,
     };
@@ -752,7 +805,7 @@ pub fn register_gfx_struct_value_with_members(
                 position_param.clone(),
                 text_parameter,
                 font_and_material_handle,
-                color_parameter,
+                color_parameter.clone(),
             ]
             .to_vec(),
             return_type: Box::from(ResolvedType::Unit),
