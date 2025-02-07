@@ -2,6 +2,7 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
+#[cfg(feature = "steam")]
 use limnus_steam_input::SteamworksInputPlugin;
 #[cfg(feature = "steam")]
 use limnus_steamworks::SteamworksPlugin;

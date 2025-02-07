@@ -25,4 +25,4 @@ limnus-steam-input = { path = "../limnus-steam-input", version = "0.0.16", optio
 
 [features]
 steam = ["limnus-steamworks", "limnus-steam-input"]
-default = ["steam"]
+default = []
