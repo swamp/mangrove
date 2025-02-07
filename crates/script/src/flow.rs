@@ -107,7 +107,7 @@ impl ScriptFlow {
 /// # Errors
 ///
 pub fn create_flow_engine_module(
-    resolve_state: &mut ResolvedProgramState,
+    _resolve_state: &mut ResolvedProgramState,
 ) -> Result<ResolvedModule, ResolveError> {
     let module_path = ["mangrove".to_string(), "flow".to_string()];
     let module = ResolvedModule::new(&module_path);

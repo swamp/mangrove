@@ -268,6 +268,7 @@ pub fn input_module(
         let parent = ResolvedEnumType {
             name: ResolvedLocalTypeIdentifier(ResolvedNode {
                 span: Span::default(),
+                markdown_doc: None,
             }),
             assigned_name: "Axis".to_string(),
             module_path: Vec::from(module_path.clone()),
@@ -285,6 +286,7 @@ pub fn input_module(
                 common: ResolvedEnumVariantCommon {
                     name: ResolvedLocalTypeIdentifier(ResolvedNode {
                         span: Span::default(),
+                        markdown_doc: None,
                     }),
                     assigned_name: variant_name.to_string(),
                     container_index: container_index as u8,
@@ -310,6 +312,7 @@ pub fn input_module(
         let parent = ResolvedEnumType {
             name: ResolvedLocalTypeIdentifier(ResolvedNode {
                 span: Span::default(),
+                markdown_doc: None,
             }),
             assigned_name: "Button".to_string(),
             module_path: Vec::from(module_path),
@@ -344,6 +347,7 @@ pub fn input_module(
                 common: ResolvedEnumVariantCommon {
                     name: ResolvedLocalTypeIdentifier(ResolvedNode {
                         span: Span::default(),
+                        markdown_doc: None,
                     }),
                     assigned_name: button_variant_name.to_string(),
                     container_index: container_index as u8,

@@ -75,6 +75,24 @@ impl RenderWrapper {
         render.draw_quad(pos, size, color);
     }
 
+    pub(crate) fn push_nine_slice(
+        &self,
+        pos: Vec3,
+        size: UVec2,
+        corner_size: UVec2,
+        material: &MaterialRef,
+        atlas_offset: UVec2,
+        color: Color,
+    ) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.draw_nine_slice(pos, size, corner_size, material, atlas_offset, color);
+    }
+
     pub fn sprite_atlas_frame(&mut self, position: Vec3, frame: u16, atlas: &impl FrameLookup) {
         // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
         let render: &mut Render;
@@ -692,7 +710,7 @@ pub fn register_gfx_struct_value_with_members(
             parameters: [
                 mut_self_parameter.clone(),
                 position_param.clone(),
-                material_handle,
+                material_handle.clone(),
                 sprite_params_parameter.clone(),
             ]
             .to_vec(),
@@ -742,7 +760,7 @@ pub fn register_gfx_struct_value_with_members(
             parameters: [
                 mut_self_parameter.clone(),
                 position_param.clone(),
-                size_param,
+                size_param.clone(),
                 color_parameter.clone(),
             ]
             .to_vec(),
@@ -771,6 +789,57 @@ pub fn register_gfx_struct_value_with_members(
                 .as_mut()
                 .unwrap()
                 .push_quad(position, size, color);
+
+            Ok(Value::Unit)
+        },
+    )?;
+
+    // nine_slice() ---------------------------
+    /// https://en.wikipedia.org/wiki/9-slice_scaling
+    let nine_slice_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
+    let nine_slice_fn = ResolvedExternalFunctionDefinition {
+        name: None,
+        assigned_name: "nine_slice".to_string(),
+        signature: FunctionTypeSignature {
+            parameters: [
+                mut_self_parameter.clone(),
+                position_param.clone(),
+                size_param.clone(),
+                size_param.clone(),
+                material_handle,
+                size_param,
+                color_parameter.clone(),
+            ]
+            .to_vec(),
+            return_type: Box::from(ResolvedType::Unit),
+        },
+        id: nine_slice_external_fn_id,
+    };
+
+    gfx_struct_type
+        .borrow_mut()
+        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(nine_slice_fn))?;
+
+    externals.register_external_function(
+        nine_slice_external_fn_id,
+        move |mem_val: &[VariableValue], context| {
+            let params = convert_to_values(mem_val).unwrap();
+            //let _self_value = &params[0]; // the Gfx struct is empty by design.
+            let position = vec3_like(&params[1])?;
+            let complete_size = uvec2_like(&params[2])?;
+            let corner_size = uvec2_like(&params[3])?;
+            let material_ref = params[4].downcast_hidden_rust::<MaterialWrapper>().unwrap();
+            let atlas_offset = uvec2_like(&params[5])?;
+            let color = color_like(&params[6])?;
+
+            context.render.as_mut().unwrap().push_nine_slice(
+                position,
+                complete_size,
+                corner_size,
+                &material_ref.borrow().0,
+                atlas_offset,
+                color,
+            );
 
             Ok(Value::Unit)
         },
