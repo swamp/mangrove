@@ -1,0 +1,101 @@
+/// Render package. Do not modify this file!
+
+enum Rotate {
+    Degrees0,
+    Degrees90,
+    Degrees180,
+    Degrees270,
+}
+
+/// Represents a color. Only values between 0.0 and 1.0 is allowed
+struct Color {
+   r: Float,
+   g: Float,
+   b: Float,
+   a: Float,
+}
+
+impl Color {
+    fn new(r: Float, g: Float, b: Float, a: Float) -> Color {
+        Color { r, g, b, a }
+    }
+
+    fn default() -> Color {
+        Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 }
+    }
+}
+
+type Pos2 = (Int, Int)
+type Pos3 = (Int, Int, Int)
+type Size2 = (Int, Int)
+type UPos2 = (Int, Int)
+type AssetName = String
+
+
+/// Specific extra parameters that should be used in sprite rendering
+struct SpriteParams {
+  flip_x: Bool, /// flips along x axis
+  flip_y: Bool, /// flips along y axis
+  rotate: Rotate, /// Rotates in 90 degree steps
+  color: Color, /// Color tint
+  scale: Int, /// Integer scaling, should rarely be used since it generally doesn't look good
+  uv: Pos2, /// u,v position in texture
+  size: Size, /// the size in pixel that it should be expanded to. generally 0,0.
+}
+
+impl SpriteParams {
+    fn default() -> SpriteParams {
+        SpriteParams { flip_x: false, flip_y: false, rotate: Rotate::Degrees0, color: Color::default(), scale: 1, uv: (0, 0), size: (0, 0) }
+    }
+}
+
+/// Has internal hidden handle to the material and other information
+struct FontAndMaterialHandle {
+}
+
+/// Has internal hidden handle to the material, size of frames, and other information
+struct FixedAtlasHandle {
+
+}
+
+/// Has internal hidden handle to the material and other information
+struct MaterialHandle {
+}
+
+
+struct Gfx
+
+impl Gfx {
+    /// Renders the whole texture in the material at the position. position is the lower left position of the texture.
+    external fn sprite(mut self, position: Pos3, material: MaterialHandle)
+    /// Renders a sprite according to the parameters in `SpriteParams`
+    external fn sprite_ex(mut self, position: Pos3, material: MaterialHandle, params: SpriteParams)
+
+    /// Renders a sprite taken from the specified frame in the atlas
+    external fn sprite_atlas_frame(mut self, position: Pos3, material: FixedAtlasHandle, frame: Int)
+    /// Renders a sprite taken from the specified frame in the atlas, but use the information in the `SpriteParams`
+    external fn sprite_atlas_frame_ex(mut self, position: Pos3, material: FixedAtlasHandle, frame: Int, params: SpriteParams)
+
+    /// Renders a quad (rectangle), with the specified size and color. position is where the lower left corner of the rectangle is rendered.
+    external fn quad(mut self, position: Pos3, size: Size2, color: Color)
+
+    /// Nine slice or nine patch rendering. https://en.wikipedia.org/wiki/9-slice_scaling
+    external fn nine_slice(mut self, position: Pos3, total_size: Size2, corner_size: Size2,
+         texture_window_size: Size2, material: MaterialHandle, texture_position: UPos2, color: Color)
+
+    /// Render text with the specified tint. `Color::default()` does not change the color
+    external fn text(mut self, position: Pos3, text: String, material: FontAndMaterialHandle, color: Color)
+}
+
+
+/// Handles graphical asset loading
+struct Assets // Internally has hidden handles to be able to do asset loading
+
+/// Starts loading the asset specified by the `AssetName` and returns a Handle (small struct) that references that asset
+impl Assets {
+    external fn material_png(mut self, name: AssetName) -> MaterialHandle
+    external fn frame_fixed_grid_material_png(mut self, name: AssetName, grid_size: Size2, texture_size: Size2) -> FixedAtlasHandle
+
+    external fn bm_font(mut self, name: AssetName) -> FontAndMaterialHandle
+}
+
