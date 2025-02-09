@@ -3720,6 +3720,23 @@ name = "swamp-script-ast"
 version = "0.0.12"
 
 [[package]]
+name = "swamp-script-compile"
+version = "0.0.12"
+dependencies = [
+ "swamp-script-analyzer",
+ "swamp-script-ast",
+ "swamp-script-core",
+ "swamp-script-dep-loader",
+ "swamp-script-eval",
+ "swamp-script-eval-loader",
+ "swamp-script-parser",
+ "swamp-script-semantic",
+ "swamp-script-source-map",
+ "swamp-script-source-map-lookup",
+ "swamp-script-std",
+]
+
+[[package]]
 name = "swamp-script-core"
 version = "0.0.12"
 dependencies = [
@@ -3747,7 +3764,9 @@ version = "0.0.12"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
+ "swamp-script-compile",
  "swamp-script-eval",
+ "swamp-script-eval-loader",
  "swamp-script-parser",
  "swamp-script-semantic",
  "swamp-script-source-map",

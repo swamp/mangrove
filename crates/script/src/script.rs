@@ -2,7 +2,6 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::render::MathTypes;
 use seq_map::SeqMapError;
 use std::cell::RefCell;
 use std::error::Error;
@@ -102,23 +101,14 @@ pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
     Value::Struct(struct_type, [].to_vec())
 }
 
-pub fn create_empty_struct_value_util(
-    namespace: &mut ResolvedModuleNamespace,
-    name: &str,
-) -> Result<(Value, ResolvedStructTypeRef), ResolveError> {
-    let struct_type = create_empty_struct_type(namespace, name)?;
-    Ok((create_empty_struct_value(struct_type.clone()), struct_type))
-}
+
 
 pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, ValueError> {
     if let Value::Struct(_struct_type_ref, fields) = sprite_params_struct {
         Ok(SpriteParams {
-            scale: fields[4].borrow().expect_int()? as u8,
-            texture_size: uvec2_like(&fields[6].borrow())?,
-            texture_pos: uvec2_like(&fields[5].borrow())?,
             flip_x: fields[0].borrow().as_bool()?,
             flip_y: fields[1].borrow().as_bool()?,
-            rotation: match fields[2].borrow().expect_int()? % 4 {
+            rotation: match fields[2].borrow().expect_enum_container_index()? % 4 {
                 0 => Rotation::Degrees0,
                 1 => Rotation::Degrees90,
                 2 => Rotation::Degrees180,
@@ -127,21 +117,13 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
             },
             pivot: Vec2::new(0, 0),
             color: color_like(&fields[3].borrow())?,
+            scale: fields[4].borrow().expect_int()? as u8,
+            texture_size: uvec2_like(&fields[6].borrow())?,
+            texture_pos: uvec2_like(&fields[5].borrow())?,
         })
     } else {
         Err(ValueError::TypeError("not a sprite param".to_string()))
     }
-}
-
-pub fn create_default_color_value(color_struct_type_ref: ResolvedStructTypeRef) -> Value {
-    let fields = vec![
-        Value::Float(Fp::one()), // red
-        Value::Float(Fp::one()), // green
-        Value::Float(Fp::one()), // blue
-        Value::Float(Fp::one()), // alpha
-    ];
-
-    Value::Struct(color_struct_type_ref, value_to_value_ref(&fields))
 }
 
 pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
@@ -152,31 +134,6 @@ pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
         .collect()
 }
 
-pub fn create_default_sprite_params(
-    sprite_params_struct_type_ref: ResolvedStructTypeRef,
-    color_type: &ResolvedStructTypeRef,
-    math_types: &MathTypes,
-) -> Value {
-    let fields = vec![
-        Value::Bool(false), // flip_x
-        Value::Bool(false), // flip_y
-        Value::Int(0),      // rotation
-        create_default_color_value(color_type.clone()),
-        Value::Int(1), // scale
-        Value::Tuple(
-            // texture_position (uv)
-            math_types.pos2_tuple_type.clone(),
-            value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
-        ),
-        Value::Tuple(
-            // texture_size
-            math_types.size2_tuple_type.clone(),
-            value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
-        ),
-    ];
-
-    Value::Struct(sprite_params_struct_type_ref, value_to_value_ref(&fields))
-}
 
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
     match v {

@@ -17,7 +17,7 @@ struct Color {
 
 impl Color {
     fn new(r: Float, g: Float, b: Float, a: Float) -> Color {
-        Color { r, g, b, a }
+        Color { r:r, g:g, b:b, a:a }
     }
 
     fn default() -> Color {
@@ -49,16 +49,16 @@ impl SpriteParams {
     }
 }
 
-/// Has internal hidden handle to the material and other information
+/// Handle to a font and material.  This is an opaque handle; the underlying data is managed by the engine.
 struct FontAndMaterialHandle {
 }
 
-/// Has internal hidden handle to the material, size of frames, and other information
+/// Handle to a fixed atlas. This is an opaque handle; the underlying data is managed by the engine.
 struct FixedAtlasHandle {
 
 }
 
-/// Has internal hidden handle to the material and other information
+/// Handle to a material. This is an opaque handle; the underlying data is managed by the engine.
 struct MaterialHandle {
 }
 
@@ -83,7 +83,7 @@ impl Gfx {
     external fn nine_slice(mut self, position: Pos3, total_size: Size2, corner_size: Size2,
          texture_window_size: Size2, material: MaterialHandle, texture_position: UPos2, color: Color)
 
-    /// Render text with the specified tint. `Color::default()` does not change the color
+    /// Render text with the specified tint. Use `Color::default()` if you do not want to tint
     external fn text(mut self, position: Pos3, text: String, material: FontAndMaterialHandle, color: Color)
 }
 
@@ -91,11 +91,11 @@ impl Gfx {
 /// Handles graphical asset loading
 struct Assets // Internally has hidden handles to be able to do asset loading
 
-/// Starts loading the asset specified by the `AssetName` and returns a Handle (small struct) that references that asset
+/// Starts loading the asset specified by the `AssetName` and returns a Handle (small struct) that references that asset.
+/// These handles are opaque; the underlying asset data is managed by the engine.
 impl Assets {
     external fn material_png(mut self, name: AssetName) -> MaterialHandle
     external fn frame_fixed_grid_material_png(mut self, name: AssetName, grid_size: Size2, texture_size: Size2) -> FixedAtlasHandle
 
     external fn bm_font(mut self, name: AssetName) -> FontAndMaterialHandle
 }
-

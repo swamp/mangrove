@@ -4,5 +4,5 @@ resolver = "2"
 members = [ "crates/input-binding", "crates/limnus-input","crates/limnus-steam-input", "crates/limnus-steamworks",
     "crates/mangrove",
     "crates/save-detector",
-    "crates/script",
+    "crates/script"
 ]

@@ -8,7 +8,7 @@ use crate::{util, SourceMapResource};
 use limnus_input_binding::{ActionSets, Actions, AnalogAction, DigitalAction, InputConfig};
 use swamp::prelude::{App, LocalResource, Plugin};
 use swamp_script::prelude::*;
-use tracing::info;
+use tracing::{info, trace};
 
 #[derive(Debug)]
 pub struct ScriptInputContext {}
@@ -59,7 +59,6 @@ fn scan_struct(struct_type: &ResolvedStructTypeRef) -> Result<BindingsInSet, Man
         .iter()
         .enumerate()
     {
-        info!(ty=?field_type.field_type, "found_field");
         let binding_kind = match &field_type.field_type {
             ResolvedType::Bool => BindingKind::Digital,
 
@@ -100,7 +99,6 @@ fn scan_struct(struct_type: &ResolvedStructTypeRef) -> Result<BindingsInSet, Man
 pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptInput, MangroveError> {
     let input_types = util::compile_types::<i32>(vec![], &["input".to_string()], source_map)?;
     let mut mapping = SeqMap::new();
-    info!(len=?input_types.borrow().definitions.len(), "definitions");
     for (name, struct_type) in input_types.borrow().namespace.borrow().structs() {
         let bindings_in_set = scan_struct(struct_type)?;
 
@@ -173,9 +171,9 @@ impl Plugin for ScriptInputPlugin {
 
             Ok(script_input) => {
                 for (name, set) in &script_input.sets {
-                    info!(?name, "found set");
+                    trace!(?name, "found set");
                     for binding in &set.bindings_in_source_order {
-                        info!(?binding, "found binding");
+                        trace!(?binding, "found binding");
                     }
                 }
 
