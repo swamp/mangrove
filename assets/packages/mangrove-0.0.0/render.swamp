@@ -40,7 +40,7 @@ struct SpriteParams {
   color: Color, /// Color tint
   scale: Int, /// Integer scaling, should rarely be used since it generally doesn't look good
   uv: Pos2, /// u,v position in texture
-  size: Size, /// the size in pixel that it should be expanded to. generally 0,0.
+  size: Size2, /// the size in pixel that it should be expanded to. generally 0,0.
 }
 
 impl SpriteParams {
