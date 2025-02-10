@@ -537,8 +537,6 @@ pub fn register_assets_external_functions(
     let assets_struct = namespace.fetch_struct("Assets");
     let assets_borrow = assets_struct.borrow();
 
-
-
     let material_png_function_id: ExternalFunctionId =
         assets_borrow.fetch_external_function_id("material_png");
 
@@ -679,14 +677,13 @@ pub fn fetch_mangrove_render_module_handles(
         type_name: "MaterialHandleGen".to_string(),
         number: 91,
     });
-    let material_handle_struct_ref = &borrow
-        .add_generated_struct(
-            "MaterialHandleGen",
-            &[(
-                "hidden",
-                ResolvedType::RustType(material_handle_rust_type_ref.clone()),
-            )],
-        )?;
+    let material_handle_struct_ref = &borrow.add_generated_struct(
+        "MaterialHandleGen",
+        &[(
+            "hidden",
+            ResolvedType::RustType(material_handle_rust_type_ref.clone()),
+        )],
+    )?;
 
     let fixed_atlas_handle_rust_type_ref = Rc::new(ResolvedRustType {
         type_name: "FixedAtlasHandleGen".to_string(),
@@ -717,8 +714,6 @@ pub fn boot(
 ) -> Result<ScriptRender, MangroveError> {
     let mut resolved_program = ResolvedProgram::new();
     let mut external_functions = ExternalFunctions::<ScriptRenderContext>::new();
-
-
 
     //let render_module_ref = Rc::new(RefCell::new(render_module));
     //resolved_program.modules.add(render_module_ref);
@@ -753,7 +748,7 @@ pub fn boot(
     let mangrove_render_path = &["mangrove".to_string(), "render".to_string()].to_vec();
     let mangrove_render = resolved_program.modules.get(mangrove_render_path).unwrap();
     let mangrove_render_ns = &*mangrove_render.borrow().namespace.borrow();
-   
+
     let (
         material_handle_struct_ref,
         material_handle_rust_type_ref,
@@ -788,7 +783,7 @@ pub fn boot(
 
     let assets_value = create_empty_struct_value(assets_struct.clone());
     let assets_value_mut = VariableValue::Reference(Rc::new(RefCell::new(assets_value)));
-    
+
     let render_struct_value = util_execute_function(
         &external_functions,
         &constants,
@@ -812,7 +807,7 @@ pub fn boot(
     let gfx_value = create_empty_struct_value(gfx_struct.clone());
     let gfx_value_ref = Rc::new(RefCell::new(gfx_value));
     let gfx_value_mut = VariableValue::Reference(gfx_value_ref.clone());
-    
+
     ScriptRender::new(
         render_struct_value_mutable_ref,
         &render_struct_type_ref,

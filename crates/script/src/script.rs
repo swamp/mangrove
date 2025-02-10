@@ -101,8 +101,6 @@ pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
     Value::Struct(struct_type, [].to_vec())
 }
 
-
-
 pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, ValueError> {
     if let Value::Struct(_struct_type_ref, fields) = sprite_params_struct {
         Ok(SpriteParams {
@@ -133,7 +131,6 @@ pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
         .clone()
         .collect()
 }
-
 
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
     match v {
