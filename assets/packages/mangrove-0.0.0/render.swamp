@@ -34,49 +34,54 @@ type AssetName = String
 
 /// Specific extra parameters that should be used in sprite rendering
 struct SpriteParams {
-  flip_x: Bool, /// flips along x axis
-  flip_y: Bool, /// flips along y axis
-  rotate: Rotate, /// Rotates in 90 degree steps
-  color: Color, /// Color tint
-  scale: Int, /// Integer scaling, should rarely be used since it generally doesn't look good
-  uv: Pos2, /// u,v position in texture
-  size: Size2, /// the size in pixel that it should be expanded to. generally 0,0.
+    flip_x: Bool, /// flips along x axis
+    flip_y: Bool, /// flips along y axis
+    rotate: Rotate, /// Rotates in 90 degree steps
+    color: Color, /// Color tint
+    scale: Int, /// Integer scaling, should rarely be used since it generally doesn't look good
+    uv: Pos2, /// u,v position in texture
+    size: Size2, /// the size in pixel that it should be expanded to. generally 0,0.
 }
 
 impl SpriteParams {
     fn default() -> SpriteParams {
-        SpriteParams { flip_x: false, flip_y: false, rotate: Rotate::Degrees0, color: Color::default(), scale: 1, uv: (0, 0), size: (0, 0) }
+        SpriteParams {
+            flip_x: false, flip_y: false, rotate: Rotate::Degrees0,
+            color: Color::default(), scale: 1, uv: (0, 0), size: (0, 0)
+        }
     }
 }
 
-/// Handle to a font and material.  This is an opaque handle; the underlying data is managed by the engine.
-struct FontAndMaterialHandle {
-}
+/// Handle to a font and material.  This is an opaque handle; the underlying data is
+/// managed by the engine.
+struct FontAndMaterialHandle
 
 /// Handle to a fixed atlas. This is an opaque handle; the underlying data is managed by the engine.
-struct FixedAtlasHandle {
-
-}
+struct FixedAtlasHandle
 
 /// Handle to a material. This is an opaque handle; the underlying data is managed by the engine.
-struct MaterialHandle {
-}
+struct MaterialHandle
 
 
+/// The main rendering struct. This is the main struct that you will use to render things.
 struct Gfx
 
 impl Gfx {
-    /// Renders the whole texture in the material at the position. position is the lower left position of the texture.
+    /// Renders the whole texture in the material at the position. position is the lower left
+    /// position of the texture.
     external fn sprite(mut self, position: Pos3, material: MaterialHandle)
     /// Renders a sprite according to the parameters in `SpriteParams`
     external fn sprite_ex(mut self, position: Pos3, material: MaterialHandle, params: SpriteParams)
 
     /// Renders a sprite taken from the specified frame in the atlas
     external fn sprite_atlas_frame(mut self, position: Pos3, material: FixedAtlasHandle, frame: Int)
-    /// Renders a sprite taken from the specified frame in the atlas, but use the information in the `SpriteParams`
-    external fn sprite_atlas_frame_ex(mut self, position: Pos3, material: FixedAtlasHandle, frame: Int, params: SpriteParams)
+    /// Renders a sprite taken from the specified frame in the atlas, but use the
+    /// information in the `SpriteParams`
+    external fn sprite_atlas_frame_ex(mut self, position: Pos3, material: FixedAtlasHandle,
+        frame: Int, params: SpriteParams)
 
-    /// Renders a quad (rectangle), with the specified size and color. position is where the lower left corner of the rectangle is rendered.
+    /// Renders a quad (rectangle), with the specified size and color. position is where the
+    /// lower left corner of the rectangle is rendered.
     external fn quad(mut self, position: Pos3, size: Size2, color: Color)
 
     /// Nine slice or nine patch rendering. https://en.wikipedia.org/wiki/9-slice_scaling
@@ -91,11 +96,13 @@ impl Gfx {
 /// Handles graphical asset loading
 struct Assets // Internally has hidden handles to be able to do asset loading
 
-/// Starts loading the asset specified by the `AssetName` and returns a Handle (small struct) that references that asset.
+/// Starts loading the asset specified by the `AssetName` and returns a Handle (small struct)
+/// that references that asset.
 /// These handles are opaque; the underlying asset data is managed by the engine.
 impl Assets {
     external fn material_png(mut self, name: AssetName) -> MaterialHandle
-    external fn frame_fixed_grid_material_png(mut self, name: AssetName, grid_size: Size2, texture_size: Size2) -> FixedAtlasHandle
+    external fn frame_fixed_grid_material_png(mut self, name: AssetName, grid_size: Size2,
+        texture_size: Size2) -> FixedAtlasHandle
 
     external fn bm_font(mut self, name: AssetName) -> FontAndMaterialHandle
 }
