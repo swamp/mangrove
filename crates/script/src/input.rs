@@ -34,23 +34,23 @@ pub struct BindingsInSet {
 #[derive(LocalResource, Debug)]
 pub struct ScriptInput {
     pub sets: SeqMap<String, BindingsInSet>,
-    pub main_module: ResolvedModuleRef,
+    pub main_module: ModuleRef,
 }
 
 impl ScriptInput {
-    pub fn new(main_module: ResolvedModuleRef, sets: SeqMap<String, BindingsInSet>) -> Self {
+    pub fn new(main_module: ModuleRef, sets: SeqMap<String, BindingsInSet>) -> Self {
         Self { sets, main_module }
     }
 
     /// # Panics
     ///
     #[must_use]
-    pub fn main_module(&self) -> ResolvedModuleRef {
+    pub fn main_module(&self) -> ModuleRef {
         self.main_module.clone()
     }
 }
 
-fn scan_struct(struct_type: &ResolvedStructTypeRef) -> Result<BindingsInSet, MangroveError> {
+fn scan_struct(struct_type: &StructTypeRef) -> Result<BindingsInSet, MangroveError> {
     let mut bindings_in_source_order = Vec::new();
     for (index, (field_name, field_type)) in struct_type
         .borrow()
@@ -60,13 +60,13 @@ fn scan_struct(struct_type: &ResolvedStructTypeRef) -> Result<BindingsInSet, Man
         .enumerate()
     {
         let binding_kind = match &field_type.field_type {
-            ResolvedType::Bool => BindingKind::Digital,
+            Type::Bool => BindingKind::Digital,
 
-            ResolvedType::Tuple(tuple_type) => {
+            Type::Tuple(tuple_type) => {
                 if tuple_type.0.len() != 2 {
                     return Err(MangroveError::Other("strange field type".into()));
                 }
-                if tuple_type.0[0] != ResolvedType::Float && tuple_type.0[1] != ResolvedType::Float
+                if tuple_type.0[0] != Type::Float && tuple_type.0[1] != Type::Float
                 {
                     return Err(MangroveError::Other("strange field type tuple".into()));
                 }

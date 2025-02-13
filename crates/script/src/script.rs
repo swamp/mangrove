@@ -4,7 +4,6 @@
  */
 use seq_map::SeqMapError;
 use std::cell::RefCell;
-use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::io;
 use std::path::Path;
@@ -12,8 +11,8 @@ use std::rc::Rc;
 use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec2, Vec3};
 use swamp_script::prelude::*;
 use swamp_script::prelude::{
-    parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
-    ResolveError,
+    DepLoaderError, DependencyParser, ParseModule,
+    Error,
 };
 
 #[derive(Debug)]
@@ -22,9 +21,8 @@ pub enum MangroveError {
     DecoratedParseError(DecoratedParseErr),
     ExecuteError(ExecuteError),
     Other(String),
-    ScriptResolveError(ScriptResolveError),
     SemanticError(SemanticError),
-    ResolveError(ResolveError),
+    Error(Error),
     DepLoaderError(DepLoaderError),
     SeqMapError(SeqMapError),
 }
@@ -35,7 +33,7 @@ impl Display for MangroveError {
     }
 }
 
-impl Error for MangroveError {}
+impl std::error::Error for MangroveError {}
 
 impl From<io::Error> for MangroveError {
     fn from(value: io::Error) -> Self {
@@ -43,11 +41,6 @@ impl From<io::Error> for MangroveError {
     }
 }
 
-impl From<ScriptResolveError> for MangroveError {
-    fn from(value: ScriptResolveError) -> Self {
-        Self::ScriptResolveError(value)
-    }
-}
 impl From<ExecuteError> for MangroveError {
     fn from(value: ExecuteError) -> Self {
         Self::ExecuteError(value)
@@ -66,9 +59,9 @@ impl From<SemanticError> for MangroveError {
     }
 }
 
-impl From<ResolveError> for MangroveError {
-    fn from(value: ResolveError) -> Self {
-        Self::ResolveError(value)
+impl From<Error> for MangroveError {
+    fn from(value: Error) -> Self {
+        Self::Error(value)
     }
 }
 
@@ -91,13 +84,13 @@ impl From<String> for MangroveError {
 }
 
 pub fn create_empty_struct_type(
-    namespace: &mut ResolvedModuleNamespace,
+    namespace: &mut ModuleNamespace,
     name: &str,
-) -> Result<ResolvedStructTypeRef, ResolveError> {
-    Ok(namespace.add_generated_struct(name, &[("hidden", ResolvedType::Unit)])?)
+) -> Result<StructTypeRef, Error> {
+    Ok(namespace.add_generated_struct(name, &[("hidden", Type::Unit)])?)
 }
 
-pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
+pub fn create_empty_struct_value(struct_type: StructTypeRef) -> Value {
     Value::Struct(struct_type, [].to_vec())
 }
 
@@ -172,13 +165,13 @@ pub fn uvec2_like(v: &Value) -> Result<UVec2, ValueError> {
 }
 
 fn prepare_main_module<C>(
-    state: &mut ResolvedProgramState,
+    state: &mut ProgramState,
     externals: &mut ExternalFunctions<C>,
     root_module_path: &[String],
-) -> Result<ResolvedModule, ResolveError> {
-    let main_module = ResolvedModule::new(root_module_path);
+) -> Result<Module, Error> {
+    let main_module = Module::new(root_module_path);
 
-    let any_parameter = ResolvedTypeForParameter {
+    let any_parameter = TypeForParameter {
         name: String::default(),
         resolved_type: None,
         is_mutable: false,
@@ -187,12 +180,12 @@ fn prepare_main_module<C>(
 
     let print_id = state.allocate_external_function_id();
 
-    let print_external = ResolvedExternalFunctionDefinition {
+    let print_external = ExternalFunctionDefinition {
         name: None,
         assigned_name: "print".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [any_parameter].to_vec(),
-            return_type: Box::from(ResolvedType::Unit),
+            return_type: Box::from(Type::Unit),
         },
         id: print_id,
     };
@@ -255,10 +248,10 @@ fn parse_module(
 pub fn compile<C>(
     base_path: &Path,
     module_path: &[String],
-    resolved_program: &mut ResolvedProgram,
+    resolved_program: &mut Program,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-) -> Result<ResolvedModuleRef, MangroveError> {
+) -> Result<ModuleRef, MangroveError> {
     compile_internal(
         base_path,
         module_path,
@@ -271,10 +264,10 @@ pub fn compile<C>(
 pub fn compile_internal<C>(
     base_path: &Path,
     module_path: &[String],
-    resolved_program: &mut ResolvedProgram,
+    resolved_program: &mut Program,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-) -> Result<ResolvedModuleRef, MangroveError> {
+) -> Result<ModuleRef, MangroveError> {
     let relative_path = module_path_to_relative_swamp_file_string(module_path);
     let parsed_module = parse_module(&relative_path, source_map)?;
 

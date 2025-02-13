@@ -7,7 +7,7 @@ use crate::simulation::ScriptSimulation;
 use crate::ScriptMessage;
 use swamp::prelude::{App, FixedPostUpdate, LoRe, LoReM, LocalResource, Msg, Plugin};
 use swamp_script::prelude::{
-    overwrite_value, quick_deserialize, ResolvedStructTypeRef, ResolvedType, Value,
+    overwrite_value, quick_deserialize, StructTypeRef, Type, Value,
 };
 use tracing::info;
 
@@ -22,7 +22,7 @@ pub fn detect_reload_tick(
                 info!(len=%previous_logic.payload.len(), "reload detected");
                 if let Some(previous_struct_type_ref) = &previous_logic.type_ref {
                     let (deserialized_value, deserialized_octet_size) = quick_deserialize(
-                        &ResolvedType::Struct(previous_struct_type_ref.clone()),
+                        &Type::Struct(previous_struct_type_ref.clone()),
                         &previous_logic.payload,
                         0,
                     );
@@ -62,7 +62,7 @@ pub fn store_tick(
 
 #[derive(Debug, LocalResource)]
 pub struct PreviousSimulation {
-    type_ref: Option<ResolvedStructTypeRef>,
+    type_ref: Option<StructTypeRef>,
     payload: Vec<u8>,
 }
 

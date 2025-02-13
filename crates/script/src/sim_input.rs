@@ -44,7 +44,7 @@ impl ScriptInput {
     /// # Panics
     ///
     #[must_use]
-    pub fn main_module(&self) -> ResolvedModuleRef {
+    pub fn main_module(&self) -> ModuleRef {
         self.script_updater.main_module()
     }
 
@@ -77,8 +77,8 @@ impl ScriptInput {
 /// # Panics
 ///
 pub fn boot(
-    simulation_main_module: &ResolvedModuleRef,
-    flow_main_module: &ResolvedModuleRef,
+    simulation_main_module: &ModuleRef,
+    flow_main_module: &ModuleRef,
     source_map: &mut SourceMapResource,
 ) -> Result<ScriptInput, MangroveError> {
     let updater = util::boot(

@@ -145,14 +145,14 @@ impl RenderWrapper {
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
 
-    material_struct_type: ResolvedStructTypeRef,
-    material_rust_type_ref: ResolvedRustTypeRef,
+    material_struct_type: StructTypeRef,
+    material_rust_type_ref: ExternalTypeRef,
 
-    fixed_atlas_struct_type_ref: ResolvedStructTypeRef,
-    fixed_atlas_rust_type_ref: ResolvedRustTypeRef,
+    fixed_atlas_struct_type_ref: StructTypeRef,
+    fixed_atlas_rust_type_ref: ExternalTypeRef,
 
-    font_and_material_struct_type_ref: ResolvedStructTypeRef,
-    font_and_material_rust_type_ref: ResolvedRustTypeRef,
+    font_and_material_struct_type_ref: StructTypeRef,
+    font_and_material_rust_type_ref: ExternalTypeRef,
 }
 
 #[derive(Debug, PartialEq)]
@@ -191,16 +191,16 @@ impl Display for FontAndMaterialWrapper {
 
 #[derive(Clone)]
 pub struct MathTypes {
-    pub pos2: ResolvedType,
-    pub pos2_tuple_type: ResolvedTupleTypeRef,
-    pub pos3: ResolvedType,
-    pub size2: ResolvedType,
-    pub size2_tuple_type: ResolvedTupleTypeRef,
+    pub pos2: Type,
+    pub pos2_tuple_type: TupleTypeRef,
+    pub pos3: Type,
+    pub size2: Type,
+    pub size2_tuple_type: TupleTypeRef,
 }
 
 pub struct GfxTypes {
-    pub color: ResolvedType,
-    pub sprite_params: ResolvedType,
+    pub color: Type,
+    pub sprite_params: Type,
 }
 
 #[derive(PartialEq)]
@@ -222,13 +222,13 @@ impl QuickSerialize for MaterialWrapper {}
 impl GameAssetsWrapper {
     pub fn new(
         game_assets: &mut GameAssets,
-        material_struct_type: ResolvedStructTypeRef,
-        material_rust_type_ref: ResolvedRustTypeRef,
-        fixed_atlas_struct_type_ref: ResolvedStructTypeRef,
-        fixed_atlas_rust_type_ref: ResolvedRustTypeRef,
+        material_struct_type: StructTypeRef,
+        material_rust_type_ref: ExternalTypeRef,
+        fixed_atlas_struct_type_ref: StructTypeRef,
+        fixed_atlas_rust_type_ref: ExternalTypeRef,
 
-        font_and_material_struct_type_ref: ResolvedStructTypeRef,
-        font_and_material_rust_type_ref: ResolvedRustTypeRef,
+        font_and_material_struct_type_ref: StructTypeRef,
+        font_and_material_rust_type_ref: ExternalTypeRef,
     ) -> Self {
         let ptr = game_assets as *mut GameAssets;
         Self {
@@ -329,7 +329,7 @@ impl GameAssetsWrapper {
 #[allow(clippy::too_many_lines)]
 pub fn register_gfx_external_functions(
     externals: &mut ExternalFunctions<ScriptRenderContext>,
-    namespace: &mut ResolvedModuleNamespace,
+    namespace: &mut ModuleNamespace,
 ) -> Result<ValueRef, MangroveError> {
     let gfx_struct = namespace.fetch_struct("Gfx");
 
@@ -532,7 +532,7 @@ pub fn register_gfx_external_functions(
 #[allow(clippy::too_many_lines)]
 pub fn register_assets_external_functions(
     externals: &mut ExternalFunctions<ScriptRenderContext>,
-    namespace: &mut ResolvedModuleNamespace,
+    namespace: &mut ModuleNamespace,
 ) -> Result<VariableValue, MangroveError> {
     let assets_struct = namespace.fetch_struct("Assets");
     let assets_borrow = assets_struct.borrow();
@@ -598,7 +598,7 @@ pub fn register_assets_external_functions(
 #[derive(LocalResource, Debug)]
 pub struct ScriptRender {
     render_value_ref: ValueRef,
-    render_fn: ResolvedInternalFunctionDefinitionRef,
+    render_fn: InternalFunctionDefinitionRef,
     externals: ExternalFunctions<ScriptRenderContext>,
     constants: Constants,
     gfx_struct_ref: ValueRef,
@@ -609,7 +609,7 @@ impl ScriptRender {
     ///
     pub fn new(
         render_value_ref: ValueRef,
-        render_struct_type_ref: &ResolvedStructTypeRef,
+        render_struct_type_ref: &StructTypeRef,
         externals: ExternalFunctions<ScriptRenderContext>,
         constants: Constants,
         gfx_struct_ref: ValueRef,
@@ -661,19 +661,19 @@ impl ScriptRender {
 /// # Errors
 ///
 pub fn fetch_mangrove_render_module_handles(
-    borrow: &mut ResolvedModuleNamespace,
+    borrow: &mut ModuleNamespace,
 ) -> Result<
     (
-        ResolvedStructTypeRef,
-        ResolvedRustTypeRef,
-        ResolvedStructTypeRef,
-        ResolvedRustTypeRef,
-        ResolvedStructTypeRef,
-        ResolvedRustTypeRef,
+        StructTypeRef,
+        ExternalTypeRef,
+        StructTypeRef,
+        ExternalTypeRef,
+        StructTypeRef,
+        ExternalTypeRef,
     ),
     MangroveError,
 > {
-    let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
+    let material_handle_rust_type_ref = Rc::new(ExternalType {
         type_name: "MaterialHandleGen".to_string(),
         number: 91,
     });
@@ -681,11 +681,11 @@ pub fn fetch_mangrove_render_module_handles(
         "MaterialHandleGen",
         &[(
             "hidden",
-            ResolvedType::RustType(material_handle_rust_type_ref.clone()),
+            Type::External(material_handle_rust_type_ref.clone()),
         )],
     )?;
 
-    let fixed_atlas_handle_rust_type_ref = Rc::new(ResolvedRustType {
+    let fixed_atlas_handle_rust_type_ref = Rc::new(ExternalType {
         type_name: "FixedAtlasHandleGen".to_string(),
         number: 92,
     });
@@ -710,9 +710,9 @@ pub fn fetch_mangrove_render_module_handles(
 ///
 pub fn boot(
     resource_storage: &mut ResourceStorage,
-    simulation_main_module: &ResolvedModuleRef,
+    simulation_main_module: &ModuleRef,
 ) -> Result<ScriptRender, MangroveError> {
-    let mut resolved_program = ResolvedProgram::new();
+    let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<ScriptRenderContext>::new();
 
     //let render_module_ref = Rc::new(RefCell::new(render_module));
@@ -876,16 +876,16 @@ impl Plugin for ScriptRenderPlugin {
         // TODO: Should not try to call updates with params that are not available yet.
         app.insert_local_resource(ScriptRender {
             render_value_ref: Rc::new(RefCell::new(Value::default())),
-            render_fn: Rc::new(ResolvedInternalFunctionDefinition {
-                body: ResolvedExpression {
-                    ty: ResolvedType::Int,
+            render_fn: Rc::new(InternalFunctionDefinition {
+                body: Expression {
+                    ty: Type::Int,
                     node: Default::default(),
-                    kind: ResolvedExpressionKind::Break,
+                    kind: ExpressionKind::Break,
                 },
-                name: ResolvedLocalIdentifier(ResolvedNode::default()),
-                signature: FunctionTypeSignature {
+                name: LocalIdentifier(Node::default()),
+                signature: Signature {
                     parameters: vec![],
-                    return_type: Box::from(ResolvedType::Unit),
+                    return_type: Box::from(Type::Unit),
                 },
             }),
             externals: ExternalFunctions::new(),
