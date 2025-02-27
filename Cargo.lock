@@ -3771,6 +3771,7 @@ dependencies = [
 name = "swamp-script-eval-loader"
 version = "0.0.12"
 dependencies = [
+ "regex",
  "swamp-script-analyzer",
  "swamp-script-ast",
  "swamp-script-dep-loader",
@@ -3797,6 +3798,7 @@ dependencies = [
  "seq-fmt",
  "seq-map",
  "seq-set",
+ "tiny-ver",
  "tracing",
 ]
 
@@ -3990,6 +3992,12 @@ dependencies = [
  "bytemuck",
  "strict-num",
 ]
+
+[[package]]
+name = "tiny-ver"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22bfcb3c82a7781508fbf27a0bb741a227cd02797f3ef5d145c23bec59e24988"
 
 [[package]]
 name = "toml"

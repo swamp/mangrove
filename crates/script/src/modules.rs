@@ -8,7 +8,7 @@ use swamp_script::prelude::*;
 #[derive(LocalResource, Debug)]
 pub struct ScriptModules {
     #[allow(unused)]
-    pub modules: ResolvedModules,
+    pub modules: Modules,
 }
 
 pub struct ScriptModulesPlugin;
@@ -16,7 +16,7 @@ pub struct ScriptModulesPlugin;
 impl Plugin for ScriptModulesPlugin {
     fn build(&self, app: &mut App) {
         let script_modules = ScriptModules {
-            modules: ResolvedModules::default(),
+            modules: Modules::default(),
         };
         app.insert_local_resource(script_modules);
     }
