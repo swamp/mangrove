@@ -2,6 +2,7 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
+/*
 use crate::err::show_mangrove_error;
 use crate::input::ScriptInput;
 use crate::script::{compile, MangroveError};
@@ -23,40 +24,39 @@ pub struct ScriptFlowContext {}
 #[derive(LocalResource, Debug)]
 pub struct ScriptFlow {
     flow_self_value_ref: ValueRef,
-    flow_update_fn: ResolvedInternalFunctionDefinitionRef,
+    flow_update_fn: InternalFunctionDefinitionRef,
 
     //---
     external_functions: ExternalFunctions<ScriptFlowContext>,
     constants: Constants,
     script_context: ScriptFlowContext,
-    resolved_program: ResolvedProgram,
-    flow_engine_module: ResolvedModuleRef,
+    resolved_program: Program,
+    flow_engine_module: ModuleRef,
 }
 
 impl Default for ScriptFlow {
     fn default() -> Self {
         Self {
             flow_self_value_ref: Rc::new(RefCell::new(Default::default())),
-            flow_update_fn: Rc::new(ResolvedInternalFunctionDefinition {
-                body: ResolvedExpression {
-                    ty: ResolvedType::Int,
+            flow_update_fn: Rc::new(InternalFunctionDefinition {
+                body: Expression {
+                    ty: Type::Int,
                     node: Default::default(),
-                    kind: ResolvedExpressionKind::Break,
+                    kind: ExpressionKind::Break,
                 },
-                name: ResolvedLocalIdentifier(Default::default()),
-                signature: FunctionTypeSignature {
+                name: LocalIdentifier(Default::default()),
+                signature: Signature {
                     parameters: vec![],
-                    return_type: Box::new(ResolvedType::Int),
+                    return_type: Box::new(Type::Int),
                 },
             }),
             external_functions: ExternalFunctions::<ScriptFlowContext>::new(),
             constants: Default::default(),
             script_context: ScriptFlowContext {},
             resolved_program: Default::default(),
-            flow_engine_module: Rc::new(RefCell::new(ResolvedModule {
-                definitions: vec![],
+            flow_engine_module: Rc::new(RefCell::new(Module {
                 expression: None,
-                namespace: Rc::new(RefCell::new(ResolvedModuleNamespace::new(&[]))),
+                namespace: Namespace::default(),
             })),
         }
     }
@@ -65,12 +65,12 @@ impl Default for ScriptFlow {
 impl ScriptFlow {
     pub fn new(
         flow_self_value_ref: ValueRef,
-        flow_update_fn: ResolvedInternalFunctionDefinitionRef,
+        flow_update_fn: InternalFunctionDefinitionRef,
         // -----
         external_functions: ExternalFunctions<ScriptFlowContext>,
         constants: Constants,
-        resolved_program: ResolvedProgram,
-        flow_engine_module: ResolvedModuleRef,
+        resolved_program: Program,
+        flow_engine_module: ModuleRef,
     ) -> Self {
         Self {
             flow_self_value_ref,
@@ -107,10 +107,10 @@ impl ScriptFlow {
 /// # Errors
 ///
 pub fn create_flow_engine_module(
-    _resolve_state: &mut ResolvedProgramState,
-) -> Result<ResolvedModule, ResolveError> {
+    _resolve_state: &mut ProgramState,
+) -> Result<Module, Error> {
     let module_path = ["mangrove".to_string(), "flow".to_string()];
-    let module = ResolvedModule::new(&module_path);
+    let module = Module::new(&module_path);
     Ok(module)
 }
 
@@ -147,10 +147,10 @@ pub fn detect_reload_tick(
 /// # Panics
 ///
 pub fn boot(
-    input_main_module: &ResolvedModuleRef,
+    input_main_module: &ModuleRef,
     source_map: &mut SourceMapResource,
 ) -> Result<ScriptFlow, MangroveError> {
-    let mut resolved_program = ResolvedProgram::new();
+    let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<ScriptFlowContext>::new();
 
     let flow_engine_module = create_flow_engine_module(&mut resolved_program.state)?;
@@ -250,3 +250,6 @@ impl Plugin for ScriptFlowPlugin {
         app.insert_local_resource(ScriptFlow::default());
     }
 }
+
+
+ */

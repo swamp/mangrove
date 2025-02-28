@@ -34,23 +34,23 @@ pub struct BindingsInSet {
 #[derive(LocalResource, Debug)]
 pub struct ScriptInput {
     pub sets: SeqMap<String, BindingsInSet>,
-    pub main_module: ResolvedModuleRef,
+    pub main_module: ModuleRef,
 }
 
 impl ScriptInput {
-    pub fn new(main_module: ResolvedModuleRef, sets: SeqMap<String, BindingsInSet>) -> Self {
+    pub fn new(main_module: ModuleRef, sets: SeqMap<String, BindingsInSet>) -> Self {
         Self { sets, main_module }
     }
 
     /// # Panics
     ///
     #[must_use]
-    pub fn main_module(&self) -> ResolvedModuleRef {
+    pub fn main_module(&self) -> ModuleRef {
         self.main_module.clone()
     }
 }
 
-fn scan_struct(struct_type: &ResolvedStructTypeRef) -> Result<BindingsInSet, MangroveError> {
+fn scan_struct(struct_type: &StructTypeRef) -> Result<BindingsInSet, MangroveError> {
     let mut bindings_in_source_order = Vec::new();
     for (index, (field_name, field_type)) in struct_type
         .borrow()
@@ -61,14 +61,13 @@ fn scan_struct(struct_type: &ResolvedStructTypeRef) -> Result<BindingsInSet, Man
     {
         info!(ty=?field_type.field_type, "found_field");
         let binding_kind = match &field_type.field_type {
-            ResolvedType::Bool => BindingKind::Digital,
+            Type::Bool => BindingKind::Digital,
 
-            ResolvedType::Tuple(tuple_type) => {
+            Type::Tuple(tuple_type) => {
                 if tuple_type.0.len() != 2 {
                     return Err(MangroveError::Other("strange field type".into()));
                 }
-                if tuple_type.0[0] != ResolvedType::Float && tuple_type.0[1] != ResolvedType::Float
-                {
+                if tuple_type.0[0] != Type::Float && tuple_type.0[1] != Type::Float {
                     return Err(MangroveError::Other("strange field type tuple".into()));
                 }
                 BindingKind::Analog
@@ -98,18 +97,21 @@ fn scan_struct(struct_type: &ResolvedStructTypeRef) -> Result<BindingsInSet, Man
 /// # Panics
 ///
 pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptInput, MangroveError> {
-    let input_types = util::compile_types::<i32>(vec![], &["input".to_string()], source_map)?;
+    let input_module = util::compile_types::<i32>(
+        vec![],
+        &["mangrove".into(), "input".to_string()],
+        source_map,
+    )?;
     let mut mapping = SeqMap::new();
-    info!(len=?input_types.borrow().definitions.len(), "definitions");
-    for (name, struct_type) in input_types.borrow().namespace.borrow().structs() {
-        let bindings_in_set = scan_struct(struct_type)?;
+    for (name, struct_type) in input_module.namespace.symbol_table.structs() {
+        let bindings_in_set = scan_struct(&struct_type)?;
 
         mapping.insert(name.clone(), bindings_in_set)?;
     }
 
     let script_input = ScriptInput {
         sets: mapping,
-        main_module: input_types,
+        main_module: input_module,
     };
 
     Ok(script_input)

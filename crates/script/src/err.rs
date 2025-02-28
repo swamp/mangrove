@@ -10,19 +10,19 @@ use tracing::error;
 
 pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
     match err {
-        MangroveError::IoError(_) => todo!(),
+        MangroveError::IoError(err) => error!(?err, "io error"),
         MangroveError::DecoratedParseError(decorated_parse_error) => {
             show_decorated(decorated_parse_error, source_map);
         }
         MangroveError::ExecuteError(err) => show_execute_error(err, source_map),
         MangroveError::Other(_) => todo!(),
-        MangroveError::ScriptResolveError(_) => todo!(),
-        MangroveError::SemanticError(_) => todo!(),
-        MangroveError::ResolveError(resolve_err) => show_error(resolve_err, source_map),
+        MangroveError::SemanticError(err) => error!(?err, "semantic error"),
+        MangroveError::Error(resolve_err) => show_error(resolve_err, source_map),
         MangroveError::DepLoaderError(err) => {
             error!(?err, "deploader");
         }
         MangroveError::SeqMapError(_) => todo!(),
+        MangroveError::ScriptError(_) => todo!(),
     }
 }
 

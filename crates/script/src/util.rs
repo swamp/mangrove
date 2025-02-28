@@ -8,10 +8,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use swamp_script::prelude::*;
 
-pub fn get_impl_func(
-    struct_type_ref: &ResolvedStructTypeRef,
-    name: &str,
-) -> ResolvedInternalFunctionDefinitionRef {
+pub fn get_impl_func(struct_type_ref: &StructTypeRef, name: &str) -> InternalFunctionDefinitionRef {
     struct_type_ref
         .borrow()
         .get_internal_member_function(name)
@@ -19,33 +16,33 @@ pub fn get_impl_func(
 }
 
 pub fn get_impl_func_optional(
-    struct_type_ref: &ResolvedStructTypeRef,
+    struct_type_ref: &StructTypeRef,
     name: &str,
-) -> Option<ResolvedInternalFunctionDefinitionRef> {
+) -> Option<InternalFunctionDefinitionRef> {
     struct_type_ref.borrow().get_internal_member_function(name)
 }
 
 #[derive(Debug)]
 pub struct ScriptModule<C> {
     self_state_value_ref: ValueRef,
-    update_fn: ResolvedInternalFunctionDefinitionRef,
+    update_fn: InternalFunctionDefinitionRef,
 
     external_functions: ExternalFunctions<C>,
     constants: Constants,
     script_context: C,
-    resolved_program: ResolvedProgram,
-    main_module: ResolvedModuleRef,
+    resolved_program: Program,
+    main_module: ModuleRef,
 }
 
 impl<C> ScriptModule<C> {
     pub fn new(
         self_state_value_ref: ValueRef,
-        update_fn: ResolvedInternalFunctionDefinitionRef,
+        update_fn: InternalFunctionDefinitionRef,
         external_functions: ExternalFunctions<C>,
         script_context: C,
         constants: Constants,
-        resolved_program: ResolvedProgram,
-        main_module: ResolvedModuleRef,
+        resolved_program: Program,
+        main_module: ModuleRef,
     ) -> Self {
         Self {
             self_state_value_ref,
@@ -58,7 +55,7 @@ impl<C> ScriptModule<C> {
         }
     }
 
-    pub fn main_module(&self) -> ResolvedModuleRef {
+    pub fn main_module(&self) -> &ModuleRef {
         let root_module_path = &["input".to_string()].to_vec();
 
         self.resolved_program
@@ -88,46 +85,43 @@ impl<C: Default> Default for ScriptModule<C> {
     fn default() -> Self {
         Self {
             self_state_value_ref: Rc::new(RefCell::new(Value::default())),
-            update_fn: Rc::new(ResolvedInternalFunctionDefinition {
-                body: ResolvedExpression {
-                    ty: ResolvedType::Int,
-                    node: ResolvedNode::default(),
-                    kind: ResolvedExpressionKind::Break,
+            update_fn: Rc::new(InternalFunctionDefinition {
+                body: Expression {
+                    ty: Type::Int,
+                    node: Node::default(),
+                    kind: ExpressionKind::Break,
                 },
-                name: ResolvedLocalIdentifier(ResolvedNode::default()),
-                signature: FunctionTypeSignature {
+                name: LocalIdentifier(Node::default()),
+                signature: Signature {
                     parameters: vec![],
-                    return_type: Box::new(ResolvedType::Int),
+                    return_type: Box::new(Type::Int),
                 },
             }),
             external_functions: ExternalFunctions::<C>::new(),
             constants: Constants::default(),
             script_context: Default::default(),
-            resolved_program: ResolvedProgram::default(),
-            main_module: Rc::new(RefCell::new(ResolvedModule {
-                definitions: vec![],
+            resolved_program: Program::default(),
+            main_module: Rc::new(Module {
                 expression: None,
-                namespace: Rc::new(RefCell::new(ResolvedModuleNamespace::new(&[]))),
-            })),
+                namespace: Namespace::new(vec![], SymbolTable::default()),
+            }),
         }
     }
 }
 
 pub fn compile_types<C>(
-    modules: Vec<&ResolvedModuleRef>,
+    modules: Vec<&ModuleRef>,
     root_module_path: &[String],
     source_map: &mut SourceMapResource,
-) -> Result<ResolvedModuleRef, MangroveError> {
-    let mut resolved_program = ResolvedProgram::new();
+) -> Result<ModuleRef, MangroveError> {
+    let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<C>::new();
-    let base_path = source_map.base_path().to_path_buf();
 
     for module in modules {
         resolved_program.modules.add(module.clone());
     }
 
     compile(
-        base_path.as_path(),
         root_module_path,
         &mut resolved_program,
         &mut external_functions,
@@ -136,20 +130,19 @@ pub fn compile_types<C>(
 }
 
 pub fn boot<C>(
-    modules: Vec<&ResolvedModuleRef>,
+    modules: Vec<&ModuleRef>,
     root_module_path: &[String],
     update_function_name: &str,
     mut script_context: C,
     source_map: &mut SourceMapResource,
 ) -> Result<ScriptModule<C>, MangroveError> {
-    let mut resolved_program = ResolvedProgram::new();
+    let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<C>::new();
 
     // base path is the root directory of the scripts, typically `scripts/`
     let base_path = source_map.base_path().to_path_buf();
 
     compile(
-        base_path.as_path(),
         root_module_path,
         &mut resolved_program,
         &mut external_functions,
@@ -163,19 +156,19 @@ pub fn boot<C>(
     let main_module = resolved_program
         .modules
         .get(root_module_path)
-        .expect("could not find main module");
+        .expect("could not find main module")
+        .clone();
 
     let mut constants = Constants::new();
     eval_constants(
         &external_functions,
         &mut constants,
-        &resolved_program.modules,
+        &resolved_program.state,
         &mut script_context,
     )?;
 
     let self_state_value = {
-        let main_borrow = main_module.borrow();
-        let main_expression = main_borrow
+        let main_expression = main_module
             .expression
             .as_ref()
             .expect("must have code within the input module");
@@ -205,6 +198,6 @@ pub fn boot<C>(
         script_context,
         constants,
         resolved_program,
-        main_module,
+        main_module.clone(),
     ))
 }

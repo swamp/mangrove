@@ -80,6 +80,7 @@ impl RenderWrapper {
         pos: Vec3,
         size: UVec2,
         corner_size: UVec2,
+        texture_window_size: UVec2,
         material: &MaterialRef,
         atlas_offset: UVec2,
         color: Color,
@@ -90,7 +91,7 @@ impl RenderWrapper {
             render = &mut *self.render;
         }
 
-        render.draw_nine_slice(pos, size, corner_size, material, atlas_offset, color);
+        render.draw_nine_slice(pos, size, corner_size, size, material, atlas_offset, color);
     }
 
     pub fn sprite_atlas_frame(&mut self, position: Vec3, frame: u16, atlas: &impl FrameLookup) {
@@ -137,14 +138,14 @@ impl RenderWrapper {
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
 
-    material_struct_type: ResolvedStructTypeRef,
-    material_rust_type_ref: ResolvedRustTypeRef,
+    material_struct_type: StructTypeRef,
+    material_rust_type_ref: ExternalTypeRef,
 
-    fixed_atlas_struct_type_ref: ResolvedStructTypeRef,
-    fixed_atlas_rust_type_ref: ResolvedRustTypeRef,
+    fixed_atlas_struct_type_ref: StructTypeRef,
+    fixed_atlas_rust_type_ref: ExternalTypeRef,
 
-    font_and_material_struct_type_ref: ResolvedStructTypeRef,
-    font_and_material_rust_type_ref: ResolvedRustTypeRef,
+    font_and_material_struct_type_ref: StructTypeRef,
+    font_and_material_rust_type_ref: ExternalTypeRef,
 }
 
 #[derive(Debug, PartialEq)]
@@ -183,16 +184,16 @@ impl Display for FontAndMaterialWrapper {
 
 #[derive(Clone)]
 pub struct MathTypes {
-    pub pos2: ResolvedType,
-    pub pos2_tuple_type: ResolvedTupleTypeRef,
-    pub pos3: ResolvedType,
-    pub size2: ResolvedType,
-    pub size2_tuple_type: ResolvedTupleTypeRef,
+    pub pos2: Type,
+    pub pos2_tuple_type: TupleTypeRef,
+    pub pos3: Type,
+    pub size2: Type,
+    pub size2_tuple_type: TupleTypeRef,
 }
 
 pub struct GfxTypes {
-    pub color: ResolvedType,
-    pub sprite_params: ResolvedType,
+    pub color: Type,
+    pub sprite_params: Type,
 }
 
 #[derive(PartialEq)]
@@ -214,13 +215,13 @@ impl QuickSerialize for MaterialWrapper {}
 impl GameAssetsWrapper {
     pub fn new(
         game_assets: &mut GameAssets,
-        material_struct_type: ResolvedStructTypeRef,
-        material_rust_type_ref: ResolvedRustTypeRef,
-        fixed_atlas_struct_type_ref: ResolvedStructTypeRef,
-        fixed_atlas_rust_type_ref: ResolvedRustTypeRef,
+        material_struct_type: StructTypeRef,
+        material_rust_type_ref: ExternalTypeRef,
+        fixed_atlas_struct_type_ref: StructTypeRef,
+        fixed_atlas_rust_type_ref: ExternalTypeRef,
 
-        font_and_material_struct_type_ref: ResolvedStructTypeRef,
-        font_and_material_rust_type_ref: ResolvedRustTypeRef,
+        font_and_material_struct_type_ref: StructTypeRef,
+        font_and_material_rust_type_ref: ExternalTypeRef,
     ) -> Self {
         let ptr = game_assets as *mut GameAssets;
         Self {
@@ -321,83 +322,83 @@ impl GameAssetsWrapper {
 ///
 #[allow(clippy::too_many_lines)]
 pub fn register_color_struct_type(
-    namespace: &mut ResolvedModuleNamespace,
-    state: &mut ResolvedProgramState,
+    symbol_table: &mut SymbolTable,
+    state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
-) -> Result<ResolvedStructTypeRef, MangroveError> {
+) -> Result<StructTypeRef, MangroveError> {
     let mut defined_fields = SeqMap::new();
 
-    let r_field = ResolvedAnonymousStructFieldType {
+    let r_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Float,
+        field_type: Type::Float,
     };
     defined_fields.insert("r".to_string(), r_field)?;
 
-    let g_field = ResolvedAnonymousStructFieldType {
+    let g_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Float,
+        field_type: Type::Float,
     };
     defined_fields.insert("g".to_string(), g_field)?;
 
-    let b_field = ResolvedAnonymousStructFieldType {
+    let b_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Float,
+        field_type: Type::Float,
     };
     defined_fields.insert("b".to_string(), b_field)?;
 
-    let a_field = ResolvedAnonymousStructFieldType {
+    let a_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Float,
+        field_type: Type::Float,
     };
     defined_fields.insert("a".to_string(), a_field)?;
 
-    let color_type = ResolvedStructType {
-        name: ResolvedNode::default(),
+    let color_type = StructType {
+        name: Node::default(),
         assigned_name: "Color".to_string(),
-        anon_struct_type: ResolvedAnonymousStructType { defined_fields },
+        anon_struct_type: AnonymousStructType { defined_fields },
         functions: SeqMap::default(),
     };
 
-    let color_struct_type_ref = namespace.add_struct(color_type)?;
+    let color_struct_type_ref = symbol_table.add_struct(color_type)?;
 
     // Color::new(r, g, b, a)
     let new_external_function_id = state.allocate_external_function_id();
-    let new_fn = ResolvedExternalFunctionDefinition {
+    let new_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "new".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: vec![
-                ResolvedTypeForParameter {
+                TypeForParameter {
                     name: "r".to_string(),
-                    resolved_type: Some(ResolvedType::Float),
+                    resolved_type: Some(Type::Float),
                     is_mutable: false,
                     node: None,
                 },
-                ResolvedTypeForParameter {
+                TypeForParameter {
                     name: "g".to_string(),
-                    resolved_type: Some(ResolvedType::Float),
+                    resolved_type: Some(Type::Float),
                     is_mutable: false,
                     node: None,
                 },
-                ResolvedTypeForParameter {
+                TypeForParameter {
                     name: "b".to_string(),
-                    resolved_type: Some(ResolvedType::Float),
+                    resolved_type: Some(Type::Float),
                     is_mutable: false,
                     node: None,
                 },
-                ResolvedTypeForParameter {
+                TypeForParameter {
                     name: "a".to_string(),
-                    resolved_type: Some(ResolvedType::Float),
+                    resolved_type: Some(Type::Float),
                     is_mutable: false,
                     node: None,
                 },
             ],
-            return_type: Box::from(ResolvedType::Struct(color_struct_type_ref.clone())),
+            return_type: Box::from(Type::Struct(color_struct_type_ref.clone())),
         },
         id: new_external_function_id,
     };
     let new_fn_ref = Rc::new(new_fn);
-    let new_fn_wrap = ResolvedFunction::External(new_fn_ref);
+    let new_fn_wrap = Function::External(new_fn_ref);
 
     let color_type_for_new = color_struct_type_ref.clone();
     externals.register_external_function(
@@ -417,17 +418,17 @@ pub fn register_color_struct_type(
 
     // Color::default()
     let default_fn_external_function_id = state.allocate_external_function_id();
-    let default_fn = ResolvedExternalFunctionDefinition {
+    let default_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "default".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: vec![],
-            return_type: Box::from(ResolvedType::Struct(color_struct_type_ref.clone())),
+            return_type: Box::from(Type::Struct(color_struct_type_ref.clone())),
         },
         id: default_fn_external_function_id,
     };
     let default_fn_ref = Rc::new(default_fn);
-    let default_fn_ref_wrap = ResolvedFunction::External(default_fn_ref);
+    let default_fn_ref_wrap = Function::External(default_fn_ref);
 
     let color_type_for_default = color_struct_type_ref.clone();
     externals.register_external_function(
@@ -449,20 +450,20 @@ pub fn register_color_struct_type(
 
 #[must_use]
 pub fn register_math_types() -> MathTypes {
-    let int_type = ResolvedType::Int;
+    let int_type = Type::Int;
 
-    let position_2_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type.clone()]);
+    let position_2_tuple_type = TupleType(vec![int_type.clone(), int_type.clone()]);
     let position_2_tuple_type_ref = Rc::new(position_2_tuple_type);
-    let pos_2_type_ref = ResolvedType::Tuple(position_2_tuple_type_ref.clone());
+    let pos_2_type_ref = Type::Tuple(position_2_tuple_type_ref.clone());
 
     let position_3_tuple_type =
-        ResolvedTupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
+        TupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
     let position_tuple_type_ref = Rc::new(position_3_tuple_type);
-    let pos_3_type_ref = ResolvedType::Tuple(position_tuple_type_ref);
+    let pos_3_type_ref = Type::Tuple(position_tuple_type_ref);
 
-    let size_int_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type]);
+    let size_int_tuple_type = TupleType(vec![int_type.clone(), int_type]);
     let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
-    let size_2_type_ref = ResolvedType::Tuple(size_int_tuple_type_ref.clone());
+    let size_2_type_ref = Type::Tuple(size_int_tuple_type_ref.clone());
 
     MathTypes {
         pos2: pos_2_type_ref,
@@ -476,21 +477,21 @@ pub fn register_math_types() -> MathTypes {
 /// # Errors
 ///
 pub fn register_gfx_types(
-    state: &mut ResolvedProgramState,
+    state: &mut ProgramState,
     external_functions: &mut ExternalFunctions<ScriptRenderContext>,
     math_types: &MathTypes,
-    namespace: &mut ResolvedModuleNamespace,
+    symbol_table: &mut SymbolTable,
 ) -> Result<GfxTypes, MangroveError> {
-    let color_struct_ref = register_color_struct_type(namespace, state, external_functions)?;
-    let color_type = ResolvedType::Struct(color_struct_ref.clone());
+    let color_struct_ref = register_color_struct_type(symbol_table, state, external_functions)?;
+    let color_type = Type::Struct(color_struct_ref.clone());
     let sprite_params_struct_ref = register_gfx_sprite_params(
         state,
         external_functions,
-        namespace,
+        symbol_table,
         color_struct_ref,
         math_types,
     )?;
-    let sprite_params = ResolvedType::Struct(sprite_params_struct_ref);
+    let sprite_params = Type::Struct(sprite_params_struct_ref);
     Ok(GfxTypes {
         color: color_type,
         sprite_params,
@@ -500,72 +501,72 @@ pub fn register_gfx_types(
 /// # Errors
 ///
 pub fn register_gfx_sprite_params(
-    state: &mut ResolvedProgramState,
+    state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
-    namespace: &mut ResolvedModuleNamespace,
-    color_type: ResolvedStructTypeRef,
+    symbol_table: &mut SymbolTable,
+    color_type: StructTypeRef,
     math_types: &MathTypes,
-) -> Result<ResolvedStructTypeRef, MangroveError> {
+) -> Result<StructTypeRef, MangroveError> {
     // Props
     let mut defined_fields = SeqMap::new();
-    let flip_x_field = ResolvedAnonymousStructFieldType {
+    let flip_x_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Bool,
+        field_type: Type::Bool,
     };
     defined_fields.insert("flip_x".to_string(), flip_x_field)?;
 
-    let flip_y_field = ResolvedAnonymousStructFieldType {
+    let flip_y_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Bool,
+        field_type: Type::Bool,
     };
     defined_fields.insert("flip_y".to_string(), flip_y_field)?;
 
-    let rotate_field = ResolvedAnonymousStructFieldType {
+    let rotate_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Int,
+        field_type: Type::Int,
     };
     defined_fields.insert("rotate".to_string(), rotate_field)?;
 
-    let color_field = ResolvedAnonymousStructFieldType {
+    let color_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Struct(color_type.clone()),
+        field_type: Type::Struct(color_type.clone()),
     };
     defined_fields.insert("color".to_string(), color_field)?;
 
-    let scale_field = ResolvedAnonymousStructFieldType {
+    let scale_field = StructTypeField {
         identifier: None,
-        field_type: ResolvedType::Int,
+        field_type: Type::Int,
     };
     defined_fields.insert("scale".to_string(), scale_field)?;
 
-    let uv = ResolvedAnonymousStructFieldType {
+    let uv = StructTypeField {
         identifier: None,
         field_type: math_types.pos2.clone(),
     };
     defined_fields.insert("uv".to_string(), uv)?;
 
-    let size = ResolvedAnonymousStructFieldType {
+    let size = StructTypeField {
         identifier: None,
         field_type: math_types.size2.clone(),
     };
     defined_fields.insert("size".to_string(), size)?;
 
-    let sprite_params_type = ResolvedStructType {
-        name: ResolvedNode::default(),
+    let sprite_params_type = StructType {
+        name: Node::default(),
         assigned_name: "SpriteParams".to_string(),
-        anon_struct_type: ResolvedAnonymousStructType { defined_fields },
+        anon_struct_type: AnonymousStructType { defined_fields },
         functions: SeqMap::default(),
     };
-    let sprite_params_struct_type_ref = namespace.add_struct(sprite_params_type)?;
+    let sprite_params_struct_type_ref = symbol_table.add_struct(sprite_params_type)?;
 
     // SpriteParams::default()
     let default_fn_external_function_id = state.allocate_external_function_id();
-    let default_fn = ResolvedExternalFunctionDefinition {
+    let default_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "default".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: vec![],
-            return_type: Box::from(ResolvedType::Struct(sprite_params_struct_type_ref.clone())),
+            return_type: Box::from(Type::Struct(sprite_params_struct_type_ref.clone())),
         },
         id: default_fn_external_function_id,
     };
@@ -596,49 +597,49 @@ pub fn register_gfx_sprite_params(
 ///
 #[allow(clippy::too_many_lines)]
 pub fn register_gfx_struct_value_with_members(
-    state: &mut ResolvedProgramState,
+    state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
-    namespace: &mut ResolvedModuleNamespace,
+    symbol_table: &mut SymbolTable,
 ) -> Result<ValueRef, MangroveError> {
-    let (gfx_value, gfx_struct_type) = create_empty_struct_value_util(namespace, "Gfx")?;
+    let (gfx_value, gfx_struct_type) = create_empty_struct_value_util(symbol_table, "Gfx")?;
     let gfx_value_mut = Rc::new(RefCell::new(gfx_value));
-    let assets_general_type = ResolvedType::Struct(gfx_struct_type.clone());
+    let assets_general_type = Type::Struct(gfx_struct_type.clone());
 
     let math_types = register_math_types();
-    let gfx_types = register_gfx_types(state, externals, &math_types, namespace)?;
+    let gfx_types = register_gfx_types(state, externals, &math_types, symbol_table)?;
 
-    let mut_self_parameter = ResolvedTypeForParameter {
+    let mut_self_parameter = TypeForParameter {
         name: "self".to_string(),
         resolved_type: Some(assets_general_type),
         is_mutable: true,
         node: None,
     };
 
-    let string_type = ResolvedType::String;
+    let string_type = Type::String;
 
-    let material_handle_type_ref = namespace
+    let material_handle_type_ref = symbol_table
         .get_struct("MaterialHandle")
         .expect("material handle is missing");
 
-    let material_handle = ResolvedTypeForParameter {
+    let material_handle = TypeForParameter {
         name: "material_handle".to_string(),
-        resolved_type: Some(ResolvedType::Struct(material_handle_type_ref.clone())),
+        resolved_type: Some(Type::Struct(material_handle_type_ref.clone())),
         is_mutable: false,
         node: None,
     };
 
-    let fixed_atlas_handle_type_ref = namespace
+    let fixed_atlas_handle_type_ref = symbol_table
         .get_struct("FixedAtlasHandle")
         .expect("FixedAtlasHandle is missing");
-    let fixed_atlas_handle = ResolvedTypeForParameter {
+    let fixed_atlas_handle = TypeForParameter {
         name: "fixed_atlas_handle".to_string(),
-        resolved_type: Some(ResolvedType::Struct(fixed_atlas_handle_type_ref.clone())),
+        resolved_type: Some(Type::Struct(fixed_atlas_handle_type_ref.clone())),
         is_mutable: false,
         node: None,
     };
 
     //position
-    let position_param = ResolvedTypeForParameter {
+    let position_param = TypeForParameter {
         name: "position".to_string(),
         resolved_type: Some(math_types.pos3.clone()),
         is_mutable: false,
@@ -646,14 +647,14 @@ pub fn register_gfx_struct_value_with_members(
     };
 
     // size
-    let size_param = ResolvedTypeForParameter {
+    let size_param = TypeForParameter {
         name: "size".to_string(),
         resolved_type: Some(math_types.size2),
         is_mutable: false,
         node: None,
     };
 
-    let sprite_params_parameter = ResolvedTypeForParameter {
+    let sprite_params_parameter = TypeForParameter {
         name: "sprite_params".to_string(),
         resolved_type: Some(gfx_types.sprite_params),
         is_mutable: false,
@@ -662,10 +663,10 @@ pub fn register_gfx_struct_value_with_members(
 
     // sprite() ---------------------------
     let sprite_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
-    let sprite_fn = ResolvedExternalFunctionDefinition {
+    let sprite_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "sprite".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [
                 mut_self_parameter.clone(),
                 position_param.clone(),
@@ -673,14 +674,14 @@ pub fn register_gfx_struct_value_with_members(
                 size_param.clone(),
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Int),
+            return_type: Box::from(Type::Int),
         },
         id: sprite_external_fn_id,
     };
 
     gfx_struct_type
         .borrow_mut()
-        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(sprite_fn))?;
+        .add_external_member_function(ExternalFunctionDefinitionRef::from(sprite_fn))?;
 
     externals.register_external_function(
         sprite_external_fn_id,
@@ -703,10 +704,10 @@ pub fn register_gfx_struct_value_with_members(
 
     // sprite_ex() ---------------------------
     let sprite_ex_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
-    let sprite_ex_fn = ResolvedExternalFunctionDefinition {
+    let sprite_ex_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "sprite_ex".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [
                 mut_self_parameter.clone(),
                 position_param.clone(),
@@ -714,14 +715,14 @@ pub fn register_gfx_struct_value_with_members(
                 sprite_params_parameter.clone(),
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Int),
+            return_type: Box::from(Type::Int),
         },
         id: sprite_ex_external_fn_id,
     };
 
     gfx_struct_type
         .borrow_mut()
-        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(sprite_ex_fn))?;
+        .add_external_member_function(ExternalFunctionDefinitionRef::from(sprite_ex_fn))?;
 
     externals.register_external_function(
         sprite_ex_external_fn_id,
@@ -744,7 +745,7 @@ pub fn register_gfx_struct_value_with_members(
         },
     )?;
 
-    let color_parameter = ResolvedTypeForParameter {
+    let color_parameter = TypeForParameter {
         name: "color".to_string(),
         resolved_type: Some(gfx_types.color),
         is_mutable: false,
@@ -753,10 +754,10 @@ pub fn register_gfx_struct_value_with_members(
 
     // quad() ---------------------------
     let quad_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
-    let quad_fn = ResolvedExternalFunctionDefinition {
+    let quad_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "quad".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [
                 mut_self_parameter.clone(),
                 position_param.clone(),
@@ -764,14 +765,14 @@ pub fn register_gfx_struct_value_with_members(
                 color_parameter.clone(),
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Unit),
+            return_type: Box::from(Type::Unit),
         },
         id: quad_external_fn_id,
     };
 
     gfx_struct_type
         .borrow_mut()
-        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(quad_fn))?;
+        .add_external_member_function(ExternalFunctionDefinitionRef::from(quad_fn))?;
 
     externals.register_external_function(
         quad_external_fn_id,
@@ -797,10 +798,10 @@ pub fn register_gfx_struct_value_with_members(
     // nine_slice() ---------------------------
     /// https://en.wikipedia.org/wiki/9-slice_scaling
     let nine_slice_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
-    let nine_slice_fn = ResolvedExternalFunctionDefinition {
+    let nine_slice_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "nine_slice".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [
                 mut_self_parameter.clone(),
                 position_param.clone(),
@@ -811,14 +812,14 @@ pub fn register_gfx_struct_value_with_members(
                 color_parameter.clone(),
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Unit),
+            return_type: Box::from(Type::Unit),
         },
         id: nine_slice_external_fn_id,
     };
 
     gfx_struct_type
         .borrow_mut()
-        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(nine_slice_fn))?;
+        .add_external_member_function(ExternalFunctionDefinitionRef::from(nine_slice_fn))?;
 
     externals.register_external_function(
         nine_slice_external_fn_id,
@@ -836,6 +837,7 @@ pub fn register_gfx_struct_value_with_members(
                 position,
                 complete_size,
                 corner_size,
+                complete_size,
                 &material_ref.borrow().0,
                 atlas_offset,
                 color,
@@ -845,18 +847,18 @@ pub fn register_gfx_struct_value_with_members(
         },
     )?;
 
-    let font_and_material_handle_ref = namespace
+    let font_and_material_handle_ref = symbol_table
         .get_struct("FontAndMaterialHandle")
         .expect("FontAndMaterialHandle is missing");
 
-    let font_and_material_handle = ResolvedTypeForParameter {
+    let font_and_material_handle = TypeForParameter {
         name: "font_and_material_handle".to_string(),
-        resolved_type: Some(ResolvedType::Struct(font_and_material_handle_ref.clone())),
+        resolved_type: Some(Type::Struct(font_and_material_handle_ref.clone())),
         is_mutable: false,
         node: None,
     };
 
-    let text_parameter = ResolvedTypeForParameter {
+    let text_parameter = TypeForParameter {
         name: "str".to_string(),
         resolved_type: Some(string_type),
         is_mutable: false,
@@ -865,10 +867,10 @@ pub fn register_gfx_struct_value_with_members(
 
     // text() ---------------------------
     let text_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
-    let text_fn = ResolvedExternalFunctionDefinition {
+    let text_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "text".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [
                 mut_self_parameter.clone(),
                 position_param.clone(),
@@ -877,14 +879,14 @@ pub fn register_gfx_struct_value_with_members(
                 color_parameter.clone(),
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Unit),
+            return_type: Box::from(Type::Unit),
         },
         id: text_external_fn_id,
     };
 
     gfx_struct_type
         .borrow_mut()
-        .add_external_member_function(ResolvedExternalFunctionDefinitionRef::from(text_fn))?;
+        .add_external_member_function(ExternalFunctionDefinitionRef::from(text_fn))?;
 
     externals.register_external_function(
         text_external_fn_id,
@@ -911,9 +913,9 @@ pub fn register_gfx_struct_value_with_members(
     )?;
 
     // frame
-    let frame = ResolvedTypeForParameter {
+    let frame = TypeForParameter {
         name: String::default(),
-        resolved_type: Some(ResolvedType::Int),
+        resolved_type: Some(Type::Int),
         is_mutable: false,
         node: None,
     };
@@ -921,10 +923,10 @@ pub fn register_gfx_struct_value_with_members(
     // sprite_atlas_frame ---------------------------
     let sprite_atlas_frame_external_fn_id: ExternalFunctionId =
         state.allocate_external_function_id();
-    let sprite_atlas_frame_fn = ResolvedExternalFunctionDefinition {
+    let sprite_atlas_frame_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "sprite_atlas_frame".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [
                 mut_self_parameter.clone(),
                 position_param.clone(),
@@ -932,7 +934,7 @@ pub fn register_gfx_struct_value_with_members(
                 frame.clone(),
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Unit),
+            return_type: Box::from(Type::Unit),
         },
         id: sprite_atlas_frame_external_fn_id,
     };
@@ -969,10 +971,10 @@ pub fn register_gfx_struct_value_with_members(
 
     let sprite_atlas_frame_ex_external_fn_id: ExternalFunctionId =
         state.allocate_external_function_id();
-    let sprite_atlas_frame_ex_fn = ResolvedExternalFunctionDefinition {
+    let sprite_atlas_frame_ex_fn = ExternalFunctionDefinition {
         name: None,
         assigned_name: "sprite_atlas_frame_ex".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [
                 mut_self_parameter,
                 position_param,
@@ -981,7 +983,7 @@ pub fn register_gfx_struct_value_with_members(
                 sprite_params_parameter,
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Unit),
+            return_type: Box::from(Type::Unit),
         },
         id: sprite_atlas_frame_ex_external_fn_id,
     };
@@ -1024,27 +1026,27 @@ pub fn register_gfx_struct_value_with_members(
 ///
 #[allow(clippy::too_many_lines)]
 pub fn register_asset_struct_value_with_members(
-    state: &mut ResolvedProgramState,
+    state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
-    namespace: &mut ResolvedModuleNamespace,
-    material_struct_type_ref: ResolvedStructTypeRef,
-    fixed_grid_struct_type_ref: ResolvedStructTypeRef,
-    font_and_material_struct_type_ref: &ResolvedStructTypeRef,
+    symbol_table: &mut SymbolTable,
+    material_struct_type_ref: StructTypeRef,
+    fixed_grid_struct_type_ref: StructTypeRef,
+    font_and_material_struct_type_ref: &StructTypeRef,
 ) -> Result<VariableValue, MangroveError> {
-    let (assets_value, assets_type) = create_empty_struct_value_util(namespace, "Assets")?;
+    let (assets_value, assets_type) = create_empty_struct_value_util(symbol_table, "Assets")?;
     let assets_value_mut = VariableValue::Reference(Rc::new(RefCell::new(assets_value)));
 
-    let assets_general_type = ResolvedType::Struct(assets_type.clone());
+    let assets_general_type = Type::Struct(assets_type.clone());
 
-    let mut_self_parameter = ResolvedTypeForParameter {
+    let mut_self_parameter = TypeForParameter {
         name: "self".to_string(),
         resolved_type: Some(assets_general_type),
         is_mutable: true,
         node: None,
     };
 
-    let string_type = ResolvedType::String;
-    let asset_name_parameter = ResolvedTypeForParameter {
+    let string_type = Type::String;
+    let asset_name_parameter = TypeForParameter {
         name: "asset_name".to_string(),
         resolved_type: Some(string_type),
         is_mutable: false,
@@ -1052,12 +1054,12 @@ pub fn register_asset_struct_value_with_members(
     };
 
     let material_png_function_id: ExternalFunctionId = state.allocate_external_function_id();
-    let material_png_def = ResolvedExternalFunctionDefinition {
+    let material_png_def = ExternalFunctionDefinition {
         name: None,
         assigned_name: "material_png".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [mut_self_parameter.clone(), asset_name_parameter.clone()].to_vec(),
-            return_type: Box::from(ResolvedType::Struct(material_struct_type_ref)),
+            return_type: Box::from(Type::Struct(material_struct_type_ref)),
         },
         id: material_png_function_id,
     };
@@ -1083,14 +1085,12 @@ pub fn register_asset_struct_value_with_members(
     )?;
 
     let bm_font_function_id: ExternalFunctionId = state.allocate_external_function_id();
-    let bm_font_def = ResolvedExternalFunctionDefinition {
+    let bm_font_def = ExternalFunctionDefinition {
         name: None,
         assigned_name: "bm_font".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [mut_self_parameter.clone(), asset_name_parameter.clone()].to_vec(),
-            return_type: Box::from(ResolvedType::Struct(
-                font_and_material_struct_type_ref.clone(),
-            )),
+            return_type: Box::from(Type::Struct(font_and_material_struct_type_ref.clone())),
         },
         id: bm_font_function_id,
     };
@@ -1111,13 +1111,13 @@ pub fn register_asset_struct_value_with_members(
         },
     )?;
 
-    let int_type = ResolvedType::Int;
-    let size_int_tuple_type = ResolvedTupleType(vec![int_type.clone(), int_type]);
+    let int_type = Type::Int;
+    let size_int_tuple_type = TupleType(vec![int_type.clone(), int_type]);
     let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
 
-    let size_param = ResolvedTypeForParameter {
+    let size_param = TypeForParameter {
         name: String::default(),
-        resolved_type: Some(ResolvedType::Tuple(size_int_tuple_type_ref)),
+        resolved_type: Some(Type::Tuple(size_int_tuple_type_ref)),
         is_mutable: false,
         node: None,
     };
@@ -1132,10 +1132,10 @@ pub fn register_asset_struct_value_with_members(
     let frame_fixed_grid_material_png_function_id: ExternalFunctionId =
         state.allocate_external_function_id();
 
-    let frame_fixed_grid_material_png_def = ResolvedExternalFunctionDefinition {
+    let frame_fixed_grid_material_png_def = ExternalFunctionDefinition {
         name: None,
         assigned_name: "frame_fixed_grid_material_png".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [
                 mut_self_parameter,
                 asset_name_parameter,
@@ -1143,7 +1143,7 @@ pub fn register_asset_struct_value_with_members(
                 size_param,
             ]
             .to_vec(),
-            return_type: Box::from(ResolvedType::Struct(fixed_grid_struct_type_ref)),
+            return_type: Box::from(Type::Struct(fixed_grid_struct_type_ref)),
         },
         id: frame_fixed_grid_material_png_function_id,
     };
@@ -1176,7 +1176,7 @@ pub fn register_asset_struct_value_with_members(
 #[derive(LocalResource, Debug)]
 pub struct ScriptRender {
     render_value_ref: ValueRef,
-    render_fn: ResolvedInternalFunctionDefinitionRef,
+    render_fn: InternalFunctionDefinitionRef,
     externals: ExternalFunctions<ScriptRenderContext>,
     constants: Constants,
     gfx_struct_ref: ValueRef,
@@ -1187,7 +1187,7 @@ impl ScriptRender {
     ///
     pub fn new(
         render_value_ref: ValueRef,
-        render_struct_type_ref: &ResolvedStructTypeRef,
+        render_struct_type_ref: &StructTypeRef,
         externals: ExternalFunctions<ScriptRenderContext>,
         constants: Constants,
         gfx_struct_ref: ValueRef,
@@ -1239,80 +1239,68 @@ impl ScriptRender {
 /// # Errors
 ///
 pub fn create_render_module(
-    resolved_program: &mut ResolvedProgram,
+    resolved_program: &mut Program,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
 ) -> Result<
     (
-        ResolvedModule,
+        SymbolTable,
         VariableValue,
         ValueRef,
-        ResolvedStructTypeRef,
-        ResolvedRustTypeRef,
-        ResolvedStructTypeRef,
-        ResolvedRustTypeRef,
-        ResolvedStructTypeRef,
-        ResolvedRustTypeRef,
+        StructTypeRef,
+        ExternalTypeRef,
+        StructTypeRef,
+        ExternalTypeRef,
+        StructTypeRef,
+        ExternalTypeRef,
     ),
     MangroveError,
 > {
-    let mangrove_render_module =
-        ResolvedModule::new(&["mangrove".to_string(), "render".to_string()]);
+    //    let mut mangrove_render_module = Module::new(&["mangrove".to_string(), "render".to_string()]);
+    let mut symbol_table = SymbolTable::new();
 
-    let material_handle_rust_type_ref = Rc::new(ResolvedRustType {
+    let material_handle_rust_type_ref = Rc::new(ExternalType {
         type_name: "MaterialHandle".to_string(),
         number: 91,
     });
 
-    let material_handle_struct_ref = mangrove_render_module
-        .namespace
-        .borrow_mut()
-        .add_generated_struct(
-            "MaterialHandle",
-            &[(
-                "hidden",
-                ResolvedType::RustType(material_handle_rust_type_ref.clone()),
-            )],
-        )?;
+    let material_handle_struct_ref = symbol_table.add_generated_struct(
+        "MaterialHandle",
+        &[(
+            "hidden",
+            Type::External(material_handle_rust_type_ref.clone()),
+        )],
+    )?;
 
-    let fixed_atlas_handle_rust_type_ref = Rc::new(ResolvedRustType {
+    let fixed_atlas_handle_rust_type_ref = Rc::new(ExternalType {
         type_name: "FixedAtlasHandle".to_string(),
         number: 92,
     });
 
-    let fixed_atlas_handle_struct_ref = mangrove_render_module
-        .namespace
-        .borrow_mut()
-        .add_generated_struct(
-            "FixedAtlasHandle",
-            &[(
-                "hidden",
-                ResolvedType::RustType(fixed_atlas_handle_rust_type_ref.clone()),
-            )],
-        )?;
+    let fixed_atlas_handle_struct_ref = symbol_table.add_generated_struct(
+        "FixedAtlasHandle",
+        &[(
+            "hidden",
+            Type::External(fixed_atlas_handle_rust_type_ref.clone()),
+        )],
+    )?;
 
-    let font_and_material_rust_type_ref = mangrove_render_module
-        .namespace
-        .borrow_mut()
-        .add_built_in_rust_type(ResolvedRustType {
-            type_name: "FontAndMaterialHandle".to_string(),
-            number: 0,
-        })?;
+    let font_and_material_rust_type_ref = symbol_table.add_external_type(ExternalType {
+        type_name: "FontAndMaterialHandleType".to_string(),
+        number: 0,
+    })?;
 
-    let font_and_material_struct_ref = mangrove_render_module
-        .namespace
-        .borrow_mut()
-        .add_generated_struct(
-            "FontAndMaterialHandle",
-            &[(
-                "hidden",
-                ResolvedType::RustType(font_and_material_rust_type_ref.clone()),
-            )],
-        )?;
+    let font_and_material_struct_ref = symbol_table.add_generated_struct(
+        "FontAndMaterialHandle",
+        &[(
+            "hidden",
+            Type::External(font_and_material_rust_type_ref.clone()),
+        )],
+    )?;
 
     let assets_struct_value = register_asset_struct_value_with_members(
         &mut resolved_program.state,
         externals,
-        &mut mangrove_render_module.namespace.borrow_mut(),
+        &mut symbol_table,
         material_handle_struct_ref.clone(),
         fixed_atlas_handle_struct_ref.clone(),
         &font_and_material_struct_ref,
@@ -1321,11 +1309,11 @@ pub fn create_render_module(
     let gfx_struct_value = register_gfx_struct_value_with_members(
         &mut resolved_program.state,
         externals,
-        &mut mangrove_render_module.namespace.borrow_mut(),
+        &mut symbol_table,
     )?;
 
     Ok((
-        mangrove_render_module,
+        symbol_table,
         assets_struct_value,
         gfx_struct_value,
         material_handle_struct_ref,
@@ -1343,13 +1331,13 @@ pub fn create_render_module(
 ///
 pub fn boot(
     resource_storage: &mut ResourceStorage,
-    simulation_main_module: &ResolvedModuleRef,
+    simulation_main_module: &ModuleRef,
 ) -> Result<ScriptRender, MangroveError> {
-    let mut resolved_program = ResolvedProgram::new();
+    let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<ScriptRenderContext>::new();
 
     let (
-        render_module,
+        mangrove_render_symbol_table,
         assets_value,
         gfx_value,
         material_handle_struct_ref,
@@ -1359,32 +1347,41 @@ pub fn boot(
         font_and_material_struct_type_ref,
         font_and_material_rust_type_ref,
     ) = create_render_module(&mut resolved_program, &mut external_functions)?;
+    let mangrove_render_module_path = &["mangrove".to_string(), "render".into()];
 
-    let render_module_ref = Rc::new(RefCell::new(render_module));
-    resolved_program.modules.add(render_module_ref);
+    let render_module_ref = Module::new(
+        mangrove_render_module_path,
+        mangrove_render_symbol_table,
+        None,
+    );
+    resolved_program
+        .modules
+        .add(ModuleRef::from(render_module_ref));
+
     resolved_program.modules.add(simulation_main_module.clone());
+    resolved_program
+        .modules
+        .link_module(&["simulation".to_string()], simulation_main_module.clone());
 
+    let crate_render_module_path = &["crate".to_string(), "render".into()];
     {
         let source_map = resource_storage.fetch_mut::<SourceMapResource>();
-        let base_path = { source_map.base_path().to_path_buf() };
         compile(
-            base_path.as_path(),
-            &["render".to_string()],
+            crate_render_module_path,
             &mut resolved_program,
             &mut external_functions,
             &mut source_map.wrapper.source_map,
         )?;
     };
 
-    let root_module_path = &["render".to_string()].to_vec();
     let main_module = resolved_program
         .modules
-        .get(root_module_path)
+        .get(crate_render_module_path)
         .expect("could not find main module");
 
-    let binding = main_module.borrow();
-    let namespace_binding = binding.namespace.borrow_mut();
-    let main_fn = namespace_binding
+    let main_fn = main_module
+        .namespace
+        .symbol_table
         .get_internal_function("main")
         .expect("No main function");
 
@@ -1407,7 +1404,7 @@ pub fn boot(
     eval_constants(
         &external_functions,
         &mut constants,
-        &resolved_program.modules,
+        &resolved_program.state,
         &mut script_context,
     )?;
 
@@ -1500,16 +1497,16 @@ impl Plugin for ScriptRenderPlugin {
         // TODO: Should not try to call updates with params that are not available yet.
         app.insert_local_resource(ScriptRender {
             render_value_ref: Rc::new(RefCell::new(Value::default())),
-            render_fn: Rc::new(ResolvedInternalFunctionDefinition {
-                body: ResolvedExpression {
-                    ty: ResolvedType::Int,
+            render_fn: Rc::new(InternalFunctionDefinition {
+                body: Expression {
+                    ty: Type::Int,
                     node: Default::default(),
-                    kind: ResolvedExpressionKind::Break,
+                    kind: ExpressionKind::Break,
                 },
-                name: ResolvedLocalIdentifier(ResolvedNode::default()),
-                signature: FunctionTypeSignature {
+                name: LocalIdentifier(Node::default()),
+                signature: Signature {
                     parameters: vec![],
-                    return_type: Box::from(ResolvedType::Unit),
+                    return_type: Box::from(Type::Unit),
                 },
             }),
             externals: ExternalFunctions::new(),

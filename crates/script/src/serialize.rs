@@ -6,7 +6,7 @@
 use crate::simulation::ScriptSimulation;
 use limnus_gamepad::{Button, GamepadMessage};
 use swamp::prelude::{App, FixedPostUpdate, LoReM, LocalResource, Msg, Plugin};
-use swamp_script::prelude::{quick_deserialize, ResolvedType, Value};
+use swamp_script::prelude::{quick_deserialize, Type, Value};
 
 fn serialize(mut logic: LoReM<ScriptSimulation>, mut rewind: LoReM<Rewind>) {
     let mut buf = [0u8; 2048];
@@ -21,7 +21,7 @@ fn serialize(mut logic: LoReM<ScriptSimulation>, mut rewind: LoReM<Rewind>) {
             // Just for verification
             {
                 let (_deserialized_value, deserialized_octet_size) =
-                    quick_deserialize(&ResolvedType::Struct(found_struct_type.clone()), &buf, 0);
+                    quick_deserialize(&Type::Struct(found_struct_type.clone()), &buf, 0);
 
                 assert_eq!(serialized_octet_size, deserialized_octet_size);
             }
@@ -37,7 +37,7 @@ fn serialize(mut logic: LoReM<ScriptSimulation>, mut rewind: LoReM<Rewind>) {
         let payload = &rewind.snapshots[index_to_show].payload;
 
         let (deserialized_payload_value, _deserialized_octet_size) =
-            quick_deserialize(&ResolvedType::Struct(found_struct_type.clone()), payload, 0);
+            quick_deserialize(&Type::Struct(found_struct_type.clone()), payload, 0);
 
         logic.debug_set_simulation_value(deserialized_payload_value);
     } else {

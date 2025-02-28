@@ -5,17 +5,12 @@
 use crate::render::MathTypes;
 use seq_map::SeqMapError;
 use std::cell::RefCell;
-use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::io;
-use std::path::Path;
 use std::rc::Rc;
 use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec2, Vec3};
+use swamp_script::compile_and_analyze;
 use swamp_script::prelude::*;
-use swamp_script::prelude::{
-    parse_dependant_modules_and_resolve, DepLoaderError, DependencyParser, ParseModule,
-    ResolveError,
-};
 
 #[derive(Debug)]
 pub enum MangroveError {
@@ -23,9 +18,9 @@ pub enum MangroveError {
     DecoratedParseError(DecoratedParseErr),
     ExecuteError(ExecuteError),
     Other(String),
-    ScriptResolveError(ScriptResolveError),
+    ScriptError(ScriptError),
     SemanticError(SemanticError),
-    ResolveError(ResolveError),
+    Error(Error),
     DepLoaderError(DepLoaderError),
     SeqMapError(SeqMapError),
 }
@@ -36,17 +31,15 @@ impl Display for MangroveError {
     }
 }
 
-impl Error for MangroveError {}
-
 impl From<io::Error> for MangroveError {
     fn from(value: io::Error) -> Self {
         Self::IoError(value)
     }
 }
 
-impl From<ScriptResolveError> for MangroveError {
-    fn from(value: ScriptResolveError) -> Self {
-        Self::ScriptResolveError(value)
+impl From<ScriptError> for MangroveError {
+    fn from(value: ScriptError) -> Self {
+        Self::ScriptError(value)
     }
 }
 impl From<ExecuteError> for MangroveError {
@@ -67,9 +60,9 @@ impl From<SemanticError> for MangroveError {
     }
 }
 
-impl From<ResolveError> for MangroveError {
-    fn from(value: ResolveError) -> Self {
-        Self::ResolveError(value)
+impl From<Error> for MangroveError {
+    fn from(value: Error) -> Self {
+        Self::Error(value)
     }
 }
 
@@ -92,21 +85,21 @@ impl From<String> for MangroveError {
 }
 
 pub fn create_empty_struct_type(
-    namespace: &mut ResolvedModuleNamespace,
+    symbol_table: &mut SymbolTable,
     name: &str,
-) -> Result<ResolvedStructTypeRef, ResolveError> {
-    Ok(namespace.add_generated_struct(name, &[("hidden", ResolvedType::Unit)])?)
+) -> Result<StructTypeRef, Error> {
+    Ok(symbol_table.add_generated_struct(name, &[("hidden", Type::Unit)])?)
 }
 
-pub fn create_empty_struct_value(struct_type: ResolvedStructTypeRef) -> Value {
+pub fn create_empty_struct_value(struct_type: StructTypeRef) -> Value {
     Value::Struct(struct_type, [].to_vec())
 }
 
 pub fn create_empty_struct_value_util(
-    namespace: &mut ResolvedModuleNamespace,
+    symbol_table: &mut SymbolTable,
     name: &str,
-) -> Result<(Value, ResolvedStructTypeRef), ResolveError> {
-    let struct_type = create_empty_struct_type(namespace, name)?;
+) -> Result<(Value, StructTypeRef), Error> {
+    let struct_type = create_empty_struct_type(symbol_table, name)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
 }
 
@@ -133,7 +126,7 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
     }
 }
 
-pub fn create_default_color_value(color_struct_type_ref: ResolvedStructTypeRef) -> Value {
+pub fn create_default_color_value(color_struct_type_ref: StructTypeRef) -> Value {
     let fields = vec![
         Value::Float(Fp::one()), // red
         Value::Float(Fp::one()), // green
@@ -153,8 +146,8 @@ pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
 }
 
 pub fn create_default_sprite_params(
-    sprite_params_struct_type_ref: ResolvedStructTypeRef,
-    color_type: &ResolvedStructTypeRef,
+    sprite_params_struct_type_ref: StructTypeRef,
+    color_type: &StructTypeRef,
     math_types: &MathTypes,
 ) -> Value {
     let fields = vec![
@@ -218,13 +211,11 @@ pub fn uvec2_like(v: &Value) -> Result<UVec2, ValueError> {
 }
 
 fn prepare_main_module<C>(
-    state: &mut ResolvedProgramState,
+    state: &mut ProgramState,
     externals: &mut ExternalFunctions<C>,
     root_module_path: &[String],
-) -> Result<ResolvedModule, ResolveError> {
-    let main_module = ResolvedModule::new(root_module_path);
-
-    let any_parameter = ResolvedTypeForParameter {
+) -> Result<Module, Error> {
+    let any_parameter = TypeForParameter {
         name: String::default(),
         resolved_type: None,
         is_mutable: false,
@@ -233,20 +224,19 @@ fn prepare_main_module<C>(
 
     let print_id = state.allocate_external_function_id();
 
-    let print_external = ResolvedExternalFunctionDefinition {
+    let print_external = ExternalFunctionDefinition {
         name: None,
         assigned_name: "print".to_string(),
-        signature: FunctionTypeSignature {
+        signature: Signature {
             parameters: [any_parameter].to_vec(),
-            return_type: Box::from(ResolvedType::Unit),
+            return_type: Box::from(Type::Unit),
         },
         id: print_id,
     };
 
-    main_module
-        .namespace
-        .borrow_mut()
-        .add_external_function_declaration("print", print_external)?;
+    let mut symbol_table = SymbolTable::default();
+
+    symbol_table.add_external_function_declaration(print_external)?;
     externals
         .register_external_function(print_id, move |args: &[VariableValue], _context| {
             if let Some(value) = args.first() {
@@ -262,6 +252,8 @@ fn prepare_main_module<C>(
         })
         .expect("should work to register");
 
+    let main_module = Module::new(root_module_path, symbol_table, None);
+
     Ok(main_module)
 }
 
@@ -271,69 +263,48 @@ pub struct DecoratedParseErr {
     pub specific: SpecificError,
 }
 
-fn parse_module(
-    relative_path: &str,
-    source_map: &mut SourceMap,
-) -> Result<ParseModule, MangroveError> {
-    let parser = AstParser {};
-
-    let (file_id, main_swamp) = source_map.read_file_relative(relative_path)?;
-
-    let ast_module = parser.parse_module(&main_swamp).map_err(|parse_err| {
-        MangroveError::DecoratedParseError(DecoratedParseErr {
-            span: Span {
-                file_id,
-                offset: parse_err.span.offset,
-                length: parse_err.span.length,
-            },
-            specific: parse_err.specific,
-        })
-    })?;
-
-    let parse_module = ParseModule {
-        ast_module,
-        file_id,
-    };
-
-    Ok(parse_module)
-}
-
 pub fn compile<C>(
-    base_path: &Path,
     module_path: &[String],
-    resolved_program: &mut ResolvedProgram,
+    analyzed_program: &mut Program,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-) -> Result<ResolvedModuleRef, MangroveError> {
-    compile_internal(
-        base_path,
-        module_path,
-        resolved_program,
-        externals,
-        source_map,
-    )
+) -> Result<ModuleRef, MangroveError> {
+    let std_module =
+        prepare_main_module(&mut analyzed_program.state, externals, &["std".to_string()])?;
+
+    analyzed_program
+        .auto_use_modules
+        .modules
+        .push(std_module.namespace.symbol_table);
+
+    let core_module = create_std_module();
+    analyzed_program
+        .auto_use_modules
+        .modules
+        .push(core_module.namespace.symbol_table);
+
+    compile_and_analyze(module_path, analyzed_program, source_map)?;
+    Ok(analyzed_program.modules.get(module_path).unwrap().clone())
 }
 
+/*
 pub fn compile_internal<C>(
-    base_path: &Path,
     module_path: &[String],
-    resolved_program: &mut ResolvedProgram,
+    resolved_program: &mut Program,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-) -> Result<ResolvedModuleRef, MangroveError> {
+) -> Result<ModuleRef, MangroveError> {
     let relative_path = module_path_to_relative_swamp_file_string(module_path);
-    let parsed_module = parse_module(&relative_path, source_map)?;
+    let parsed_module = parse_single_module(&relative_path, source_map)?;
 
     let main_module = prepare_main_module(&mut resolved_program.state, externals, module_path)?;
 
     let main_path = module_path;
 
-    let main_module_ref = Rc::new(RefCell::new(main_module));
+    let main_module_ref = Rc::new(main_module);
     resolved_program.modules.add(main_module_ref.clone());
 
-    resolved_program
-        .modules
-        .add(Rc::new(RefCell::new(create_std_module())));
+    resolved_program.modules.add(Rc::new(create_std_module()));
 
     let mut dependency_parser = DependencyParser::new();
     dependency_parser.add_ast_module(Vec::from(main_path), parsed_module);
@@ -342,20 +313,8 @@ pub fn compile_internal<C>(
         dependency_parser.add_resolved_module(module_path.clone());
     }
 
-    let module_paths_in_order = parse_dependant_modules_and_resolve(
-        base_path.to_owned(),
-        Vec::from(main_path),
-        &mut dependency_parser,
-        source_map,
-    )?;
-
-    resolve_program(
-        &mut resolved_program.state,
-        &mut resolved_program.modules,
-        source_map,
-        &module_paths_in_order,
-        &dependency_parser,
-    )?;
-
     Ok(main_module_ref)
 }
+
+
+ */

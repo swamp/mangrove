@@ -2,7 +2,6 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::err::show_mangrove_error;
 use crate::script::MangroveError;
 use crate::simulation::ScriptSimulation;
 use crate::util::ScriptModule;
@@ -45,7 +44,7 @@ impl ScriptInput {
     /// # Panics
     ///
     #[must_use]
-    pub fn main_module(&self) -> ResolvedModuleRef {
+    pub fn main_module(&self) -> &ModuleRef {
         self.script_updater.main_module()
     }
 
@@ -78,8 +77,8 @@ impl ScriptInput {
 /// # Panics
 ///
 pub fn boot(
-    simulation_main_module: &ResolvedModuleRef,
-    flow_main_module: &ResolvedModuleRef,
+    simulation_main_module: &ModuleRef,
+    flow_main_module: &ModuleRef,
     source_map: &mut SourceMapResource,
 ) -> Result<ScriptInput, MangroveError> {
     let updater = util::boot(
@@ -98,6 +97,7 @@ pub struct ScriptInputPlugin;
 impl Plugin for ScriptInputPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(PreUpdate, input_tick);
+        // TODO: Fix this
         let source_map_resource = app
             .get_resource_mut::<SourceMapResource>()
             .expect("must have source map resource");

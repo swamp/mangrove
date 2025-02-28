@@ -38,26 +38,26 @@ pub struct ScriptSimulationContext {}
 #[derive(LocalResource, Debug)]
 pub struct ScriptSimulation {
     simulation_value_ref: ValueRef,
-    simulation_fn: ResolvedInternalFunctionDefinitionRef,
-    gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
-    gamepad_button_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
+    simulation_fn: InternalFunctionDefinitionRef,
+    gamepad_axis_changed_fn: Option<InternalFunctionDefinitionRef>,
+    gamepad_button_changed_fn: Option<InternalFunctionDefinitionRef>,
     external_functions: ExternalFunctions<ScriptSimulationContext>,
     constants: Constants,
     script_context: ScriptSimulationContext,
-    resolved_program: ResolvedProgram,
-    input_module: ResolvedModuleRef,
+    resolved_program: Program,
+    input_module: ModuleRef,
 }
 
 impl ScriptSimulation {
     pub fn new(
         simulation_value_ref: ValueRef,
-        simulation_fn: ResolvedInternalFunctionDefinitionRef,
-        gamepad_axis_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
-        gamepad_button_changed_fn: Option<ResolvedInternalFunctionDefinitionRef>,
+        simulation_fn: InternalFunctionDefinitionRef,
+        gamepad_axis_changed_fn: Option<InternalFunctionDefinitionRef>,
+        gamepad_button_changed_fn: Option<InternalFunctionDefinitionRef>,
         external_functions: ExternalFunctions<ScriptSimulationContext>,
         constants: Constants,
-        resolved_program: ResolvedProgram,
-        input_module: ResolvedModuleRef,
+        resolved_program: Program,
+        input_module: ModuleRef,
     ) -> Self {
         Self {
             simulation_value_ref,
@@ -88,13 +88,14 @@ impl ScriptSimulation {
     /// # Panics
     ///
     #[must_use]
-    pub fn main_module(&self) -> ResolvedModuleRef {
-        let root_module_path = &["simulation".to_string()].to_vec();
+    pub fn main_module(&self) -> ModuleRef {
+        let root_module_path = &["crate".to_string(), "simulation".to_string()].to_vec();
 
         self.resolved_program
             .modules
             .get(root_module_path)
             .expect("simulation module should exist in simulation")
+            .clone()
     }
 
     /// # Errors
@@ -118,7 +119,7 @@ impl ScriptSimulation {
 
     fn execute(
         &mut self,
-        fn_def: &ResolvedInternalFunctionDefinitionRef,
+        fn_def: &InternalFunctionDefinitionRef,
         arguments: &[Value],
     ) -> Result<(), ExecuteError> {
         let mut complete_arguments = Vec::new();
@@ -155,7 +156,7 @@ impl ScriptSimulation {
 
     fn axis_changed(&mut self, gamepad_id: GamePadId, axis: Axis, value: AxisValueType) {
         let script_axis_value = {
-            let input_module_ref = self.input_module.borrow();
+            let input_module_ref = &self.input_module;
             let axis_str = match axis {
                 Axis::LeftStickX => "LeftStickX",
                 Axis::LeftStickY => "LeftStickY",
@@ -165,7 +166,7 @@ impl ScriptSimulation {
 
             let axis_enum = input_module_ref
                 .namespace
-                .borrow()
+                .symbol_table
                 .get_enum("Axis")
                 .expect("axis")
                 .clone();
@@ -176,7 +177,7 @@ impl ScriptSimulation {
                 .expect("should be there")
                 .clone();
 
-            if let ResolvedEnumVariantType::Nothing(simple) = &*variant {
+            if let EnumVariantType::Nothing(simple) = &*variant {
                 Value::EnumVariantSimple(simple.clone())
             } else {
                 panic!("variant axis problem");
@@ -196,7 +197,7 @@ impl ScriptSimulation {
 
     fn button_changed(&mut self, gamepad_id: GamePadId, button: Button, value: ButtonValueType) {
         let script_button_value = {
-            let input_module_ref = self.input_module.borrow();
+            let input_module_ref = &self.input_module;
             let button_str = match button {
                 Button::South => "South",
                 Button::East => "East",
@@ -219,7 +220,7 @@ impl ScriptSimulation {
 
             let button_enum = input_module_ref
                 .namespace
-                .borrow()
+                .symbol_table
                 .get_enum("Button")
                 .expect("button name failed")
                 .clone();
@@ -230,7 +231,7 @@ impl ScriptSimulation {
                 .expect("should exist")
                 .clone();
 
-            if let ResolvedEnumVariantType::Nothing(simple) = &*variant {
+            if let EnumVariantType::Nothing(simple) = &*variant {
                 Value::EnumVariantSimple(simple.clone())
             } else {
                 panic!("variant axis problem");
@@ -257,36 +258,33 @@ impl ScriptSimulation {
 /// # Errors
 ///
 pub fn input_module(
-    resolve_state: &mut ResolvedProgramState,
-) -> Result<(ResolvedModule, ResolvedEnumTypeRef, ResolvedEnumTypeRef), ResolveError> {
-    let module_path = ["input".to_string()];
-    let module = ResolvedModule::new(&module_path);
+    resolve_state: &mut ProgramState,
+) -> Result<(SymbolTable, EnumTypeRef, EnumTypeRef), Error> {
+    let mut symbol_table = SymbolTable::new();
 
     let axis_enum_type_ref = {
         let axis_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
 
-        let parent = ResolvedEnumType {
-            name: ResolvedLocalTypeIdentifier(ResolvedNode {
+        let parent = EnumType {
+            name: LocalTypeIdentifier(Node {
                 span: Span::default(),
-                markdown_doc: None,
             }),
             assigned_name: "Axis".to_string(),
-            module_path: Vec::from(module_path.clone()),
+            module_path: Vec::default(),
             number: axis_enum_type_id,
             variants: SeqMap::default(),
         };
 
-        let axis_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent)?;
+        let axis_enum_type_ref = symbol_table.add_enum_type(parent)?;
 
         let variant_names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
         let mut resolved_variants = SeqMap::new();
         for (container_index, variant_name) in variant_names.iter().enumerate() {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
-            let variant = ResolvedEnumVariantSimpleType {
-                common: ResolvedEnumVariantCommon {
-                    name: ResolvedLocalTypeIdentifier(ResolvedNode {
+            let variant = EnumVariantSimpleType {
+                common: EnumVariantCommon {
+                    name: LocalTypeIdentifier(Node {
                         span: Span::default(),
-                        markdown_doc: None,
                     }),
                     assigned_name: variant_name.to_string(),
                     container_index: container_index as u8,
@@ -295,7 +293,7 @@ pub fn input_module(
                 },
             };
 
-            let complete_variant = ResolvedEnumVariantType::Nothing(variant.into());
+            let complete_variant = EnumVariantType::Nothing(variant.into());
 
             resolved_variants
                 .insert(variant_name.to_string(), Rc::new(complete_variant))
@@ -309,17 +307,16 @@ pub fn input_module(
     let button_enum_type_ref = {
         let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
                                                                    // let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
-        let parent = ResolvedEnumType {
-            name: ResolvedLocalTypeIdentifier(ResolvedNode {
+        let parent = EnumType {
+            name: LocalTypeIdentifier(Node {
                 span: Span::default(),
-                markdown_doc: None,
             }),
             assigned_name: "Button".to_string(),
-            module_path: Vec::from(module_path),
+            module_path: Vec::default(),
             number: button_enum_type_id,
             variants: Default::default(),
         };
-        let button_enum_type_ref = module.namespace.borrow_mut().add_enum_type(parent)?;
+        let button_enum_type_ref = symbol_table.add_enum_type(parent)?;
 
         let button_names = [
             "South",
@@ -343,11 +340,10 @@ pub fn input_module(
 
         for (container_index, button_variant_name) in button_names.iter().enumerate() {
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
-            let variant = ResolvedEnumVariantSimpleType {
-                common: ResolvedEnumVariantCommon {
-                    name: ResolvedLocalTypeIdentifier(ResolvedNode {
+            let variant = EnumVariantSimpleType {
+                common: EnumVariantCommon {
+                    name: LocalTypeIdentifier(Node {
                         span: Span::default(),
-                        markdown_doc: None,
                     }),
                     assigned_name: button_variant_name.to_string(),
                     container_index: container_index as u8,
@@ -356,16 +352,13 @@ pub fn input_module(
                 },
             };
 
-            let complete_variant = ResolvedEnumVariantType::Nothing(Rc::new(variant));
-            module
-                .namespace
-                .borrow_mut()
-                .add_enum_variant(button_enum_type_ref.clone(), complete_variant)?;
+            let complete_variant = EnumVariantType::Nothing(Rc::new(variant));
+            symbol_table.add_enum_variant(button_enum_type_ref.clone(), complete_variant)?;
         }
         button_enum_type_ref
     };
 
-    Ok((module, axis_enum_type_ref, button_enum_type_ref))
+    Ok((symbol_table, axis_enum_type_ref, button_enum_type_ref))
 }
 
 /// # Errors
@@ -373,35 +366,38 @@ pub fn input_module(
 /// # Panics
 ///
 pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, MangroveError> {
-    let mut resolved_program = ResolvedProgram::new();
+    let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<ScriptSimulationContext>::new();
 
-    let (input_module, _axis_enum_type, _button_enum_type) =
-        input_module(&mut resolved_program.state)?;
-    let input_module_ref = Rc::new(RefCell::new(input_module));
-    resolved_program.modules.add(input_module_ref.clone());
+    //let (input_module, _axis_enum_type, _button_enum_type) =
+    //  input_module(&mut resolved_program.state)?;
+    //let input_module_ref = ModuleRef::from(Module::new(&["input".to_string()], input_module, None));
+    // resolved_program.modules.add(input_module_ref.clone());
+    let fake_symbol_table = SymbolTable::new();
+    let input_module_ref = ModuleRef::from(Module::new(
+        &["crate".to_string(), "input".to_string()],
+        fake_symbol_table,
+        None,
+    ));
 
-    let base_path = source_map.base_path().to_path_buf();
+    let crate_simulation_path = &["crate".to_string(), "simulation".to_string()];
 
     compile(
-        base_path.as_path(),
-        &["simulation".to_string()],
+        crate_simulation_path,
         &mut resolved_program,
         &mut external_functions,
         &mut source_map.wrapper.source_map,
     )?;
 
-    let root_module_path = &["simulation".to_string()];
     let main_fn = {
         let main_module = resolved_program
             .modules
-            .get(root_module_path)
+            .get(crate_simulation_path)
             .expect("could not find main module");
 
-        let binding = main_module.borrow();
-        let function_ref = binding
+        let function_ref = main_module
             .namespace
-            .borrow()
+            .symbol_table
             .get_internal_function("main")
             .expect("No main function")
             .clone();
@@ -414,7 +410,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, Mang
     eval_constants(
         &external_functions,
         &mut constants,
-        &resolved_program.modules,
+        &resolved_program.state,
         &mut script_context,
     )?;
 
@@ -488,16 +484,16 @@ impl Plugin for ScriptSimulationPlugin {
         // TODO: Should not try to call updates with params that are not available yet.
         app.insert_local_resource(ScriptSimulation {
             simulation_value_ref: Rc::new(RefCell::new(Value::default())),
-            simulation_fn: Rc::new(ResolvedInternalFunctionDefinition {
-                body: ResolvedExpression {
-                    ty: ResolvedType::Int,
+            simulation_fn: Rc::new(InternalFunctionDefinition {
+                body: Expression {
+                    ty: Type::Int,
                     node: Default::default(),
-                    kind: ResolvedExpressionKind::Break,
+                    kind: ExpressionKind::Break,
                 },
-                name: ResolvedLocalIdentifier(ResolvedNode::default()),
-                signature: FunctionTypeSignature {
+                name: LocalIdentifier(Node::default()),
+                signature: Signature {
                     parameters: vec![],
-                    return_type: Box::from(ResolvedType::Int),
+                    return_type: Box::from(Type::Int),
                 },
             }),
             gamepad_axis_changed_fn: None,
@@ -505,19 +501,20 @@ impl Plugin for ScriptSimulationPlugin {
             external_functions: ExternalFunctions::new(),
             constants: Constants { values: vec![] },
             script_context: ScriptSimulationContext {},
-            resolved_program: ResolvedProgram {
-                state: ResolvedProgramState {
+            resolved_program: Program {
+                state: ProgramState {
                     array_types: vec![],
                     number: 0,
                     external_function_number: 0,
+                    constants_in_dependency_order: vec![],
                 },
-                modules: ResolvedModules::default(),
+                modules: Modules::default(),
+                auto_use_modules: AutoUseModules { modules: vec![] },
             },
-            input_module: Rc::new(RefCell::new(ResolvedModule {
-                definitions: vec![],
+            input_module: Rc::new(Module {
                 expression: None,
-                namespace: Rc::new(RefCell::new(ResolvedModuleNamespace::new(&[]))),
-            })),
+                namespace: Namespace::new(vec![], SymbolTable::default()),
+            }),
         });
     }
 }
