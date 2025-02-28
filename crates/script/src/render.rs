@@ -1285,7 +1285,7 @@ pub fn create_render_module(
     )?;
 
     let font_and_material_rust_type_ref = symbol_table.add_external_type(ExternalType {
-        type_name: "FontAndMaterialHandle".to_string(),
+        type_name: "FontAndMaterialHandleType".to_string(),
         number: 0,
     })?;
 
@@ -1337,7 +1337,7 @@ pub fn boot(
     let mut external_functions = ExternalFunctions::<ScriptRenderContext>::new();
 
     let (
-        render_symbol_table,
+        mangrove_render_symbol_table,
         assets_value,
         gfx_value,
         material_handle_struct_ref,
@@ -1347,27 +1347,36 @@ pub fn boot(
         font_and_material_struct_type_ref,
         font_and_material_rust_type_ref,
     ) = create_render_module(&mut resolved_program, &mut external_functions)?;
+    let mangrove_render_module_path = &["mangrove".to_string(), "render".into()];
 
-    let render_module_ref = Module::new(&["render".into()], render_symbol_table, None);
+    let render_module_ref = Module::new(
+        mangrove_render_module_path,
+        mangrove_render_symbol_table,
+        None,
+    );
     resolved_program
         .modules
         .add(ModuleRef::from(render_module_ref));
-    resolved_program.modules.add(simulation_main_module.clone());
 
+    resolved_program.modules.add(simulation_main_module.clone());
+    resolved_program
+        .modules
+        .link_module(&["simulation".to_string()], simulation_main_module.clone());
+
+    let crate_render_module_path = &["crate".to_string(), "render".into()];
     {
         let source_map = resource_storage.fetch_mut::<SourceMapResource>();
         compile(
-            &["render".to_string()],
+            crate_render_module_path,
             &mut resolved_program,
             &mut external_functions,
             &mut source_map.wrapper.source_map,
         )?;
     };
 
-    let root_module_path = &["render".to_string()].to_vec();
     let main_module = resolved_program
         .modules
-        .get(root_module_path)
+        .get(crate_render_module_path)
         .expect("could not find main module");
 
     let main_fn = main_module
