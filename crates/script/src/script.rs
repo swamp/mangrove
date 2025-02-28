@@ -11,7 +11,6 @@ use std::rc::Rc;
 use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec2, Vec3};
 use swamp_script::compile_and_analyze;
 use swamp_script::prelude::*;
-use tracing::trace;
 
 #[derive(Debug)]
 pub enum MangroveError {
@@ -270,6 +269,20 @@ pub fn compile<C>(
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
 ) -> Result<ModuleRef, MangroveError> {
+    let std_module =
+        prepare_main_module(&mut analyzed_program.state, externals, &["std".to_string()])?;
+
+    analyzed_program
+        .auto_use_modules
+        .modules
+        .push(std_module.namespace.symbol_table);
+
+    let core_module = create_std_module();
+    analyzed_program
+        .auto_use_modules
+        .modules
+        .push(core_module.namespace.symbol_table);
+
     compile_and_analyze(module_path, analyzed_program, source_map)?;
     Ok(analyzed_program.modules.get(module_path).unwrap().clone())
 }

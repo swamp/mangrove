@@ -410,7 +410,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, Mang
     eval_constants(
         &external_functions,
         &mut constants,
-        &resolved_program.modules,
+        &resolved_program.state,
         &mut script_context,
     )?;
 
@@ -506,6 +506,7 @@ impl Plugin for ScriptSimulationPlugin {
                     array_types: vec![],
                     number: 0,
                     external_function_number: 0,
+                    constants_in_dependency_order: vec![],
                 },
                 modules: Modules::default(),
                 auto_use_modules: AutoUseModules { modules: vec![] },

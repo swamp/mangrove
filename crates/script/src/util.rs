@@ -163,7 +163,7 @@ pub fn boot<C>(
     eval_constants(
         &external_functions,
         &mut constants,
-        &resolved_program.modules,
+        &resolved_program.state,
         &mut script_context,
     )?;
 
