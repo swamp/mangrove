@@ -89,7 +89,7 @@ impl ScriptSimulation {
     ///
     #[must_use]
     pub fn main_module(&self) -> ModuleRef {
-        let root_module_path = &["simulation".to_string()].to_vec();
+        let root_module_path = &["crate".to_string(), "simulation".to_string()].to_vec();
 
         self.resolved_program
             .modules

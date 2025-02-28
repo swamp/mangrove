@@ -16,7 +16,7 @@ pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
         }
         MangroveError::ExecuteError(err) => show_execute_error(err, source_map),
         MangroveError::Other(_) => todo!(),
-        MangroveError::SemanticError(_) => todo!(),
+        MangroveError::SemanticError(err) => error!(?err, "semantic error"),
         MangroveError::Error(resolve_err) => show_error(resolve_err, source_map),
         MangroveError::DepLoaderError(err) => {
             error!(?err, "deploader");
