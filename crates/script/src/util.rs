@@ -116,7 +116,6 @@ pub fn compile_types<C>(
 ) -> Result<ModuleRef, MangroveError> {
     let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<C>::new();
-    let base_path = source_map.base_path().to_path_buf();
 
     for module in modules {
         resolved_program.modules.add(module.clone());

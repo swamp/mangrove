@@ -369,23 +369,30 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, Mang
     let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<ScriptSimulationContext>::new();
 
-    let (input_module, _axis_enum_type, _button_enum_type) =
-        input_module(&mut resolved_program.state)?;
-    let input_module_ref = ModuleRef::from(Module::new(&["input".to_string()], input_module, None));
-    resolved_program.modules.add(input_module_ref.clone());
+    //let (input_module, _axis_enum_type, _button_enum_type) =
+    //  input_module(&mut resolved_program.state)?;
+    //let input_module_ref = ModuleRef::from(Module::new(&["input".to_string()], input_module, None));
+    // resolved_program.modules.add(input_module_ref.clone());
+    let fake_symbol_table = SymbolTable::new();
+    let input_module_ref = ModuleRef::from(Module::new(
+        &["crate".to_string(), "input".to_string()],
+        fake_symbol_table,
+        None,
+    ));
+
+    let crate_simulation_path = &["crate".to_string(), "simulation".to_string()];
 
     compile(
-        &["simulation".to_string()],
+        crate_simulation_path,
         &mut resolved_program,
         &mut external_functions,
         &mut source_map.wrapper.source_map,
     )?;
 
-    let root_module_path = &["simulation".to_string()];
     let main_fn = {
         let main_module = resolved_program
             .modules
-            .get(root_module_path)
+            .get(crate_simulation_path)
             .expect("could not find main module");
 
         let function_ref = main_module

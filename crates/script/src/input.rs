@@ -97,7 +97,11 @@ fn scan_struct(struct_type: &StructTypeRef) -> Result<BindingsInSet, MangroveErr
 /// # Panics
 ///
 pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptInput, MangroveError> {
-    let input_module = util::compile_types::<i32>(vec![], &["input".to_string()], source_map)?;
+    let input_module = util::compile_types::<i32>(
+        vec![],
+        &["mangrove".into(), "input".to_string()],
+        source_map,
+    )?;
     let mut mapping = SeqMap::new();
     for (name, struct_type) in input_module.namespace.symbol_table.structs() {
         let bindings_in_set = scan_struct(&struct_type)?;

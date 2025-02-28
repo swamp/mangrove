@@ -9,7 +9,9 @@ use std::fmt::{Debug, Display, Formatter};
 use std::io;
 use std::rc::Rc;
 use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec2, Vec3};
+use swamp_script::compile_and_analyze;
 use swamp_script::prelude::*;
+use tracing::trace;
 
 #[derive(Debug)]
 pub enum MangroveError {
@@ -262,42 +264,17 @@ pub struct DecoratedParseErr {
     pub specific: SpecificError,
 }
 
-fn parse_module(
-    relative_path: &str,
-    source_map: &mut SourceMap,
-) -> Result<ParsedAstModule, MangroveError> {
-    let parser = AstParser {};
-
-    let (file_id, main_swamp) = source_map.read_file_relative("crate", relative_path)?;
-
-    let ast_module = parser.parse_module(&main_swamp).map_err(|parse_err| {
-        MangroveError::DecoratedParseError(DecoratedParseErr {
-            span: Span {
-                file_id,
-                offset: parse_err.span.offset,
-                length: parse_err.span.length,
-            },
-            specific: parse_err.specific,
-        })
-    })?;
-
-    let parse_module = ParsedAstModule {
-        ast_module,
-        file_id,
-    };
-
-    Ok(parse_module)
-}
-
 pub fn compile<C>(
     module_path: &[String],
-    resolved_program: &mut Program,
+    analyzed_program: &mut Program,
     externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
 ) -> Result<ModuleRef, MangroveError> {
-    compile_internal(module_path, resolved_program, externals, source_map)
+    compile_and_analyze(module_path, analyzed_program, source_map)?;
+    Ok(analyzed_program.modules.get(module_path).unwrap().clone())
 }
 
+/*
 pub fn compile_internal<C>(
     module_path: &[String],
     resolved_program: &mut Program,
@@ -305,7 +282,7 @@ pub fn compile_internal<C>(
     source_map: &mut SourceMap,
 ) -> Result<ModuleRef, MangroveError> {
     let relative_path = module_path_to_relative_swamp_file_string(module_path);
-    let parsed_module = parse_module(&relative_path, source_map)?;
+    let parsed_module = parse_single_module(&relative_path, source_map)?;
 
     let main_module = prepare_main_module(&mut resolved_program.state, externals, module_path)?;
 
@@ -325,3 +302,6 @@ pub fn compile_internal<C>(
 
     Ok(main_module_ref)
 }
+
+
+ */
