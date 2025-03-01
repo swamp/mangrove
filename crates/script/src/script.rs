@@ -217,7 +217,7 @@ fn prepare_main_module<C>(
 ) -> Result<Module, Error> {
     let any_parameter = TypeForParameter {
         name: String::default(),
-        resolved_type: None,
+        resolved_type: Type::String,
         is_mutable: false,
         node: None,
     };

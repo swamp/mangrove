@@ -370,25 +370,25 @@ pub fn register_color_struct_type(
             parameters: vec![
                 TypeForParameter {
                     name: "r".to_string(),
-                    resolved_type: Some(Type::Float),
+                    resolved_type: Type::Float,
                     is_mutable: false,
                     node: None,
                 },
                 TypeForParameter {
                     name: "g".to_string(),
-                    resolved_type: Some(Type::Float),
+                    resolved_type: Type::Float,
                     is_mutable: false,
                     node: None,
                 },
                 TypeForParameter {
                     name: "b".to_string(),
-                    resolved_type: Some(Type::Float),
+                    resolved_type: Type::Float,
                     is_mutable: false,
                     node: None,
                 },
                 TypeForParameter {
                     name: "a".to_string(),
-                    resolved_type: Some(Type::Float),
+                    resolved_type: Type::Float,
                     is_mutable: false,
                     node: None,
                 },
@@ -610,7 +610,7 @@ pub fn register_gfx_struct_value_with_members(
 
     let mut_self_parameter = TypeForParameter {
         name: "self".to_string(),
-        resolved_type: Some(assets_general_type),
+        resolved_type: assets_general_type,
         is_mutable: true,
         node: None,
     };
@@ -623,7 +623,7 @@ pub fn register_gfx_struct_value_with_members(
 
     let material_handle = TypeForParameter {
         name: "material_handle".to_string(),
-        resolved_type: Some(Type::Struct(material_handle_type_ref.clone())),
+        resolved_type: Type::Struct(material_handle_type_ref.clone()),
         is_mutable: false,
         node: None,
     };
@@ -633,7 +633,7 @@ pub fn register_gfx_struct_value_with_members(
         .expect("FixedAtlasHandle is missing");
     let fixed_atlas_handle = TypeForParameter {
         name: "fixed_atlas_handle".to_string(),
-        resolved_type: Some(Type::Struct(fixed_atlas_handle_type_ref.clone())),
+        resolved_type: Type::Struct(fixed_atlas_handle_type_ref.clone()),
         is_mutable: false,
         node: None,
     };
@@ -641,7 +641,7 @@ pub fn register_gfx_struct_value_with_members(
     //position
     let position_param = TypeForParameter {
         name: "position".to_string(),
-        resolved_type: Some(math_types.pos3.clone()),
+        resolved_type: math_types.pos3.clone(),
         is_mutable: false,
         node: None,
     };
@@ -649,14 +649,14 @@ pub fn register_gfx_struct_value_with_members(
     // size
     let size_param = TypeForParameter {
         name: "size".to_string(),
-        resolved_type: Some(math_types.size2),
+        resolved_type: math_types.size2,
         is_mutable: false,
         node: None,
     };
 
     let sprite_params_parameter = TypeForParameter {
         name: "sprite_params".to_string(),
-        resolved_type: Some(gfx_types.sprite_params),
+        resolved_type: gfx_types.sprite_params,
         is_mutable: false,
         node: None,
     };
@@ -715,7 +715,7 @@ pub fn register_gfx_struct_value_with_members(
                 sprite_params_parameter.clone(),
             ]
             .to_vec(),
-            return_type: Box::from(Type::Int),
+            return_type: Box::from(Type::Unit),
         },
         id: sprite_ex_external_fn_id,
     };
@@ -747,7 +747,7 @@ pub fn register_gfx_struct_value_with_members(
 
     let color_parameter = TypeForParameter {
         name: "color".to_string(),
-        resolved_type: Some(gfx_types.color),
+        resolved_type: gfx_types.color,
         is_mutable: false,
         node: None,
     };
@@ -853,14 +853,14 @@ pub fn register_gfx_struct_value_with_members(
 
     let font_and_material_handle = TypeForParameter {
         name: "font_and_material_handle".to_string(),
-        resolved_type: Some(Type::Struct(font_and_material_handle_ref.clone())),
+        resolved_type: Type::Struct(font_and_material_handle_ref.clone()),
         is_mutable: false,
         node: None,
     };
 
     let text_parameter = TypeForParameter {
         name: "str".to_string(),
-        resolved_type: Some(string_type),
+        resolved_type: string_type,
         is_mutable: false,
         node: None,
     };
@@ -915,7 +915,7 @@ pub fn register_gfx_struct_value_with_members(
     // frame
     let frame = TypeForParameter {
         name: String::default(),
-        resolved_type: Some(Type::Int),
+        resolved_type: Type::Int,
         is_mutable: false,
         node: None,
     };
@@ -1040,7 +1040,7 @@ pub fn register_asset_struct_value_with_members(
 
     let mut_self_parameter = TypeForParameter {
         name: "self".to_string(),
-        resolved_type: Some(assets_general_type),
+        resolved_type: assets_general_type,
         is_mutable: true,
         node: None,
     };
@@ -1048,7 +1048,7 @@ pub fn register_asset_struct_value_with_members(
     let string_type = Type::String;
     let asset_name_parameter = TypeForParameter {
         name: "asset_name".to_string(),
-        resolved_type: Some(string_type),
+        resolved_type: string_type,
         is_mutable: false,
         node: None,
     };
@@ -1117,7 +1117,7 @@ pub fn register_asset_struct_value_with_members(
 
     let size_param = TypeForParameter {
         name: String::default(),
-        resolved_type: Some(Type::Tuple(size_int_tuple_type_ref)),
+        resolved_type: Type::Tuple(size_int_tuple_type_ref),
         is_mutable: false,
         node: None,
     };

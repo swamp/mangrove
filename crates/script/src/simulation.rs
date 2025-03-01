@@ -16,14 +16,14 @@ use swamp_script::prelude::*;
 ///
 pub fn simulation_tick(
     mut script: LoReM<ScriptSimulation>,
-    _source_map: Re<SourceMapResource>,
+    source_map: Re<SourceMapResource>,
     error: Re<ErrorResource>,
 ) {
-    //let lookup: &dyn SourceMapLookup = &source_map.wrapper;
+    let lookup: &dyn SourceMapLookup = &source_map.wrapper;
     if error.has_errors {
         return;
     }
-    script.tick(None).expect("script.tick() crashed");
+    script.tick(Some(lookup)).expect("script.tick() crashed");
 }
 
 pub fn input_tick(mut script: LoReM<ScriptSimulation>, gamepad_messages: Msg<GamepadMessage>) {
