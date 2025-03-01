@@ -23,6 +23,7 @@ pub enum MangroveError {
     Error(Error),
     DepLoaderError(DepLoaderError),
     SeqMapError(SeqMapError),
+    EvalLoaderError(EvalLoaderError),
 }
 
 impl Display for MangroveError {
@@ -69,6 +70,12 @@ impl From<Error> for MangroveError {
 impl From<DepLoaderError> for MangroveError {
     fn from(value: DepLoaderError) -> Self {
         Self::DepLoaderError(value)
+    }
+}
+
+impl From<EvalLoaderError> for MangroveError {
+    fn from(value: EvalLoaderError) -> Self {
+        Self::EvalLoaderError(value)
     }
 }
 

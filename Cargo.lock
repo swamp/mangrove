@@ -3747,7 +3747,9 @@ version = "0.0.12"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
+ "swamp-script-dep-loader",
  "swamp-script-eval",
+ "swamp-script-eval-loader",
  "swamp-script-parser",
  "swamp-script-semantic",
  "swamp-script-source-map",
