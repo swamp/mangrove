@@ -139,9 +139,6 @@ pub fn boot<C>(
     let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<C>::new();
 
-    // base path is the root directory of the scripts, typically `scripts/`
-    let base_path = source_map.base_path().to_path_buf();
-
     compile(
         root_module_path,
         &mut resolved_program,
