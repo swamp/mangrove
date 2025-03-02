@@ -6,8 +6,7 @@ use crate::script::{DecoratedParseErr, MangroveError};
 use crate::ErrorResource;
 use swamp::prelude::{App, Plugin};
 use swamp_script::prelude::{
-    show_eval_loader_error, show_execute_error, show_parse_error_internal, show_parser_error,
-    EvalLoaderError, SourceMap,
+    show_eval_loader_error, show_execute_error, show_parse_error_internal, SourceMap,
 };
 use tracing::error;
 

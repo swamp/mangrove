@@ -795,8 +795,7 @@ pub fn register_gfx_struct_value_with_members(
         },
     )?;
 
-    // nine_slice() ---------------------------
-    /// https://en.wikipedia.org/wiki/9-slice_scaling
+    // [9-slice](https://en.wikipedia.org/wiki/9-slice_scaling)
     let nine_slice_external_fn_id: ExternalFunctionId = state.allocate_external_function_id();
     let nine_slice_fn = ExternalFunctionDefinition {
         name: None,
