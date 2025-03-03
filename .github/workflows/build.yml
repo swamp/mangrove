@@ -39,6 +39,9 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt install librust-alsa-sys-dev libudev-dev
 
+      - name: install Rust version
+        run: rustup install 1.85.0
+
       - name: Add target
         run: rustup target add ${{ matrix.target }}
 
