@@ -25,4 +25,5 @@ limnus-steam-input = { path = "../limnus-steam-input", version = "0.0.7", option
 
 [features]
 steam = ["limnus-steamworks", "limnus-steam-input"]
+time_machine = []
 default = []
