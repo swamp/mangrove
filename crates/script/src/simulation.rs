@@ -423,7 +423,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, Mang
         None,
     )?;
 
-    let Value::Struct(simulation_struct_type_ref, _) = &simulation_value else {
+    let Value::NamedStruct(simulation_struct_type_ref, _) = &simulation_value else {
         return Err(MangroveError::Other(
             "needs to be simulation struct".to_string(),
         ));

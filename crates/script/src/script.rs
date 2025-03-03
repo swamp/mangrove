@@ -99,7 +99,7 @@ pub fn create_empty_struct_type(
 }
 
 pub fn create_empty_struct_value(struct_type: StructTypeRef) -> Value {
-    Value::Struct(struct_type, [].to_vec())
+    Value::NamedStruct(struct_type, [].to_vec())
 }
 
 pub fn create_empty_struct_value_util(
@@ -111,7 +111,7 @@ pub fn create_empty_struct_value_util(
 }
 
 pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, ValueError> {
-    if let Value::Struct(_struct_type_ref, fields) = sprite_params_struct {
+    if let Value::NamedStruct(_struct_type_ref, fields) = sprite_params_struct {
         Ok(SpriteParams {
             scale: fields[4].borrow().expect_int()? as u8,
             texture_size: uvec2_like(&fields[6].borrow())?,
@@ -141,7 +141,7 @@ pub fn create_default_color_value(color_struct_type_ref: StructTypeRef) -> Value
         Value::Float(Fp::one()), // alpha
     ];
 
-    Value::Struct(color_struct_type_ref, value_to_value_ref(&fields))
+    Value::NamedStruct(color_struct_type_ref, value_to_value_ref(&fields))
 }
 
 pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
@@ -175,7 +175,7 @@ pub fn create_default_sprite_params(
         ),
     ];
 
-    Value::Struct(sprite_params_struct_type_ref, value_to_value_ref(&fields))
+    Value::NamedStruct(sprite_params_struct_type_ref, value_to_value_ref(&fields))
 }
 
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
@@ -193,7 +193,7 @@ pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {
 
 pub fn color_like(v: &Value) -> Result<Color, ValueError> {
     match v {
-        Value::Struct(_, fields) => {
+        Value::NamedStruct(_, fields) => {
             let r = fields[0].borrow().expect_float()?;
             let g = fields[1].borrow().expect_float()?;
             let b = fields[2].borrow().expect_float()?;

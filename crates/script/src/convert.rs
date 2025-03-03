@@ -20,7 +20,7 @@ pub fn detect_reload_tick(
                 info!(len=%previous_logic.payload.len(), "reload detected");
                 if let Some(previous_struct_type_ref) = &previous_logic.type_ref {
                     let (deserialized_value, deserialized_octet_size) = quick_deserialize(
-                        &Type::Struct(previous_struct_type_ref.clone()),
+                        &Type::NamedStruct(previous_struct_type_ref.clone()),
                         &previous_logic.payload,
                         0,
                     );
@@ -35,7 +35,7 @@ pub fn detect_reload_tick(
                     script_logic.debug_set_simulation_value(overwritten_value);
                 } else {
                     match script_logic.immutable_simulation_value() {
-                        Value::Struct(first_time_struct_ref, _) => {
+                        Value::NamedStruct(first_time_struct_ref, _) => {
                             previous_logic.type_ref = Some(first_time_struct_ref.clone());
                         }
                         _ => panic!("must be struct"),
