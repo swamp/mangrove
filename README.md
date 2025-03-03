@@ -4,7 +4,7 @@
 
 # Mangrove
 
-A cool 2D game engine that combines the power of [Limnus](https://github.com/swamp/limnus), 
+A cool 2D game engine that combines the power of [Limnus](https://github.com/swamp/limnus),
 [Swamp](https://github.com/swamp/swamp) and [Swamp Script](https://github.com/swamp/script)
 in one awesome package!
 
@@ -16,13 +16,32 @@ Mangrove is a 2D game engine built in Rust that integrates several key component
 
 - [**Swamp Script**](https://github.com/swamp/script) - A custom scripting language designed for games.
 - [**Swamp**](https://github.com/swamp/swamp) - Game development framework
-- [**Limnus**](https://github.com/swamp/limnus) - Core game engine functionality 
+- [**Limnus**](https://github.com/swamp/limnus) - Core game engine functionality
 
 ## 🚀 Installation
 
 Download the executable from the [Releases](https://github.com/swamp/mangrove/releases)
 
 ### MacOS
+
+#### Brew
+
+Please install using homebrew if at all possible:
+
+- Add the tap: (this is only needed once)
+
+```sh
+brew tap fengrove/tap
+brew update
+```
+
+- Install mangrove
+
+```sh
+brew install mangrove
+```
+
+#### Using the tar file
 
 Due to Apple's security measures, you'll need to allow the executable:
 
@@ -60,7 +79,7 @@ You are welcome to:
 - Provide feedback
 - Share the project
 
-If you have suggestions or find bugs, please feel free to open an issue for discussion. While I cannot 
+If you have suggestions or find bugs, please feel free to open an issue for discussion. While I cannot
 accept pull requests, I value your feedback and engagement with the project.
 
 Thank you for your understanding and interest in the project! 🙏
