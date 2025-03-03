@@ -4,8 +4,8 @@
  */
 use crate::err::show_mangrove_error;
 use crate::script::{
-    MangroveError, color_like, compile, create_default_color_value, create_default_sprite_params,
-    create_empty_struct_value_util, sprite_params, uvec2_like, value_to_value_ref, vec3_like,
+    color_like, compile, create_default_color_value, create_default_sprite_params, create_empty_struct_value_util,
+    sprite_params, uvec2_like, value_to_value_ref, vec3_like, MangroveError,
 };
 use crate::simulation::ScriptSimulation;
 use crate::util::get_impl_func;
@@ -354,7 +354,7 @@ pub fn register_color_struct_type(
     let color_type = NamedStructType {
         name: Node::default(),
         assigned_name: "Color".to_string(),
-        anon_struct_type: AnonymousStructType { defined_fields },
+        anon_struct_type: AnonymousStructTypeRef::from(AnonymousStructType::new(defined_fields)),
         functions: SeqMap::default(),
     };
 
@@ -553,7 +553,7 @@ pub fn register_gfx_sprite_params(
     let sprite_params_type = NamedStructType {
         name: Node::default(),
         assigned_name: "SpriteParams".to_string(),
-        anon_struct_type: AnonymousStructType { defined_fields },
+        anon_struct_type: AnonymousStructTypeRef::from(AnonymousStructType::new(defined_fields)),
         functions: SeqMap::default(),
     };
     let sprite_params_struct_type_ref = symbol_table.add_struct(sprite_params_type)?;
