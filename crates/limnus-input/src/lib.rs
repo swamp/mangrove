@@ -4,8 +4,8 @@
  */
 
 use limnus_app::prelude::{App, Plugin};
-use limnus_message::prelude::Message;
 use limnus_message::Messages;
+use limnus_message::prelude::Message;
 use limnus_resource::prelude::Resource;
 use std::collections::HashMap;
 use tracing::{debug, error, trace};

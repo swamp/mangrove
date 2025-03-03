@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::err::show_mangrove_error;
-use crate::script::{compile, MangroveError};
+use crate::script::{MangroveError, compile};
 use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
@@ -306,7 +306,7 @@ pub fn input_module(
 
     let button_enum_type_ref = {
         let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
-                                                                   // let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
+        // let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
         let parent = EnumType {
             name: LocalTypeIdentifier(Node {
                 span: Span::default(),

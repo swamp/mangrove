@@ -4,9 +4,8 @@
  */
 use crate::err::show_mangrove_error;
 use crate::script::{
-    color_like, compile, create_default_color_value, create_default_sprite_params,
+    MangroveError, color_like, compile, create_default_color_value, create_default_sprite_params,
     create_empty_struct_value_util, sprite_params, uvec2_like, value_to_value_ref, vec3_like,
-    MangroveError,
 };
 use crate::simulation::ScriptSimulation;
 use crate::util::get_impl_func;

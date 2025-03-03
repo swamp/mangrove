@@ -6,7 +6,7 @@
 use crate::simulation::ScriptSimulation;
 use limnus_gamepad::{Button, GamepadMessage};
 use swamp::prelude::{App, FixedPostUpdate, LoReM, LocalResource, Msg, Plugin};
-use swamp_script::prelude::{quick_deserialize, Type, Value};
+use swamp_script::prelude::{Type, Value, quick_deserialize};
 
 fn serialize(mut logic: LoReM<ScriptSimulation>, mut rewind: LoReM<Rewind>) {
     let mut buf = [0u8; 2048];

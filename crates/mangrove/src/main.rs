@@ -11,11 +11,11 @@ use mangrove_script::convert::ConvertPlugin;
 use mangrove_script::err::ErrorPlugin;
 //use mangrove_script::flow::ScriptFlowPlugin;
 //use mangrove_script::input::ScriptInputPlugin;
+use mangrove_script::ScriptPlugin;
 use mangrove_script::render::ScriptRenderPlugin;
 use mangrove_script::serialize::SerializePlugin;
 use mangrove_script::simulation::ScriptSimulationPlugin;
 use mangrove_script::source_map::SourceMapPlugin;
-use mangrove_script::ScriptPlugin;
 use swamp::prelude::SwampDefaultPlugins;
 use swamp::prelude::*;
 

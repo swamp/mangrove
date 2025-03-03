@@ -1,7 +1,7 @@
 [package]
 name = "mangrove-save-detector"
 version = "0.0.7-alpha.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 description = "Detects file changes and sends message to mangrove script plugin"
 repository = "https://github.com/swamp/mangrove"
@@ -9,8 +9,8 @@ repository = "https://github.com/swamp/mangrove"
 [dependencies]
 mangrove-script = { path = "../script", version = "0.0.7-alpha.1" }
 
-#swamp = "0.0.16-alpha.2"
-swamp = { path = "../../../swamp/crates/swamp", version = "0.0.16-alpha.1" }
+swamp = "0.0.17"
+#swamp = { path = "../../../swamp/crates/swamp", version = "0.0.16-alpha.1" }
 
 limnus-message = "0.0.16"
 

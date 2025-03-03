@@ -5,7 +5,7 @@
 use crate::script::MangroveError;
 use crate::simulation::ScriptSimulation;
 use crate::util::ScriptModule;
-use crate::{util, ErrorResource, SourceMapResource};
+use crate::{ErrorResource, SourceMapResource, util};
 use swamp::prelude::{App, LoRe, LoReM, LocalResource, Plugin, PreUpdate, Re};
 use swamp_script::prelude::*;
 

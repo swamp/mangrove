@@ -4,7 +4,7 @@
  */
 use crate::err::show_mangrove_error;
 use crate::script::MangroveError;
-use crate::{util, SourceMapResource};
+use crate::{SourceMapResource, util};
 use limnus_input_binding::{ActionSets, Actions, AnalogAction, DigitalAction, InputConfig};
 use swamp::prelude::{App, LocalResource, Plugin};
 use swamp_script::prelude::*;

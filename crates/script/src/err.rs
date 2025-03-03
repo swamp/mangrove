@@ -2,11 +2,11 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::script::{DecoratedParseErr, MangroveError};
 use crate::ErrorResource;
+use crate::script::{DecoratedParseErr, MangroveError};
 use swamp::prelude::{App, Plugin};
 use swamp_script::prelude::{
-    show_eval_loader_error, show_execute_error, show_parse_error_internal, SourceMap,
+    SourceMap, show_eval_loader_error, show_execute_error, show_parse_error_internal,
 };
 use tracing::error;
 

@@ -2,8 +2,8 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::script::{compile, MangroveError};
 use crate::SourceMapResource;
+use crate::script::{MangroveError, compile};
 use std::cell::RefCell;
 use std::rc::Rc;
 use swamp_script::prelude::*;
