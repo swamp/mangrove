@@ -179,7 +179,7 @@ pub fn boot<C>(
         )?
     };
 
-    let Value::Struct(self_struct_type_ref, _) = &self_state_value else {
+    let Value::NamedStruct(self_struct_type_ref, _) = &self_state_value else {
         return Err(MangroveError::Other("needs to be logic struct".to_string()));
     };
 

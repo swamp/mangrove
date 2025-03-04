@@ -240,7 +240,7 @@ impl GameAssetsWrapper {
             Rc::new(RefCell::new(Box::new(MaterialWrapper(material_ref)))),
         )));
 
-        Value::Struct(
+        Value::NamedStruct(
             self.material_struct_type.clone(),
             [material_ref_value].to_vec(),
         )
@@ -253,7 +253,7 @@ impl GameAssetsWrapper {
             Rc::new(RefCell::new(Box::new(wrapper))),
         )));
 
-        Value::Struct(
+        Value::NamedStruct(
             self.fixed_atlas_struct_type_ref.clone(),
             [fixed_atlas_ref].to_vec(),
         )
@@ -266,7 +266,7 @@ impl GameAssetsWrapper {
             Rc::new(RefCell::new(Box::new(wrapper))),
         )));
 
-        Value::Struct(
+        Value::NamedStruct(
             self.font_and_material_struct_type_ref.clone(),
             [font_and_material_ref].to_vec(),
         )
@@ -351,10 +351,10 @@ pub fn register_color_struct_type(
     };
     defined_fields.insert("a".to_string(), a_field)?;
 
-    let color_type = StructType {
+    let color_type = NamedStructType {
         name: Node::default(),
         assigned_name: "Color".to_string(),
-        anon_struct_type: AnonymousStructType { defined_fields },
+        anon_struct_type: AnonymousStructType::new(defined_fields),
         functions: SeqMap::default(),
     };
 
@@ -392,7 +392,7 @@ pub fn register_color_struct_type(
                     node: None,
                 },
             ],
-            return_type: Box::from(Type::Struct(color_struct_type_ref.clone())),
+            return_type: Box::from(Type::NamedStruct(color_struct_type_ref.clone())),
         },
         id: new_external_function_id,
     };
@@ -408,7 +408,7 @@ pub fn register_color_struct_type(
             let g = params[1].clone();
             let b = params[2].clone();
             let a = params[3].clone();
-            Ok(Value::Struct(
+            Ok(Value::NamedStruct(
                 color_type_for_new.clone(),
                 value_to_value_ref([r, g, b, a].as_ref()),
             ))
@@ -422,7 +422,7 @@ pub fn register_color_struct_type(
         assigned_name: "default".to_string(),
         signature: Signature {
             parameters: vec![],
-            return_type: Box::from(Type::Struct(color_struct_type_ref.clone())),
+            return_type: Box::from(Type::NamedStruct(color_struct_type_ref.clone())),
         },
         id: default_fn_external_function_id,
     };
@@ -482,7 +482,7 @@ pub fn register_gfx_types(
     symbol_table: &mut SymbolTable,
 ) -> Result<GfxTypes, MangroveError> {
     let color_struct_ref = register_color_struct_type(symbol_table, state, external_functions)?;
-    let color_type = Type::Struct(color_struct_ref.clone());
+    let color_type = Type::NamedStruct(color_struct_ref.clone());
     let sprite_params_struct_ref = register_gfx_sprite_params(
         state,
         external_functions,
@@ -490,7 +490,7 @@ pub fn register_gfx_types(
         color_struct_ref,
         math_types,
     )?;
-    let sprite_params = Type::Struct(sprite_params_struct_ref);
+    let sprite_params = Type::NamedStruct(sprite_params_struct_ref);
     Ok(GfxTypes {
         color: color_type,
         sprite_params,
@@ -528,7 +528,7 @@ pub fn register_gfx_sprite_params(
 
     let color_field = StructTypeField {
         identifier: None,
-        field_type: Type::Struct(color_type.clone()),
+        field_type: Type::NamedStruct(color_type.clone()),
     };
     defined_fields.insert("color".to_string(), color_field)?;
 
@@ -550,10 +550,10 @@ pub fn register_gfx_sprite_params(
     };
     defined_fields.insert("size".to_string(), size)?;
 
-    let sprite_params_type = StructType {
+    let sprite_params_type = NamedStructType {
         name: Node::default(),
         assigned_name: "SpriteParams".to_string(),
-        anon_struct_type: AnonymousStructType { defined_fields },
+        anon_struct_type: AnonymousStructType::new(defined_fields),
         functions: SeqMap::default(),
     };
     let sprite_params_struct_type_ref = symbol_table.add_struct(sprite_params_type)?;
@@ -565,7 +565,7 @@ pub fn register_gfx_sprite_params(
         assigned_name: "default".to_string(),
         signature: Signature {
             parameters: vec![],
-            return_type: Box::from(Type::Struct(sprite_params_struct_type_ref.clone())),
+            return_type: Box::from(Type::NamedStruct(sprite_params_struct_type_ref.clone())),
         },
         id: default_fn_external_function_id,
     };
@@ -602,7 +602,7 @@ pub fn register_gfx_struct_value_with_members(
 ) -> Result<ValueRef, MangroveError> {
     let (gfx_value, gfx_struct_type) = create_empty_struct_value_util(symbol_table, "Gfx")?;
     let gfx_value_mut = Rc::new(RefCell::new(gfx_value));
-    let assets_general_type = Type::Struct(gfx_struct_type.clone());
+    let assets_general_type = Type::NamedStruct(gfx_struct_type.clone());
 
     let math_types = register_math_types();
     let gfx_types = register_gfx_types(state, externals, &math_types, symbol_table)?;
@@ -622,7 +622,7 @@ pub fn register_gfx_struct_value_with_members(
 
     let material_handle = TypeForParameter {
         name: "material_handle".to_string(),
-        resolved_type: Type::Struct(material_handle_type_ref.clone()),
+        resolved_type: Type::NamedStruct(material_handle_type_ref.clone()),
         is_mutable: false,
         node: None,
     };
@@ -632,7 +632,7 @@ pub fn register_gfx_struct_value_with_members(
         .expect("FixedAtlasHandle is missing");
     let fixed_atlas_handle = TypeForParameter {
         name: "fixed_atlas_handle".to_string(),
-        resolved_type: Type::Struct(fixed_atlas_handle_type_ref.clone()),
+        resolved_type: Type::NamedStruct(fixed_atlas_handle_type_ref.clone()),
         is_mutable: false,
         node: None,
     };
@@ -851,7 +851,7 @@ pub fn register_gfx_struct_value_with_members(
 
     let font_and_material_handle = TypeForParameter {
         name: "font_and_material_handle".to_string(),
-        resolved_type: Type::Struct(font_and_material_handle_ref.clone()),
+        resolved_type: Type::NamedStruct(font_and_material_handle_ref.clone()),
         is_mutable: false,
         node: None,
     };
@@ -1034,7 +1034,7 @@ pub fn register_asset_struct_value_with_members(
     let (assets_value, assets_type) = create_empty_struct_value_util(symbol_table, "Assets")?;
     let assets_value_mut = VariableValue::Reference(Rc::new(RefCell::new(assets_value)));
 
-    let assets_general_type = Type::Struct(assets_type.clone());
+    let assets_general_type = Type::NamedStruct(assets_type.clone());
 
     let mut_self_parameter = TypeForParameter {
         name: "self".to_string(),
@@ -1057,7 +1057,7 @@ pub fn register_asset_struct_value_with_members(
         assigned_name: "material_png".to_string(),
         signature: Signature {
             parameters: [mut_self_parameter.clone(), asset_name_parameter.clone()].to_vec(),
-            return_type: Box::from(Type::Struct(material_struct_type_ref)),
+            return_type: Box::from(Type::NamedStruct(material_struct_type_ref)),
         },
         id: material_png_function_id,
     };
@@ -1088,7 +1088,7 @@ pub fn register_asset_struct_value_with_members(
         assigned_name: "bm_font".to_string(),
         signature: Signature {
             parameters: [mut_self_parameter.clone(), asset_name_parameter.clone()].to_vec(),
-            return_type: Box::from(Type::Struct(font_and_material_struct_type_ref.clone())),
+            return_type: Box::from(Type::NamedStruct(font_and_material_struct_type_ref.clone())),
         },
         id: bm_font_function_id,
     };
@@ -1141,7 +1141,7 @@ pub fn register_asset_struct_value_with_members(
                 size_param,
             ]
             .to_vec(),
-            return_type: Box::from(Type::Struct(fixed_grid_struct_type_ref)),
+            return_type: Box::from(Type::NamedStruct(fixed_grid_struct_type_ref)),
         },
         id: frame_fixed_grid_material_png_function_id,
     };
@@ -1416,7 +1416,7 @@ pub fn boot(
         None, //Some(&source_map.wrapper),
     )?;
 
-    let Value::Struct(render_struct_type_ref, _) = render_struct_value.clone() else {
+    let Value::NamedStruct(render_struct_type_ref, _) = render_struct_value.clone() else {
         return Err(MangroveError::Other(
             "needs to be simulation struct".to_string(),
         ));

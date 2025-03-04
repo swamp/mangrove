@@ -55,7 +55,7 @@ fn scan_struct(struct_type: &StructTypeRef) -> Result<BindingsInSet, MangroveErr
     for (index, (field_name, field_type)) in struct_type
         .borrow()
         .anon_struct_type
-        .defined_fields
+        .field_name_sorted_fields
         .iter()
         .enumerate()
     {
