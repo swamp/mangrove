@@ -19,6 +19,7 @@ use swamp::prelude::{
     LocalResource, MaterialRef, Msg, Plugin, Re, ReAll, ReM, Render, RenderUpdate, ResourceStorage,
     SpriteParams, UVec2, Update, Vec3,
 };
+use swamp_script::prelude::Rule::program;
 use swamp_script::prelude::*;
 use tracing::error;
 
@@ -351,14 +352,17 @@ pub fn register_color_struct_type(
     };
     defined_fields.insert("a".to_string(), a_field)?;
 
+    let color_type_id = state.allocate_number();
     let color_type = NamedStructType {
         name: Node::default(),
         assigned_name: "Color".to_string(),
         anon_struct_type: AnonymousStructType::new(defined_fields),
-        functions: SeqMap::default(),
+        type_id: color_type_id,
     };
 
     let color_struct_type_ref = symbol_table.add_struct(color_type)?;
+    let color_general_type = Type::NamedStruct(color_struct_type_ref.clone());
+    state.associated_impls.prepare(&color_general_type);
 
     // Color::new(r, g, b, a)
     let new_external_function_id = state.allocate_external_function_id();
@@ -438,11 +442,13 @@ pub fn register_color_struct_type(
     )?;
 
     // insert functions
-    let mut functions = SeqMap::new();
-    functions.insert("new".to_string(), new_fn_wrap.into())?;
-    functions.insert("default".to_string(), default_fn_ref_wrap.into())?;
 
-    color_struct_type_ref.borrow_mut().functions = functions;
+    //functions.insert("new".to_string(), new_fn_wrap.into())?;
+    //functions.insert("default".to_string(), default_fn_ref_wrap.into())?;
+
+    state
+        .associated_impls
+        .add_external_struct_member_function(&color_struct_type_ref, new_fn_wrap)?;
 
     Ok(color_struct_type_ref)
 }
@@ -550,13 +556,16 @@ pub fn register_gfx_sprite_params(
     };
     defined_fields.insert("size".to_string(), size)?;
 
+    let sprite_params_type_id = state.allocate_number();
     let sprite_params_type = NamedStructType {
         name: Node::default(),
         assigned_name: "SpriteParams".to_string(),
         anon_struct_type: AnonymousStructType::new(defined_fields),
-        functions: SeqMap::default(),
+        type_id: sprite_params_type_id,
     };
     let sprite_params_struct_type_ref = symbol_table.add_struct(sprite_params_type)?;
+    let sprite_params_general_type = Type::NamedStruct(sprite_params_struct_type_ref.clone());
+    state.associated_impls.prepare(&sprite_params_general_type);
 
     // SpriteParams::default()
     let default_fn_external_function_id = state.allocate_external_function_id();
@@ -565,14 +574,17 @@ pub fn register_gfx_sprite_params(
         assigned_name: "default".to_string(),
         signature: Signature {
             parameters: vec![],
-            return_type: Box::from(Type::NamedStruct(sprite_params_struct_type_ref.clone())),
+            return_type: Box::from(sprite_params_general_type),
         },
         id: default_fn_external_function_id,
     };
     let default_fn_ref = Rc::new(default_fn);
-    sprite_params_struct_type_ref
-        .borrow_mut()
-        .add_external_member_function(default_fn_ref)?;
+    state
+        .associated_impls
+        .add_external_struct_member_function_external_ref(
+            sprite_params_struct_type_ref.clone(),
+            default_fn_ref,
+        )?;
 
     let sprite_params_struct_ref_for_default = sprite_params_struct_type_ref.clone();
     let color_type_for_default = color_type;
@@ -600,16 +612,20 @@ pub fn register_gfx_struct_value_with_members(
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     symbol_table: &mut SymbolTable,
 ) -> Result<ValueRef, MangroveError> {
-    let (gfx_value, gfx_struct_type) = create_empty_struct_value_util(symbol_table, "Gfx")?;
+    let gfx_type_id = state.allocate_number();
+    let (gfx_value, gfx_struct_type) =
+        create_empty_struct_value_util(symbol_table, "Gfx", gfx_type_id)?;
     let gfx_value_mut = Rc::new(RefCell::new(gfx_value));
-    let assets_general_type = Type::NamedStruct(gfx_struct_type.clone());
+    let gfx_general_type = Type::NamedStruct(gfx_struct_type.clone());
+
+    state.associated_impls.prepare(&gfx_general_type);
 
     let math_types = register_math_types();
     let gfx_types = register_gfx_types(state, externals, &math_types, symbol_table)?;
 
     let mut_self_parameter = TypeForParameter {
         name: "self".to_string(),
-        resolved_type: assets_general_type,
+        resolved_type: gfx_general_type,
         is_mutable: true,
         node: None,
     };
@@ -678,9 +694,9 @@ pub fn register_gfx_struct_value_with_members(
         id: sprite_external_fn_id,
     };
 
-    gfx_struct_type
-        .borrow_mut()
-        .add_external_member_function(ExternalFunctionDefinitionRef::from(sprite_fn))?;
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(gfx_struct_type.clone(), sprite_fn)?;
 
     externals.register_external_function(
         sprite_external_fn_id,
@@ -719,9 +735,9 @@ pub fn register_gfx_struct_value_with_members(
         id: sprite_ex_external_fn_id,
     };
 
-    gfx_struct_type
-        .borrow_mut()
-        .add_external_member_function(ExternalFunctionDefinitionRef::from(sprite_ex_fn))?;
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(gfx_struct_type.clone(), sprite_ex_fn)?;
 
     externals.register_external_function(
         sprite_ex_external_fn_id,
@@ -769,9 +785,9 @@ pub fn register_gfx_struct_value_with_members(
         id: quad_external_fn_id,
     };
 
-    gfx_struct_type
-        .borrow_mut()
-        .add_external_member_function(ExternalFunctionDefinitionRef::from(quad_fn))?;
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(gfx_struct_type.clone(), quad_fn)?;
 
     externals.register_external_function(
         quad_external_fn_id,
@@ -815,9 +831,9 @@ pub fn register_gfx_struct_value_with_members(
         id: nine_slice_external_fn_id,
     };
 
-    gfx_struct_type
-        .borrow_mut()
-        .add_external_member_function(ExternalFunctionDefinitionRef::from(nine_slice_fn))?;
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(gfx_struct_type.clone(), nine_slice_fn)?;
 
     externals.register_external_function(
         nine_slice_external_fn_id,
@@ -882,9 +898,9 @@ pub fn register_gfx_struct_value_with_members(
         id: text_external_fn_id,
     };
 
-    gfx_struct_type
-        .borrow_mut()
-        .add_external_member_function(ExternalFunctionDefinitionRef::from(text_fn))?;
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(gfx_struct_type.clone(), text_fn)?;
 
     externals.register_external_function(
         text_external_fn_id,
@@ -936,9 +952,12 @@ pub fn register_gfx_struct_value_with_members(
         },
         id: sprite_atlas_frame_external_fn_id,
     };
-    gfx_struct_type
-        .borrow_mut()
-        .add_external_member_function(sprite_atlas_frame_fn.into())?;
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(
+            gfx_struct_type.clone(),
+            sprite_atlas_frame_fn,
+        )?;
 
     externals.register_external_function(
         sprite_atlas_frame_external_fn_id,
@@ -985,9 +1004,12 @@ pub fn register_gfx_struct_value_with_members(
         },
         id: sprite_atlas_frame_ex_external_fn_id,
     };
-    gfx_struct_type
-        .borrow_mut()
-        .add_external_member_function(sprite_atlas_frame_ex_fn.into())?;
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(
+            gfx_struct_type.clone(),
+            sprite_atlas_frame_ex_fn,
+        )?;
 
     externals.register_external_function(
         sprite_atlas_frame_ex_external_fn_id,
@@ -1031,14 +1053,17 @@ pub fn register_asset_struct_value_with_members(
     fixed_grid_struct_type_ref: StructTypeRef,
     font_and_material_struct_type_ref: &StructTypeRef,
 ) -> Result<VariableValue, MangroveError> {
-    let (assets_value, assets_type) = create_empty_struct_value_util(symbol_table, "Assets")?;
+    let asset_type_id = state.allocate_number();
+    let (assets_value, assets_type) =
+        create_empty_struct_value_util(symbol_table, "Assets", asset_type_id)?;
     let assets_value_mut = VariableValue::Reference(Rc::new(RefCell::new(assets_value)));
 
     let assets_general_type = Type::NamedStruct(assets_type.clone());
+    state.associated_impls.prepare(&assets_general_type);
 
     let mut_self_parameter = TypeForParameter {
         name: "self".to_string(),
-        resolved_type: assets_general_type,
+        resolved_type: assets_general_type.clone(),
         is_mutable: true,
         node: None,
     };
@@ -1062,9 +1087,9 @@ pub fn register_asset_struct_value_with_members(
         id: material_png_function_id,
     };
 
-    assets_type
-        .borrow_mut()
-        .add_external_member_function(material_png_def.into())?;
+    state
+        .associated_impls
+        .add_external_member_function(&assets_general_type.clone(), material_png_def)?;
 
     externals.register_external_function(
         material_png_function_id,
@@ -1093,9 +1118,9 @@ pub fn register_asset_struct_value_with_members(
         id: bm_font_function_id,
     };
 
-    assets_type
-        .borrow_mut()
-        .add_external_member_function(bm_font_def.into())?;
+    state
+        .associated_impls
+        .add_external_member_function(&assets_general_type.clone(), bm_font_def)?;
 
     externals.register_external_function(
         bm_font_function_id,
@@ -1146,9 +1171,10 @@ pub fn register_asset_struct_value_with_members(
         id: frame_fixed_grid_material_png_function_id,
     };
 
-    assets_type
-        .borrow_mut()
-        .add_external_member_function(frame_fixed_grid_material_png_def.into())?;
+    state.associated_impls.add_external_member_function(
+        &assets_general_type.clone(),
+        frame_fixed_grid_material_png_def,
+    )?;
 
     externals.register_external_function(
         frame_fixed_grid_material_png_function_id,
@@ -1188,9 +1214,10 @@ impl ScriptRender {
         render_struct_type_ref: &StructTypeRef,
         externals: ExternalFunctions<ScriptRenderContext>,
         constants: Constants,
+        impls: AssociatedImpls,
         gfx_struct_ref: ValueRef,
     ) -> Result<Self, MangroveError> {
-        let render_fn = get_impl_func(render_struct_type_ref, "render");
+        let render_fn = get_impl_func(&impls, render_struct_type_ref, "render");
 
         Ok(Self {
             render_value_ref,
@@ -1261,12 +1288,14 @@ pub fn create_render_module(
         number: 91,
     });
 
+    let handle_type_id = resolved_program.state.allocate_number();
     let material_handle_struct_ref = symbol_table.add_generated_struct(
         "MaterialHandle",
         &[(
             "hidden",
             Type::External(material_handle_rust_type_ref.clone()),
         )],
+        handle_type_id,
     )?;
 
     let fixed_atlas_handle_rust_type_ref = Rc::new(ExternalType {
@@ -1274,12 +1303,14 @@ pub fn create_render_module(
         number: 92,
     });
 
+    let fixed_atlas_handle_type_id = resolved_program.state.allocate_number();
     let fixed_atlas_handle_struct_ref = symbol_table.add_generated_struct(
         "FixedAtlasHandle",
         &[(
             "hidden",
             Type::External(fixed_atlas_handle_rust_type_ref.clone()),
         )],
+        fixed_atlas_handle_type_id,
     )?;
 
     let font_and_material_rust_type_ref = symbol_table.add_external_type(ExternalType {
@@ -1287,12 +1318,15 @@ pub fn create_render_module(
         number: 0,
     })?;
 
+    let font_and_material_handle = resolved_program.state.allocate_number();
+
     let font_and_material_struct_ref = symbol_table.add_generated_struct(
         "FontAndMaterialHandle",
         &[(
             "hidden",
             Type::External(font_and_material_rust_type_ref.clone()),
         )],
+        font_and_material_handle,
     )?;
 
     let assets_struct_value = register_asset_struct_value_with_members(
@@ -1432,6 +1466,7 @@ pub fn boot(
         &render_struct_type_ref,
         external_functions,
         constants,
+        resolved_program.state.associated_impls,
         gfx_value,
     )
 }
@@ -1502,6 +1537,7 @@ impl Plugin for ScriptRenderPlugin {
                     kind: ExpressionKind::Break,
                 },
                 name: LocalIdentifier(Node::default()),
+                assigned_name: "".to_string(),
                 signature: Signature {
                     parameters: vec![],
                     return_type: Box::from(Type::Unit),

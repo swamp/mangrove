@@ -271,7 +271,7 @@ pub fn input_module(
             }),
             assigned_name: "Axis".to_string(),
             module_path: Vec::default(),
-            number: axis_enum_type_id,
+            type_id: axis_enum_type_id,
             variants: SeqMap::default(),
         };
 
@@ -313,7 +313,7 @@ pub fn input_module(
             }),
             assigned_name: "Button".to_string(),
             module_path: Vec::default(),
-            number: button_enum_type_id,
+            type_id: button_enum_type_id,
             variants: Default::default(),
         };
         let button_enum_type_ref = symbol_table.add_enum_type(parent)?;
@@ -429,11 +429,21 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, Mang
         ));
     };
 
-    let simulation_fn = get_impl_func(simulation_struct_type_ref, "tick");
-    let gamepad_axis_changed_fn =
-        get_impl_func_optional(simulation_struct_type_ref, "gamepad_axis_changed");
-    let gamepad_button_changed_fn =
-        get_impl_func_optional(simulation_struct_type_ref, "gamepad_button_changed");
+    let simulation_fn = get_impl_func(
+        &resolved_program.state.associated_impls,
+        simulation_struct_type_ref,
+        "tick",
+    );
+    let gamepad_axis_changed_fn = get_impl_func_optional(
+        &resolved_program.state.associated_impls,
+        simulation_struct_type_ref,
+        "gamepad_axis_changed",
+    );
+    let gamepad_button_changed_fn = get_impl_func_optional(
+        &resolved_program.state.associated_impls,
+        simulation_struct_type_ref,
+        "gamepad_button_changed",
+    );
 
     // Convert it to a mutable (reference), so it can be mutated in update ticks
     let simulation_value_ref = Rc::new(RefCell::new(simulation_value));
@@ -491,6 +501,7 @@ impl Plugin for ScriptSimulationPlugin {
                     kind: ExpressionKind::Break,
                 },
                 name: LocalIdentifier(Node::default()),
+                assigned_name: "".to_string(),
                 signature: Signature {
                     parameters: vec![],
                     return_type: Box::from(Type::Int),
@@ -507,6 +518,7 @@ impl Plugin for ScriptSimulationPlugin {
                     number: 0,
                     external_function_number: 0,
                     constants_in_dependency_order: vec![],
+                    associated_impls: Default::default(),
                 },
                 modules: Modules::default(),
                 auto_use_modules: AutoUseModules { modules: vec![] },

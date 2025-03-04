@@ -8,9 +8,11 @@ use std::cell::RefCell;
 use std::fmt::{Debug, Display, Formatter};
 use std::io;
 use std::rc::Rc;
+use std::time::Instant;
 use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec2, Vec3};
 use swamp_script::compile_and_analyze;
 use swamp_script::prelude::*;
+use yansi::Paint;
 
 #[derive(Debug)]
 pub enum MangroveError {
@@ -94,8 +96,9 @@ impl From<String> for MangroveError {
 pub fn create_empty_struct_type(
     symbol_table: &mut SymbolTable,
     name: &str,
+    type_id: TypeNumber,
 ) -> Result<StructTypeRef, Error> {
-    Ok(symbol_table.add_generated_struct(name, &[("hidden", Type::Unit)])?)
+    Ok(symbol_table.add_generated_struct(name, &[("hidden", Type::Unit)], type_id)?)
 }
 
 pub fn create_empty_struct_value(struct_type: StructTypeRef) -> Value {
@@ -105,8 +108,9 @@ pub fn create_empty_struct_value(struct_type: StructTypeRef) -> Value {
 pub fn create_empty_struct_value_util(
     symbol_table: &mut SymbolTable,
     name: &str,
+    type_id: TypeNumber,
 ) -> Result<(Value, StructTypeRef), Error> {
-    let struct_type = create_empty_struct_type(symbol_table, name)?;
+    let struct_type = create_empty_struct_type(symbol_table, name, type_id)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
 }
 
@@ -269,6 +273,7 @@ pub struct DecoratedParseErr {
     pub span: Span,
     pub specific: SpecificError,
 }
+use chrono::{DateTime, Utc};
 
 pub fn compile<C>(
     module_path: &[String],
@@ -290,7 +295,22 @@ pub fn compile<C>(
         .modules
         .push(core_module.namespace.symbol_table);
 
+    let start = Instant::now();
+
     compile_and_analyze(module_path, analyzed_program, source_map)?;
+
+    let end = Instant::now();
+    let duration = end.duration_since(start);
+
+    let now: DateTime<Utc> = Utc::now();
+    eprintln!(
+        "{} {}: {} {} {:?}",
+        now.format("%Y-%m-%d %H:%M:%S").white(),
+        "compiled".bright_cyan(),
+        module_path.join("::").green(),
+        "took".bright_cyan(),
+        duration.blue(),
+    );
     Ok(analyzed_program.modules.get(module_path).unwrap().clone())
 }
 

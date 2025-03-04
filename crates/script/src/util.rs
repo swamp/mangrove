@@ -8,18 +8,25 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use swamp_script::prelude::*;
 
-pub fn get_impl_func(struct_type_ref: &StructTypeRef, name: &str) -> InternalFunctionDefinitionRef {
-    struct_type_ref
-        .borrow()
-        .get_internal_member_function(name)
+pub fn get_impl_func(
+    associated_impls: &AssociatedImpls,
+    struct_type_ref: &StructTypeRef,
+    name: &str,
+) -> InternalFunctionDefinitionRef {
+    associated_impls
+        .get_internal_member_function(&Type::NamedStruct(struct_type_ref.clone()), name)
         .unwrap_or_else(|| panic!("must have function {name}"))
+        .clone()
 }
 
 pub fn get_impl_func_optional(
+    associated_impls: &AssociatedImpls,
     struct_type_ref: &StructTypeRef,
     name: &str,
 ) -> Option<InternalFunctionDefinitionRef> {
-    struct_type_ref.borrow().get_internal_member_function(name)
+    associated_impls
+        .get_internal_member_function(&Type::NamedStruct(struct_type_ref.clone()), name)
+        .cloned()
 }
 
 #[derive(Debug)]
@@ -92,6 +99,7 @@ impl<C: Default> Default for ScriptModule<C> {
                     kind: ExpressionKind::Break,
                 },
                 name: LocalIdentifier(Node::default()),
+                assigned_name: "".to_string(),
                 signature: Signature {
                     parameters: vec![],
                     return_type: Box::new(Type::Int),
@@ -183,7 +191,11 @@ pub fn boot<C>(
         return Err(MangroveError::Other("needs to be logic struct".to_string()));
     };
 
-    let update_function = get_impl_func(self_struct_type_ref, update_function_name);
+    let update_function = get_impl_func(
+        &resolved_program.state.associated_impls,
+        self_struct_type_ref,
+        update_function_name,
+    );
 
     // Convert it to a mutable (reference), so it can be mutated in update ticks
     let self_state_value_ref = Rc::new(RefCell::new(self_state_value));

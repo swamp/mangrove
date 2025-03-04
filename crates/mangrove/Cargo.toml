@@ -15,8 +15,6 @@ swamp = "0.0.17"
 #swamp = { path = "../../../swamp/crates/swamp", version = "0.0.16-alpha.1" }
 
 #limnus = "0.0.17-alpha.2"
-seq-map = "0.0.13"
-
 mangrove-script = { path = "../script", version = "0.0.9" }
 mangrove-save-detector = { path = "../save-detector", version = "0.0.9" }
 
