@@ -1,6 +1,6 @@
 [package]
 name = "mangrove-engine"
-version = "0.0.8"
+version = "0.0.9"
 edition = "2024"
 license = "MIT"
 description = "2D game engine powered by swamp-script"
@@ -17,11 +17,11 @@ swamp = "0.0.17"
 #limnus = "0.0.17-alpha.2"
 seq-map = "0.0.13"
 
-mangrove-script = { path = "../script", version = "0.0.8" }
-mangrove-save-detector = { path = "../save-detector", version = "0.0.8" }
+mangrove-script = { path = "../script", version = "0.0.9" }
+mangrove-save-detector = { path = "../save-detector", version = "0.0.9" }
 
-limnus-steamworks = { path = "../limnus-steamworks", version = "0.0.8", optional = true }
-limnus-steam-input = { path = "../limnus-steam-input", version = "0.0.8", optional = true }
+limnus-steamworks = { path = "../limnus-steamworks", version = "0.0.9", optional = true }
+limnus-steam-input = { path = "../limnus-steam-input", version = "0.0.9", optional = true }
 
 [features]
 steam = ["limnus-steamworks", "limnus-steam-input"]

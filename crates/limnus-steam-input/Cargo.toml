@@ -1,6 +1,6 @@
 [package]
 name = "limnus-steam-input"
-version = "0.0.8"
+version = "0.0.9"
 edition = "2024"
 
 [dependencies]
@@ -11,8 +11,8 @@ limnus-resource = "0.0.16"
 limnus-system-params = "0.0.16"
 limnus-default-stages = "0.0.16"
 
-limnus-steamworks = { path = "../limnus-steamworks", version = "0.0.8" }
-limnus-input-binding = { path = "../input-binding", version = "0.0.8" }
-limnus-input = { path = "../limnus-input", version = "0.0.8" }
+limnus-steamworks = { path = "../limnus-steamworks", version = "0.0.9" }
+limnus-input-binding = { path = "../input-binding", version = "0.0.9" }
+limnus-input = { path = "../limnus-input", version = "0.0.9" }
 seq-map = "0.0.13"
 tracing = "0.1.40"
