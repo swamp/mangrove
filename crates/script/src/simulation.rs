@@ -266,9 +266,9 @@ pub fn input_module(
         let axis_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
 
         let parent = EnumType {
-            name: LocalTypeIdentifier(Node {
+            name: Node {
                 span: Span::default(),
-            }),
+            },
             assigned_name: "Axis".to_string(),
             module_path: Vec::default(),
             type_id: axis_enum_type_id,
@@ -283,9 +283,9 @@ pub fn input_module(
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
             let variant = EnumVariantSimpleType {
                 common: EnumVariantCommon {
-                    name: LocalTypeIdentifier(Node {
+                    name: Node {
                         span: Span::default(),
-                    }),
+                    },
                     assigned_name: variant_name.to_string(),
                     container_index: container_index as u8,
                     number: variant_type_id,
@@ -308,9 +308,9 @@ pub fn input_module(
         let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
         // let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
         let parent = EnumType {
-            name: LocalTypeIdentifier(Node {
+            name: Node {
                 span: Span::default(),
-            }),
+            },
             assigned_name: "Button".to_string(),
             module_path: Vec::default(),
             type_id: button_enum_type_id,
@@ -342,9 +342,9 @@ pub fn input_module(
             let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
             let variant = EnumVariantSimpleType {
                 common: EnumVariantCommon {
-                    name: LocalTypeIdentifier(Node {
+                    name: Node {
                         span: Span::default(),
-                    }),
+                    },
                     assigned_name: button_variant_name.to_string(),
                     container_index: container_index as u8,
                     number: variant_type_id,
@@ -514,7 +514,6 @@ impl Plugin for ScriptSimulationPlugin {
             script_context: ScriptSimulationContext {},
             resolved_program: Program {
                 state: ProgramState {
-                    array_types: vec![],
                     number: 0,
                     external_function_number: 0,
                     constants_in_dependency_order: vec![],

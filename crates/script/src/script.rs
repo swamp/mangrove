@@ -97,11 +97,11 @@ pub fn create_empty_struct_type(
     symbol_table: &mut SymbolTable,
     name: &str,
     type_id: TypeNumber,
-) -> Result<StructTypeRef, Error> {
+) -> Result<NamedStructTypeRef, Error> {
     Ok(symbol_table.add_generated_struct(name, &[("hidden", Type::Unit)], type_id)?)
 }
 
-pub fn create_empty_struct_value(struct_type: StructTypeRef) -> Value {
+pub fn create_empty_struct_value(struct_type: NamedStructTypeRef) -> Value {
     Value::NamedStruct(struct_type, [].to_vec())
 }
 
@@ -109,7 +109,7 @@ pub fn create_empty_struct_value_util(
     symbol_table: &mut SymbolTable,
     name: &str,
     type_id: TypeNumber,
-) -> Result<(Value, StructTypeRef), Error> {
+) -> Result<(Value, NamedStructTypeRef), Error> {
     let struct_type = create_empty_struct_type(symbol_table, name, type_id)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
 }
@@ -137,7 +137,7 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
     }
 }
 
-pub fn create_default_color_value(color_struct_type_ref: StructTypeRef) -> Value {
+pub fn create_default_color_value(color_struct_type_ref: NamedStructTypeRef) -> Value {
     let fields = vec![
         Value::Float(Fp::one()), // red
         Value::Float(Fp::one()), // green
@@ -157,8 +157,8 @@ pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
 }
 
 pub fn create_default_sprite_params(
-    sprite_params_struct_type_ref: StructTypeRef,
-    color_type: &StructTypeRef,
+    sprite_params_struct_type_ref: NamedStructTypeRef,
+    color_type: &NamedStructTypeRef,
     math_types: &MathTypes,
 ) -> Value {
     let fields = vec![

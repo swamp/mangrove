@@ -50,7 +50,7 @@ impl ScriptInput {
     }
 }
 
-fn scan_struct(struct_type: &StructTypeRef) -> Result<BindingsInSet, MangroveError> {
+fn scan_struct(struct_type: &NamedStructTypeRef) -> Result<BindingsInSet, MangroveError> {
     let mut bindings_in_source_order = Vec::new();
     for (index, (field_name, field_type)) in struct_type
         .borrow()
@@ -64,10 +64,10 @@ fn scan_struct(struct_type: &StructTypeRef) -> Result<BindingsInSet, MangroveErr
             Type::Bool => BindingKind::Digital,
 
             Type::Tuple(tuple_type) => {
-                if tuple_type.0.len() != 2 {
+                if tuple_type.len() != 2 {
                     return Err(MangroveError::Other("strange field type".into()));
                 }
-                if tuple_type.0[0] != Type::Float && tuple_type.0[1] != Type::Float {
+                if tuple_type[0] != Type::Float && tuple_type[1] != Type::Float {
                     return Err(MangroveError::Other("strange field type tuple".into()));
                 }
                 BindingKind::Analog

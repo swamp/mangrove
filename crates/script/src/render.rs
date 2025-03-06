@@ -10,23 +10,40 @@ use crate::script::{
 use crate::simulation::ScriptSimulation;
 use crate::util::get_impl_func;
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
+use limnus_screen::WindowMessage;
 use monotonic_time_rs::Millis;
 use std::cell::RefCell;
 use std::fmt::{Debug, Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
     App, Assets, Color, FixedAtlas, FontAndMaterial, FrameLookup, GameAssets, Gfx, LoRe, LoReM,
-    LocalResource, MaterialRef, Msg, Plugin, Re, ReAll, ReM, Render, RenderUpdate, ResourceStorage,
-    SpriteParams, UVec2, Update, Vec3,
+    LocalResource, MaterialRef, Msg, MsgM, Plugin, Re, ReAll, ReM, Render, RenderUpdate,
+    ResourceStorage, SpriteParams, UVec2, Update, Vec3, ViewportStrategy, VirtualScale, WgpuWindow,
 };
-use swamp_script::prelude::Rule::program;
 use swamp_script::prelude::*;
-use tracing::error;
+use tracing::field::display;
+use tracing::{debug, error};
+
+#[derive(Debug)]
+pub struct DisplaySettings {
+    pub scale: u16,
+}
+
+impl DisplaySettings {
+    pub fn new() -> Self {
+        Self { scale: 0 }
+    }
+
+    pub fn set_scale(&mut self, scale: u16) {
+        self.scale = scale;
+    }
+}
 
 #[derive(Debug)]
 pub struct ScriptRenderContext {
     pub(crate) game_assets: Option<GameAssetsWrapper>,
     pub(crate) render: Option<RenderWrapper>,
+    pub display: DisplaySettings,
 }
 
 // I didn't want to change the implementation of GameAssets.
@@ -129,6 +146,16 @@ impl RenderWrapper {
 
         render.text_draw(pos, str, material_ref, color);
     }
+
+    pub fn set_virtual_resolution(&self, virtual_resolution: UVec2) {
+        // Safety: We assume the Render pointer is still valid, since the RenderWrapper is short-lived (only alive during a render call)
+        let render: &mut Render;
+        unsafe {
+            render = &mut *self.render;
+        }
+
+        render.set_viewport(ViewportStrategy::FitIntegerScaling(virtual_resolution));
+    }
 }
 
 // I didn't want to change the implementation of GameAssets.
@@ -138,13 +165,13 @@ impl RenderWrapper {
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
 
-    material_struct_type: StructTypeRef,
+    material_struct_type: NamedStructTypeRef,
     material_rust_type_ref: ExternalTypeRef,
 
-    fixed_atlas_struct_type_ref: StructTypeRef,
+    fixed_atlas_struct_type_ref: NamedStructTypeRef,
     fixed_atlas_rust_type_ref: ExternalTypeRef,
 
-    font_and_material_struct_type_ref: StructTypeRef,
+    font_and_material_struct_type_ref: NamedStructTypeRef,
     font_and_material_rust_type_ref: ExternalTypeRef,
 }
 
@@ -185,10 +212,10 @@ impl Display for FontAndMaterialWrapper {
 #[derive(Clone)]
 pub struct MathTypes {
     pub pos2: Type,
-    pub pos2_tuple_type: TupleTypeRef,
+    pub pos2_tuple_type: Vec<Type>,
     pub pos3: Type,
     pub size2: Type,
-    pub size2_tuple_type: TupleTypeRef,
+    pub size2_tuple_type: Vec<Type>,
 }
 
 pub struct GfxTypes {
@@ -215,12 +242,12 @@ impl QuickSerialize for MaterialWrapper {}
 impl GameAssetsWrapper {
     pub fn new(
         game_assets: &mut GameAssets,
-        material_struct_type: StructTypeRef,
+        material_struct_type: NamedStructTypeRef,
         material_rust_type_ref: ExternalTypeRef,
-        fixed_atlas_struct_type_ref: StructTypeRef,
+        fixed_atlas_struct_type_ref: NamedStructTypeRef,
         fixed_atlas_rust_type_ref: ExternalTypeRef,
 
-        font_and_material_struct_type_ref: StructTypeRef,
+        font_and_material_struct_type_ref: NamedStructTypeRef,
         font_and_material_rust_type_ref: ExternalTypeRef,
     ) -> Self {
         let ptr = game_assets as *mut GameAssets;
@@ -325,7 +352,7 @@ pub fn register_color_struct_type(
     symbol_table: &mut SymbolTable,
     state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
-) -> Result<StructTypeRef, MangroveError> {
+) -> Result<NamedStructTypeRef, MangroveError> {
     let mut defined_fields = SeqMap::new();
 
     let r_field = StructTypeField {
@@ -457,25 +484,21 @@ pub fn register_color_struct_type(
 pub fn register_math_types() -> MathTypes {
     let int_type = Type::Int;
 
-    let position_2_tuple_type = TupleType(vec![int_type.clone(), int_type.clone()]);
-    let position_2_tuple_type_ref = Rc::new(position_2_tuple_type);
-    let pos_2_type_ref = Type::Tuple(position_2_tuple_type_ref.clone());
+    let position_2_tuple_type = vec![int_type.clone(), int_type.clone()];
+    let pos_2_type_ref = Type::Tuple(position_2_tuple_type.clone());
 
-    let position_3_tuple_type =
-        TupleType(vec![int_type.clone(), int_type.clone(), int_type.clone()]);
-    let position_tuple_type_ref = Rc::new(position_3_tuple_type);
-    let pos_3_type_ref = Type::Tuple(position_tuple_type_ref);
+    let position_3_tuple_type = vec![int_type.clone(), int_type.clone(), int_type.clone()];
+    let pos_3_type_ref = Type::Tuple(position_3_tuple_type);
 
-    let size_int_tuple_type = TupleType(vec![int_type.clone(), int_type]);
-    let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
-    let size_2_type_ref = Type::Tuple(size_int_tuple_type_ref.clone());
+    let size_int_tuple_type = vec![int_type.clone(), int_type];
+    let size_2_type_ref = Type::Tuple(size_int_tuple_type.clone());
 
     MathTypes {
         pos2: pos_2_type_ref,
-        pos2_tuple_type: position_2_tuple_type_ref,
+        pos2_tuple_type: position_2_tuple_type,
         pos3: pos_3_type_ref,
         size2: size_2_type_ref,
-        size2_tuple_type: size_int_tuple_type_ref,
+        size2_tuple_type: size_int_tuple_type,
     }
 }
 
@@ -509,9 +532,9 @@ pub fn register_gfx_sprite_params(
     state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     symbol_table: &mut SymbolTable,
-    color_type: StructTypeRef,
+    color_type: NamedStructTypeRef,
     math_types: &MathTypes,
-) -> Result<StructTypeRef, MangroveError> {
+) -> Result<NamedStructTypeRef, MangroveError> {
     // Props
     let mut defined_fields = SeqMap::new();
     let flip_x_field = StructTypeField {
@@ -669,6 +692,14 @@ pub fn register_gfx_struct_value_with_members(
         node: None,
     };
 
+    // int
+    let int_param = TypeForParameter {
+        name: "i".to_string(),
+        resolved_type: Type::Int,
+        is_mutable: false,
+        node: None,
+    };
+
     let sprite_params_parameter = TypeForParameter {
         name: "sprite_params".to_string(),
         resolved_type: gfx_types.sprite_params,
@@ -822,7 +853,7 @@ pub fn register_gfx_struct_value_with_members(
                 size_param.clone(),
                 size_param.clone(),
                 material_handle,
-                size_param,
+                size_param.clone(),
                 color_parameter.clone(),
             ]
             .to_vec(),
@@ -993,7 +1024,7 @@ pub fn register_gfx_struct_value_with_members(
         assigned_name: "sprite_atlas_frame_ex".to_string(),
         signature: Signature {
             parameters: [
-                mut_self_parameter,
+                mut_self_parameter.clone(),
                 position_param,
                 fixed_atlas_handle,
                 frame,
@@ -1037,6 +1068,74 @@ pub fn register_gfx_struct_value_with_members(
         },
     )?;
 
+    // --- set virtual resolution
+    let set_virtual_resolution_external_fn_id: ExternalFunctionId =
+        state.allocate_external_function_id();
+    let set_virtual_resolution_fn = ExternalFunctionDefinition {
+        name: None,
+        assigned_name: "set_virtual_resolution".to_string(),
+        signature: Signature {
+            parameters: [mut_self_parameter.clone(), size_param].to_vec(),
+            return_type: Box::from(Type::Unit),
+        },
+        id: set_virtual_resolution_external_fn_id,
+    };
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(
+            gfx_struct_type.clone(),
+            set_virtual_resolution_fn,
+        )?;
+
+    externals.register_external_function(
+        set_virtual_resolution_external_fn_id,
+        move |mem_values: &[VariableValue], context| {
+            let params = convert_to_values(mem_values)
+                .expect("external function should be given values and no references");
+            let size = uvec2_like(&params[1])?;
+
+            context
+                .render
+                .as_mut()
+                .unwrap()
+                .set_virtual_resolution(size);
+
+            Ok(Value::Unit)
+        },
+    )?;
+
+    // --- set resolution scale
+    let set_resolution_scale_external_fn_id: ExternalFunctionId =
+        state.allocate_external_function_id();
+    let set_resolution_scale_fn = ExternalFunctionDefinition {
+        name: None,
+        assigned_name: "set_resolution_scale".to_string(),
+        signature: Signature {
+            parameters: [mut_self_parameter.clone(), int_param].to_vec(),
+            return_type: Box::from(Type::Unit),
+        },
+        id: set_resolution_scale_external_fn_id,
+    };
+    state
+        .associated_impls
+        .add_external_struct_member_function_external(
+            gfx_struct_type.clone(),
+            set_resolution_scale_fn,
+        )?;
+
+    externals.register_external_function(
+        set_resolution_scale_external_fn_id,
+        move |mem_values: &[VariableValue], context| {
+            let params = convert_to_values(mem_values)
+                .expect("external function should be given values and no references");
+            let scale = params[1].expect_int()?;
+
+            context.display.set_scale(scale as u16);
+
+            Ok(Value::Unit)
+        },
+    )?;
+
     Ok(gfx_value_mut)
 }
 
@@ -1049,9 +1148,9 @@ pub fn register_asset_struct_value_with_members(
     state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     symbol_table: &mut SymbolTable,
-    material_struct_type_ref: StructTypeRef,
-    fixed_grid_struct_type_ref: StructTypeRef,
-    font_and_material_struct_type_ref: &StructTypeRef,
+    material_struct_type_ref: NamedStructTypeRef,
+    fixed_grid_struct_type_ref: NamedStructTypeRef,
+    font_and_material_struct_type_ref: &NamedStructTypeRef,
 ) -> Result<VariableValue, MangroveError> {
     let asset_type_id = state.allocate_number();
     let (assets_value, assets_type) =
@@ -1135,12 +1234,11 @@ pub fn register_asset_struct_value_with_members(
     )?;
 
     let int_type = Type::Int;
-    let size_int_tuple_type = TupleType(vec![int_type.clone(), int_type]);
-    let size_int_tuple_type_ref = Rc::new(size_int_tuple_type);
+    let size_int_tuple_type = vec![int_type.clone(), int_type];
 
     let size_param = TypeForParameter {
         name: String::default(),
-        resolved_type: Type::Tuple(size_int_tuple_type_ref),
+        resolved_type: Type::Tuple(size_int_tuple_type),
         is_mutable: false,
         node: None,
     };
@@ -1163,7 +1261,7 @@ pub fn register_asset_struct_value_with_members(
                 mut_self_parameter,
                 asset_name_parameter,
                 size_param.clone(),
-                size_param,
+                size_param.clone(),
             ]
             .to_vec(),
             return_type: Box::from(Type::NamedStruct(fixed_grid_struct_type_ref)),
@@ -1202,6 +1300,7 @@ pub struct ScriptRender {
     render_value_ref: ValueRef,
     render_fn: InternalFunctionDefinitionRef,
     externals: ExternalFunctions<ScriptRenderContext>,
+    display_settings: DisplaySettings,
     constants: Constants,
     gfx_struct_ref: ValueRef,
 }
@@ -1211,7 +1310,7 @@ impl ScriptRender {
     ///
     pub fn new(
         render_value_ref: ValueRef,
-        render_struct_type_ref: &StructTypeRef,
+        render_struct_type_ref: &NamedStructTypeRef,
         externals: ExternalFunctions<ScriptRenderContext>,
         constants: Constants,
         impls: AssociatedImpls,
@@ -1223,6 +1322,7 @@ impl ScriptRender {
             render_value_ref,
             render_fn,
             externals,
+            display_settings: DisplaySettings::new(),
             constants,
             gfx_struct_ref,
         })
@@ -1239,6 +1339,7 @@ impl ScriptRender {
         let mut script_context = ScriptRenderContext {
             game_assets: None,
             render: Some(RenderWrapper::new(wgpu_render)),
+            display: DisplaySettings::new(),
         };
 
         let self_mut_ref = VariableValue::Reference(self.render_value_ref.clone());
@@ -1257,6 +1358,8 @@ impl ScriptRender {
             None,
         )?;
 
+        self.display_settings = script_context.display;
+
         Ok(())
     }
 }
@@ -1271,11 +1374,11 @@ pub fn create_render_module(
         SymbolTable,
         VariableValue,
         ValueRef,
-        StructTypeRef,
+        NamedStructTypeRef,
         ExternalTypeRef,
-        StructTypeRef,
+        NamedStructTypeRef,
         ExternalTypeRef,
-        StructTypeRef,
+        NamedStructTypeRef,
         ExternalTypeRef,
     ),
     MangroveError,
@@ -1430,6 +1533,7 @@ pub fn boot(
             font_and_material_rust_type_ref,
         )),
         render: None,
+        display: DisplaySettings::new(),
     };
 
     let mut constants = Constants::new();
@@ -1473,10 +1577,25 @@ pub fn boot(
 
 /// # Panics
 ///
+pub fn update_screen_resolution_tick(
+    mut script: LoReM<ScriptRender>,
+    mut wgpu_render: ReM<Render>,
+    mut window_settings: ReM<limnus_screen::Window>,
+) {
+    if script.display_settings.scale != 0 {
+        let new_size = wgpu_render.virtual_surface_size() * script.display_settings.scale;
+        debug!(?new_size, "resizing");
+        window_settings.requested_surface_size = new_size;
+    }
+}
+
+/// # Panics
+///
 pub fn render_tick(
     mut script: LoReM<ScriptRender>,
     simulation: LoRe<ScriptSimulation>,
     mut wgpu_render: ReM<Render>,
+
     error: Re<ErrorResource>,
     source_map: Re<SourceMapResource>,
 ) {
@@ -1525,6 +1644,7 @@ pub struct ScriptRenderPlugin;
 impl Plugin for ScriptRenderPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(Update, detect_reload_tick);
+        app.add_system(Update, update_screen_resolution_tick);
         app.add_system(RenderUpdate, render_tick);
         // HACK: Just add a completely zeroed out ScriptRender and wait for reload message.
         // TODO: Should not try to call updates with params that are not available yet.
@@ -1544,6 +1664,7 @@ impl Plugin for ScriptRenderPlugin {
                 },
             }),
             externals: ExternalFunctions::new(),
+            display_settings: DisplaySettings::new(),
             constants: Constants { values: vec![] },
             gfx_struct_ref: Rc::new(RefCell::new(Value::default())),
         });

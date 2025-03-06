@@ -6,7 +6,7 @@
 use crate::ScriptMessage;
 use crate::simulation::ScriptSimulation;
 use swamp::prelude::{App, FixedPostUpdate, LoRe, LoReM, LocalResource, Msg, Plugin};
-use swamp_script::prelude::{StructTypeRef, Type, Value, overwrite_value, quick_deserialize};
+use swamp_script::prelude::{NamedStructTypeRef, Type, Value, overwrite_value, quick_deserialize};
 use tracing::info;
 
 pub fn detect_reload_tick(
@@ -60,7 +60,7 @@ pub fn store_tick(
 
 #[derive(Debug, LocalResource)]
 pub struct PreviousSimulation {
-    type_ref: Option<StructTypeRef>,
+    type_ref: Option<NamedStructTypeRef>,
     payload: Vec<u8>,
 }
 

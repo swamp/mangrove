@@ -10,7 +10,7 @@ use swamp_script::prelude::*;
 
 pub fn get_impl_func(
     associated_impls: &AssociatedImpls,
-    struct_type_ref: &StructTypeRef,
+    struct_type_ref: &NamedStructTypeRef,
     name: &str,
 ) -> InternalFunctionDefinitionRef {
     associated_impls
@@ -21,7 +21,7 @@ pub fn get_impl_func(
 
 pub fn get_impl_func_optional(
     associated_impls: &AssociatedImpls,
-    struct_type_ref: &StructTypeRef,
+    struct_type_ref: &NamedStructTypeRef,
     name: &str,
 ) -> Option<InternalFunctionDefinitionRef> {
     associated_impls
