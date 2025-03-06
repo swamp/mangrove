@@ -5,8 +5,8 @@ edition = "2024"
 
 [dependencies]
 seq-map = "0.0.13"
-limnus-app = "0.0.16"
-limnus-local-resource = "0.0.16"
-limnus-resource = "0.0.16"
-limnus-system-params = "0.0.16"
-limnus-default-stages = "0.0.16"
+limnus-app = "0.0.17"
+limnus-local-resource = "0.0.17"
+limnus-resource = "0.0.17"
+limnus-system-params = "0.0.17"
+limnus-default-stages = "0.0.17"

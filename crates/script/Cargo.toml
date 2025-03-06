@@ -7,16 +7,16 @@ description = "Swamp Script plugin for Mangrove"
 repository = "https://github.com/swamp/mangrove"
 
 [dependencies]
-swamp = "0.0.17"
-#swamp = { path = "../../../swamp/crates/swamp", version="0.0.16-alpha.1" }
+swamp = "0.0.18"
+#swamp = { path = "../../../swamp/crates/swamp", version="0.0.18" }
 
 swamp-script = "0.0.19"
 #swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.18" }
 limnus-input-binding = { path = "../input-binding", version = "0.0.9" }
 
-limnus-message = "0.0.16"
-limnus-gamepad = "0.0.16"
-limnus-screen = "0.0.16"
+limnus-message = "0.0.17"
+limnus-gamepad = "0.0.17"
+limnus-screen = "0.0.17"
 
 tracing = "0.1.40"
 seq-map = "0.0.13"
