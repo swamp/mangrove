@@ -274,6 +274,7 @@ pub struct DecoratedParseErr {
     pub specific: SpecificError,
 }
 use chrono::{DateTime, Utc};
+use tiny_ver::TinyVersion;
 
 pub fn compile<C>(
     module_path: &[String],
@@ -289,7 +290,9 @@ pub fn compile<C>(
         .modules
         .push(std_module.namespace.symbol_table);
 
-    let core_module = create_std_module();
+    let version: TinyVersion = "0.0.0".parse().unwrap();
+
+    let core_module = create_module(&version);
     analyzed_program
         .auto_use_modules
         .modules
