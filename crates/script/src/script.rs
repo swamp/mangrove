@@ -25,7 +25,8 @@ pub enum MangroveError {
     Error(Error),
     DepLoaderError(DepLoaderError),
     SeqMapError(SeqMapError),
-    EvalLoaderError(EvalLoaderError),
+    EvalLoaderError(LoaderErr),
+    ScriptResolveError(ScriptResolveError),
 }
 
 impl Display for MangroveError {
@@ -43,6 +44,12 @@ impl From<io::Error> for MangroveError {
 impl From<ScriptError> for MangroveError {
     fn from(value: ScriptError) -> Self {
         Self::ScriptError(value)
+    }
+}
+
+impl From<ScriptResolveError> for MangroveError {
+    fn from(value: ScriptResolveError) -> Self {
+        Self::ScriptResolveError(value)
     }
 }
 impl From<ExecuteError> for MangroveError {
@@ -75,8 +82,8 @@ impl From<DepLoaderError> for MangroveError {
     }
 }
 
-impl From<EvalLoaderError> for MangroveError {
-    fn from(value: EvalLoaderError) -> Self {
+impl From<LoaderErr> for MangroveError {
+    fn from(value: LoaderErr) -> Self {
         Self::EvalLoaderError(value)
     }
 }
@@ -274,33 +281,14 @@ pub struct DecoratedParseErr {
     pub specific: SpecificError,
 }
 use chrono::{DateTime, Utc};
-use tiny_ver::TinyVersion;
 
-pub fn compile<C>(
+pub fn compile(
     module_path: &[String],
-    analyzed_program: &mut Program,
-    externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-) -> Result<ModuleRef, MangroveError> {
-    let std_module =
-        prepare_main_module(&mut analyzed_program.state, externals, &["std".to_string()])?;
-
-    analyzed_program
-        .auto_use_modules
-        .modules
-        .push(std_module.namespace.symbol_table);
-
-    let version: TinyVersion = "0.0.0".parse().unwrap();
-
-    let core_module = create_module(&version);
-    analyzed_program
-        .auto_use_modules
-        .modules
-        .push(core_module.namespace.symbol_table);
-
+) -> Result<Program, MangroveError> {
     let start = Instant::now();
 
-    compile_and_analyze(module_path, analyzed_program, source_map)?;
+    let program = compile_and_analyze(module_path, source_map)?;
 
     let end = Instant::now();
     let duration = end.duration_since(start);
@@ -314,7 +302,8 @@ pub fn compile<C>(
         "took".bright_cyan(),
         duration.blue(),
     );
-    Ok(analyzed_program.modules.get(module_path).unwrap().clone())
+
+    Ok(program)
 }
 
 /*

@@ -117,26 +117,7 @@ impl<C: Default> Default for ScriptModule<C> {
     }
 }
 
-pub fn compile_types<C>(
-    modules: Vec<&ModuleRef>,
-    root_module_path: &[String],
-    source_map: &mut SourceMapResource,
-) -> Result<ModuleRef, MangroveError> {
-    let mut resolved_program = Program::new();
-    let mut external_functions = ExternalFunctions::<C>::new();
-
-    for module in modules {
-        resolved_program.modules.add(module.clone());
-    }
-
-    compile(
-        root_module_path,
-        &mut resolved_program,
-        &mut external_functions,
-        &mut source_map.wrapper.source_map,
-    )
-}
-
+/*
 pub fn boot<C>(
     modules: Vec<&ModuleRef>,
     root_module_path: &[String],
@@ -210,3 +191,5 @@ pub fn boot<C>(
         main_module.clone(),
     ))
 }
+
+ */

@@ -3798,6 +3798,7 @@ name = "swamp-script"
 version = "0.0.19"
 dependencies = [
  "swamp-script-analyzer",
+ "swamp-script-compile",
  "swamp-script-core",
  "swamp-script-core-extra",
  "swamp-script-dep-loader",
@@ -3818,6 +3819,7 @@ dependencies = [
 name = "swamp-script-analyzer"
 version = "0.0.19"
 dependencies = [
+ "seq-fmt",
  "seq-map",
  "seq-set",
  "swamp-script-ast",
@@ -3832,6 +3834,29 @@ dependencies = [
 [[package]]
 name = "swamp-script-ast"
 version = "0.0.19"
+
+[[package]]
+name = "swamp-script-compile"
+version = "0.0.19"
+dependencies = [
+ "regex",
+ "seq-map",
+ "swamp-script-analyzer",
+ "swamp-script-ast",
+ "swamp-script-core",
+ "swamp-script-dep-loader",
+ "swamp-script-error-report",
+ "swamp-script-eval-loader",
+ "swamp-script-modules",
+ "swamp-script-parser",
+ "swamp-script-pretty-print",
+ "swamp-script-semantic",
+ "swamp-script-source-map",
+ "swamp-script-source-map-lookup",
+ "swamp-script-std",
+ "tiny-ver",
+ "tracing",
+]
 
 [[package]]
 name = "swamp-script-core"
@@ -3942,10 +3967,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "swamp-script-pretty-print"
+version = "0.0.19"
+dependencies = [
+ "seq-map",
+ "swamp-script-core-extra",
+ "swamp-script-modules",
+ "swamp-script-semantic",
+ "swamp-script-types",
+ "tracing",
+ "yansi",
+]
+
+[[package]]
 name = "swamp-script-semantic"
 version = "0.0.19"
 dependencies = [
  "fixed32",
+ "seq-fmt",
  "seq-map",
  "swamp-script-node",
  "swamp-script-types",

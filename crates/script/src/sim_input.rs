@@ -81,6 +81,8 @@ pub fn boot(
     flow_main_module: &ModuleRef,
     source_map: &mut SourceMapResource,
 ) -> Result<ScriptInput, MangroveError> {
+    todo!()
+    /*
     let updater = util::boot(
         vec![simulation_main_module, flow_main_module],
         &["simulation_input".to_string()],
@@ -90,6 +92,8 @@ pub fn boot(
     )?;
 
     Ok(ScriptInput::new(updater))
+
+     */
 }
 
 pub struct ScriptInputPlugin;

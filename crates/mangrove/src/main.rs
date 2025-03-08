@@ -53,8 +53,8 @@ fn main() {
         app.add_plugins(SerializePlugin);
     }
 
-    app.add_plugins(ScriptRenderPlugin)
-        .add_plugins(SaveDetectorPlugin);
+    //app.add_plugins(ScriptRenderPlugin)
+    //    .add_plugins(SaveDetectorPlugin);
 
     #[cfg(feature = "steam")]
     {

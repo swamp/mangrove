@@ -19,7 +19,7 @@ pub fn simulation_tick(
     source_map: Re<SourceMapResource>,
     error: Re<ErrorResource>,
 ) {
-    let lookup: &dyn SourceMapLookup = &source_map.wrapper;
+    let lookup: &dyn SourceMapLookup = &source_map.wrapper();
     if error.has_errors {
         return;
     }
@@ -366,7 +366,6 @@ pub fn input_module(
 /// # Panics
 ///
 pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, MangroveError> {
-    let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<ScriptSimulationContext>::new();
 
     //let (input_module, _axis_enum_type, _button_enum_type) =
@@ -382,12 +381,7 @@ pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, Mang
 
     let crate_simulation_path = &["crate".to_string(), "simulation".to_string()];
 
-    compile(
-        crate_simulation_path,
-        &mut resolved_program,
-        &mut external_functions,
-        &mut source_map.wrapper.source_map,
-    )?;
+    let resolved_program = compile(crate_simulation_path, &mut source_map.source_map)?;
 
     let main_fn = {
         let main_module = resolved_program
@@ -471,7 +465,7 @@ pub fn detect_reload_tick(
             ScriptMessage::Reload => match boot(&mut source_map_resource) {
                 Ok(new_simulation) => *script_simulation = new_simulation,
                 Err(mangrove_error) => {
-                    show_mangrove_error(&mangrove_error, &source_map_resource.wrapper.source_map);
+                    show_mangrove_error(&mangrove_error, &source_map_resource.source_map);
                     err.has_errors = true;
 
                     //                    eprintln!("script simulation failed: {}", mangrove_error);
@@ -514,13 +508,16 @@ impl Plugin for ScriptSimulationPlugin {
             script_context: ScriptSimulationContext {},
             resolved_program: Program {
                 state: ProgramState {
-                    number: 0,
+                    type_id_generator: TypeIdGenerator::new(16),
                     external_function_number: 0,
                     constants_in_dependency_order: vec![],
                     associated_impls: Default::default(),
+                    instantiation_cache: InstantiationCache {
+                        cache: Default::default(),
+                    },
                 },
                 modules: Modules::default(),
-                auto_use_modules: AutoUseModules { modules: vec![] },
+                default_symbol_table: SymbolTable::default(),
             },
             input_module: Rc::new(Module {
                 expression: None,

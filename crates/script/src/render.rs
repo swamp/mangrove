@@ -1468,6 +1468,7 @@ pub fn boot(
     resource_storage: &mut ResourceStorage,
     simulation_main_module: &ModuleRef,
 ) -> Result<ScriptRender, MangroveError> {
+    /*
     let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<ScriptRenderContext>::new();
 
@@ -1573,6 +1574,9 @@ pub fn boot(
         resolved_program.state.associated_impls,
         gfx_value,
     )
+
+     */
+    todo!()
 }
 
 /// # Panics
@@ -1606,7 +1610,7 @@ pub fn render_tick(
         .render(
             &mut wgpu_render,
             &simulation.immutable_simulation_value(),
-            &source_map.wrapper,
+            &source_map.wrapper(),
         )
         .expect("script.render() crashed");
 }
@@ -1629,7 +1633,7 @@ pub fn detect_reload_tick(
                     Ok(new_render) => *script_render = new_render,
                     Err(mangrove_error) => {
                         err.has_errors = true;
-                        show_mangrove_error(&mangrove_error, &source_map.wrapper.source_map);
+                        show_mangrove_error(&mangrove_error, &source_map.source_map);
                         eprintln!("script render failed: {mangrove_error}");
                         error!(error=?mangrove_error, "script render failed");
                     }
