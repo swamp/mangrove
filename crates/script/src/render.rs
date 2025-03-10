@@ -1617,6 +1617,7 @@ pub fn detect_reload_tick(
     for msg in script_messages.iter_previous() {
         match msg {
             ScriptMessage::Reload => {
+                /*
                 match boot(&mut all_resources, &script_simulation.main_module()) {
                     Ok(new_render) => *script_render = new_render,
                     Err(mangrove_error) => {
@@ -1626,6 +1627,8 @@ pub fn detect_reload_tick(
                         error!(error=?mangrove_error, "script render failed");
                     }
                 }
+
+                 */
             }
         }
     }

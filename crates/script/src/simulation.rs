@@ -2,19 +2,21 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::main::{ScriptContext, ScriptMain};
+use crate::main::ScriptMain;
+use crate::script::MangroveError;
+use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ErrorResource, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, Re, Update};
+use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, Re, Update};
 use swamp_script::prelude::*;
 
 /// # Panics
 ///
 pub fn simulation_tick(
-    mut game: LoReM<ScriptMain>,
-    mut script_context: LoReM<ScriptContext>,
+    mut main: LoReM<ScriptMain>,
+    mut script_simulation: LoReM<ScriptSimulation>,
     source_map: Re<SourceMapResource>,
     error: Re<ErrorResource>,
 ) {
@@ -23,11 +25,15 @@ pub fn simulation_tick(
         return;
     }
 
-    let variable_value_ref = VariableValue::Reference(game.simulation_value_ref.clone());
+    let variable_value_ref =
+        VariableValue::Reference(script_simulation.simulation_value_ref.clone());
+
+    let mut script_context = ScriptSimulationContext {};
+
     let _ = util_execute_function(
-        &game.external_functions,
-        &game.constants,
-        &game.simulation_fn,
+        &script_simulation.external_functions,
+        &main.constants,
+        &script_simulation.simulation_tick_fn,
         &[variable_value_ref],
         &mut script_context,
         None,
@@ -35,9 +41,13 @@ pub fn simulation_tick(
     .unwrap();
 }
 
-pub fn input_tick(mut script: LoReM<ScriptSimulation>, gamepad_messages: Msg<GamepadMessage>) {
+pub fn input_tick(
+    mut script: LoReM<ScriptSimulation>,
+    main: LoRe<ScriptMain>,
+    gamepad_messages: Msg<GamepadMessage>,
+) {
     for gamepad_message in gamepad_messages.iter_current() {
-        script.gamepad(gamepad_message);
+        script.gamepad(&main, gamepad_message);
     }
 }
 
@@ -47,13 +57,11 @@ pub struct ScriptSimulationContext {}
 #[derive(LocalResource, Debug)]
 pub struct ScriptSimulation {
     simulation_value_ref: ValueRef,
-    simulation_fn: InternalFunctionDefinitionRef,
+    simulation_tick_fn: InternalFunctionDefinitionRef,
     gamepad_axis_changed_fn: Option<InternalFunctionDefinitionRef>,
     gamepad_button_changed_fn: Option<InternalFunctionDefinitionRef>,
-    external_functions: ExternalFunctions<ScriptSimulationContext>,
-    constants: Constants,
-    script_context: ScriptSimulationContext,
-    resolved_program: Program,
+    external_functions: ExternalFunctions<ScriptSimulationContext>, // It is empty, but stored for convenience
+    script_context: ScriptSimulationContext, // It is empty, but stored for convenience
     input_module: ModuleRef,
 }
 
@@ -64,19 +72,15 @@ impl ScriptSimulation {
         gamepad_axis_changed_fn: Option<InternalFunctionDefinitionRef>,
         gamepad_button_changed_fn: Option<InternalFunctionDefinitionRef>,
         external_functions: ExternalFunctions<ScriptSimulationContext>,
-        constants: Constants,
-        resolved_program: Program,
         input_module: ModuleRef,
     ) -> Self {
         Self {
             simulation_value_ref,
-            simulation_fn,
+            simulation_tick_fn: simulation_fn,
             gamepad_axis_changed_fn,
             gamepad_button_changed_fn,
             external_functions,
             script_context: ScriptSimulationContext {},
-            constants,
-            resolved_program,
             input_module,
         }
     }
@@ -94,30 +98,9 @@ impl ScriptSimulation {
         self.simulation_value_ref = Rc::new(RefCell::new(value));
     }
 
-    /// # Panics
-    ///
-    #[must_use]
-    pub fn main_module(&self) -> ModuleRef {
-        let root_module_path = &["crate".to_string(), "simulation".to_string()].to_vec();
-
-        self.resolved_program
-            .modules
-            .get(root_module_path)
-            .expect("simulation module should exist in simulation")
-            .clone()
-    }
-
-    /// # Errors
-    ///
-    pub fn tick(
-        &mut self,
-        debug_source_map: Option<&dyn SourceMapLookup>,
-    ) -> Result<(), ExecuteError> {
-        Ok(())
-    }
-
     fn execute(
         &mut self,
+        script_main: &ScriptMain,
         fn_def: &InternalFunctionDefinitionRef,
         arguments: &[Value],
     ) -> Result<(), ExecuteError> {
@@ -129,7 +112,7 @@ impl ScriptSimulation {
 
         let _ = util_execute_function(
             &self.external_functions,
-            &self.constants,
+            &script_main.constants,
             fn_def,
             &complete_arguments,
             &mut self.script_context,
@@ -139,21 +122,27 @@ impl ScriptSimulation {
         Ok(())
     }
 
-    pub fn gamepad(&mut self, msg: &GamepadMessage) {
+    pub fn gamepad(&mut self, script_main: &ScriptMain, msg: &GamepadMessage) {
         match msg {
             GamepadMessage::Connected(_, _) => {}
             GamepadMessage::Disconnected(_) => {}
             GamepadMessage::Activated(_) => {}
             GamepadMessage::ButtonChanged(gamepad_id, button, value) => {
-                self.button_changed(*gamepad_id, *button, *value);
+                self.button_changed(script_main, *gamepad_id, *button, *value);
             }
             GamepadMessage::AxisChanged(gamepad_id, axis, value) => {
-                self.axis_changed(*gamepad_id, *axis, *value);
+                self.axis_changed(script_main, *gamepad_id, *axis, *value);
             }
         }
     }
 
-    fn axis_changed(&mut self, gamepad_id: GamePadId, axis: Axis, value: AxisValueType) {
+    fn axis_changed(
+        &mut self,
+        script_main: &ScriptMain,
+        gamepad_id: GamePadId,
+        axis: Axis,
+        value: AxisValueType,
+    ) {
         let script_axis_value = {
             let input_module_ref = &self.input_module;
             let axis_str = match axis {
@@ -187,12 +176,22 @@ impl ScriptSimulation {
 
             let fn_ref = found_fn.clone();
 
-            self.execute(&fn_ref, &[gamepad_id_value, script_axis_value, axis_value])
-                .expect("gamepad_axis_changed");
+            self.execute(
+                script_main,
+                &fn_ref,
+                &[gamepad_id_value, script_axis_value, axis_value],
+            )
+            .expect("gamepad_axis_changed");
         }
     }
 
-    fn button_changed(&mut self, gamepad_id: GamePadId, button: Button, value: ButtonValueType) {
+    fn button_changed(
+        &mut self,
+        script_main: &ScriptMain,
+        gamepad_id: GamePadId,
+        button: Button,
+        value: ButtonValueType,
+    ) {
         let script_button_value = {
             let input_module_ref = &self.input_module;
             let button_str = match button {
@@ -242,6 +241,7 @@ impl ScriptSimulation {
             let fn_ref = found_fn.clone();
 
             self.execute(
+                script_main,
                 &fn_ref,
                 &[gamepad_id_value, script_button_value, button_value],
             )
@@ -252,9 +252,7 @@ impl ScriptSimulation {
 
 /// # Errors
 ///
-pub fn input_module(
-    resolve_state: &mut ProgramState,
-) -> Result<(SymbolTable, EnumType, EnumType), Error> {
+pub fn input_module() -> Result<(SymbolTable, EnumType, EnumType), Error> {
     let mut symbol_table = SymbolTable::new(&["mangrove".to_string(), "input".to_string()]);
 
     let axis_enum_type_ref = {
@@ -351,6 +349,55 @@ pub fn input_module(
     Ok((symbol_table, axis_enum_type_ref, button_enum_type_ref))
 }
 
+fn boot(script_main: ScriptMain) -> Result<ScriptSimulation, MangroveError> {
+    let mut script_context = ScriptSimulationContext {};
+    let empty_external_functions = ExternalFunctions::<ScriptSimulationContext>::new();
+    let simulation_value = util_execute_function(
+        &empty_external_functions,
+        &script_main.constants,
+        &script_main.simulation_new_fn,
+        &[],
+        &mut script_context,
+        None,
+    )?;
+
+    let Value::NamedStruct(simulation_struct_type_ref, _) = &simulation_value else {
+        return Err(MangroveError::Other(
+            "needs to be simulation struct".to_string(),
+        ));
+    };
+
+    let simulation_fn = get_impl_func(
+        &script_main.resolved_program.state.associated_impls,
+        simulation_struct_type_ref,
+        "tick",
+    );
+    let gamepad_axis_changed_fn = get_impl_func_optional(
+        &script_main.resolved_program.state.associated_impls,
+        simulation_struct_type_ref,
+        "gamepad_axis_changed",
+    );
+    let gamepad_button_changed_fn = get_impl_func_optional(
+        &script_main.resolved_program.state.associated_impls,
+        simulation_struct_type_ref,
+        "gamepad_button_changed",
+    );
+
+    // Convert it to a mutable (reference), so it can be mutated in update ticks
+    let simulation_value_ref = Rc::new(RefCell::new(simulation_value));
+
+    let input_module = input_module()?;
+
+    Ok(ScriptSimulation::new(
+        simulation_value_ref,
+        simulation_fn,
+        gamepad_axis_changed_fn,
+        gamepad_button_changed_fn,
+        empty_external_functions,
+        ModuleRef::new(Module::new(SymbolTable::new(&[]), None)),
+    ))
+}
+
 pub struct ScriptSimulationPlugin;
 
 impl Plugin for ScriptSimulationPlugin {
@@ -362,7 +409,7 @@ impl Plugin for ScriptSimulationPlugin {
         // TODO: Should not try to call updates with params that are not available yet.
         app.insert_local_resource(ScriptSimulation {
             simulation_value_ref: Rc::new(RefCell::new(Value::default())),
-            simulation_fn: Rc::new(InternalFunctionDefinition {
+            simulation_tick_fn: Rc::new(InternalFunctionDefinition {
                 body: Expression {
                     ty: Type::Int,
                     node: Default::default(),
@@ -378,20 +425,7 @@ impl Plugin for ScriptSimulationPlugin {
             gamepad_axis_changed_fn: None,
             gamepad_button_changed_fn: None,
             external_functions: ExternalFunctions::new(),
-            constants: Constants { values: vec![] },
             script_context: ScriptSimulationContext {},
-            resolved_program: Program {
-                state: ProgramState {
-                    external_function_number: 0,
-                    constants_in_dependency_order: vec![],
-                    associated_impls: Default::default(),
-                    instantiation_cache: InstantiationCache {
-                        cache: Default::default(),
-                    },
-                },
-                modules: Modules::default(),
-                default_symbol_table: SymbolTable::new(&[]),
-            },
             input_module: Rc::new(Module {
                 expression: None,
                 symbol_table: SymbolTable::new(&[]),
