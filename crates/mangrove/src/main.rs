@@ -8,6 +8,7 @@ use limnus_steam_input::SteamworksInputPlugin;
 use limnus_steamworks::SteamworksPlugin;
 use mangrove_save_detector::SaveDetectorPlugin;
 use mangrove_script::err::ErrorPlugin;
+use mangrove_script::main::ScriptGamePlugin;
 use mangrove_script::render::ScriptRenderPlugin;
 use mangrove_script::simulation::ScriptSimulationPlugin;
 use mangrove_script::source_map::SourceMapPlugin;
@@ -45,7 +46,8 @@ fn main() {
     .add_plugins(ScriptPlugin)
     //  .add_plugins(ScriptInputPlugin)
     //.add_plugins(ScriptFlowPlugin)
-    .add_plugins(ScriptSimulationPlugin);
+    .add_plugins(ScriptGamePlugin);
+    //.add_plugins(ScriptSimulationPlugin);
 
     #[cfg(feature = "time_machine")]
     {

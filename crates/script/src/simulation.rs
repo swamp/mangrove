@@ -2,20 +2,19 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::err::show_mangrove_error;
-use crate::script::{MangroveError, compile};
-use crate::util::{get_impl_func, get_impl_func_optional};
-use crate::{ErrorResource, ScriptMessage, SourceMapResource};
+use crate::main::{ScriptContext, ScriptMain};
+use crate::{ErrorResource, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update};
+use swamp::prelude::{App, Fp, LoReM, LocalResource, Msg, Plugin, Re, Update};
 use swamp_script::prelude::*;
 
 /// # Panics
 ///
 pub fn simulation_tick(
-    mut script: LoReM<ScriptSimulation>,
+    mut game: LoReM<ScriptMain>,
+    mut script_context: LoReM<ScriptContext>,
     source_map: Re<SourceMapResource>,
     error: Re<ErrorResource>,
 ) {
@@ -23,7 +22,17 @@ pub fn simulation_tick(
     if error.has_errors {
         return;
     }
-    script.tick(Some(lookup)).expect("script.tick() crashed");
+
+    let variable_value_ref = VariableValue::Reference(game.simulation_value_ref.clone());
+    let _ = util_execute_function(
+        &game.external_functions,
+        &game.constants,
+        &game.simulation_fn,
+        &[variable_value_ref],
+        &mut script_context,
+        None,
+    )
+    .unwrap();
 }
 
 pub fn input_tick(mut script: LoReM<ScriptSimulation>, gamepad_messages: Msg<GamepadMessage>) {
@@ -104,16 +113,6 @@ impl ScriptSimulation {
         &mut self,
         debug_source_map: Option<&dyn SourceMapLookup>,
     ) -> Result<(), ExecuteError> {
-        let variable_value_ref = VariableValue::Reference(self.simulation_value_ref.clone());
-        let _ = util_execute_function(
-            &self.external_functions,
-            &self.constants,
-            &self.simulation_fn,
-            &[variable_value_ref],
-            &mut self.script_context,
-            debug_source_map,
-        )?;
-
         Ok(())
     }
 
@@ -165,19 +164,17 @@ impl ScriptSimulation {
             };
 
             let axis_enum = input_module_ref
-                .namespace
                 .symbol_table
                 .get_enum("Axis")
                 .expect("axis")
                 .clone();
 
             let variant = axis_enum
-                .borrow()
                 .get_variant(axis_str)
                 .expect("should be there")
                 .clone();
 
-            if let EnumVariantType::Nothing(simple) = &*variant {
+            if let EnumVariantType::Nothing(simple) = variant {
                 Value::EnumVariantSimple(simple.clone())
             } else {
                 panic!("variant axis problem");
@@ -219,19 +216,17 @@ impl ScriptSimulation {
             };
 
             let button_enum = input_module_ref
-                .namespace
                 .symbol_table
                 .get_enum("Button")
                 .expect("button name failed")
                 .clone();
 
             let variant = button_enum
-                .borrow()
                 .get_variant(button_str)
                 .expect("should exist")
                 .clone();
 
-            if let EnumVariantType::Nothing(simple) = &*variant {
+            if let EnumVariantType::Nothing(simple) = variant {
                 Value::EnumVariantSimple(simple.clone())
             } else {
                 panic!("variant axis problem");
@@ -259,28 +254,22 @@ impl ScriptSimulation {
 ///
 pub fn input_module(
     resolve_state: &mut ProgramState,
-) -> Result<(SymbolTable, EnumTypeRef, EnumTypeRef), Error> {
-    let mut symbol_table = SymbolTable::new();
+) -> Result<(SymbolTable, EnumType, EnumType), Error> {
+    let mut symbol_table = SymbolTable::new(&["mangrove".to_string(), "input".to_string()]);
 
     let axis_enum_type_ref = {
-        let axis_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
-
-        let parent = EnumType {
+        let mut parent = EnumType {
             name: Node {
                 span: Span::default(),
             },
             assigned_name: "Axis".to_string(),
             module_path: Vec::default(),
-            type_id: axis_enum_type_id,
             variants: SeqMap::default(),
         };
-
-        let axis_enum_type_ref = symbol_table.add_enum_type(parent)?;
 
         let variant_names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
         let mut resolved_variants = SeqMap::new();
         for (container_index, variant_name) in variant_names.iter().enumerate() {
-            let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
             let variant = EnumVariantSimpleType {
                 common: EnumVariantCommon {
                     name: Node {
@@ -288,35 +277,32 @@ pub fn input_module(
                     },
                     assigned_name: variant_name.to_string(),
                     container_index: container_index as u8,
-                    number: variant_type_id,
-                    owner: axis_enum_type_ref.clone(),
                 },
             };
 
             let complete_variant = EnumVariantType::Nothing(variant.into());
 
             resolved_variants
-                .insert(variant_name.to_string(), Rc::new(complete_variant))
+                .insert(variant_name.to_string(), complete_variant)
                 .expect("works")
         }
 
-        axis_enum_type_ref.borrow_mut().variants = resolved_variants;
-        axis_enum_type_ref
+        parent.variants = resolved_variants;
+
+        symbol_table.add_enum_type(parent.clone())?;
+
+        parent
     };
 
     let button_enum_type_ref = {
-        let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
-        // let button_enum_type_id = resolve_state.allocate_number(); // TODO: HACK
-        let parent = EnumType {
+        let mut parent = EnumType {
             name: Node {
                 span: Span::default(),
             },
             assigned_name: "Button".to_string(),
             module_path: Vec::default(),
-            type_id: button_enum_type_id,
             variants: Default::default(),
         };
-        let button_enum_type_ref = symbol_table.add_enum_type(parent)?;
 
         let button_names = [
             "South",
@@ -339,7 +325,6 @@ pub fn input_module(
         ];
 
         for (container_index, button_variant_name) in button_names.iter().enumerate() {
-            let variant_type_id = resolve_state.allocate_number(); // TODO: HACK
             let variant = EnumVariantSimpleType {
                 common: EnumVariantCommon {
                     name: Node {
@@ -347,140 +332,29 @@ pub fn input_module(
                     },
                     assigned_name: button_variant_name.to_string(),
                     container_index: container_index as u8,
-                    number: variant_type_id,
-                    owner: button_enum_type_ref.clone(),
                 },
             };
 
-            let complete_variant = EnumVariantType::Nothing(Rc::new(variant));
-            symbol_table.add_enum_variant(button_enum_type_ref.clone(), complete_variant)?;
+            let complete_variant = EnumVariantType::Nothing(variant);
+            // symbol_table.add_enum_variant(&mut button_enum_type_ref, complete_variant)?;
+            parent
+                .variants
+                .insert(button_variant_name.to_string(), complete_variant)
+                .unwrap();
         }
-        button_enum_type_ref
+
+        symbol_table.add_enum_type(parent.clone())?;
+
+        parent.clone()
     };
 
     Ok((symbol_table, axis_enum_type_ref, button_enum_type_ref))
-}
-
-/// # Errors
-///
-/// # Panics
-///
-pub fn boot(source_map: &mut SourceMapResource) -> Result<ScriptSimulation, MangroveError> {
-    let mut external_functions = ExternalFunctions::<ScriptSimulationContext>::new();
-
-    //let (input_module, _axis_enum_type, _button_enum_type) =
-    //  input_module(&mut resolved_program.state)?;
-    //let input_module_ref = ModuleRef::from(Module::new(&["input".to_string()], input_module, None));
-    // resolved_program.modules.add(input_module_ref.clone());
-    let fake_symbol_table = SymbolTable::new();
-    let input_module_ref = ModuleRef::from(Module::new(
-        &["crate".to_string(), "input".to_string()],
-        fake_symbol_table,
-        None,
-    ));
-
-    let crate_simulation_path = &["crate".to_string(), "simulation".to_string()];
-
-    let resolved_program = compile(crate_simulation_path, &mut source_map.source_map)?;
-
-    let main_fn = {
-        let main_module = resolved_program
-            .modules
-            .get(crate_simulation_path)
-            .expect("could not find main module");
-
-        let function_ref = main_module
-            .namespace
-            .symbol_table
-            .get_internal_function("main")
-            .expect("No main function")
-            .clone();
-
-        Rc::clone(&function_ref) // Clone the Rc, not the inner value
-    };
-
-    let mut script_context = ScriptSimulationContext {};
-    let mut constants = Constants::new();
-    eval_constants(
-        &external_functions,
-        &mut constants,
-        &resolved_program.state,
-        &mut script_context,
-    )?;
-
-    let simulation_value = util_execute_function(
-        &external_functions,
-        &constants,
-        &main_fn,
-        &[],
-        &mut script_context,
-        None,
-    )?;
-
-    let Value::NamedStruct(simulation_struct_type_ref, _) = &simulation_value else {
-        return Err(MangroveError::Other(
-            "needs to be simulation struct".to_string(),
-        ));
-    };
-
-    let simulation_fn = get_impl_func(
-        &resolved_program.state.associated_impls,
-        simulation_struct_type_ref,
-        "tick",
-    );
-    let gamepad_axis_changed_fn = get_impl_func_optional(
-        &resolved_program.state.associated_impls,
-        simulation_struct_type_ref,
-        "gamepad_axis_changed",
-    );
-    let gamepad_button_changed_fn = get_impl_func_optional(
-        &resolved_program.state.associated_impls,
-        simulation_struct_type_ref,
-        "gamepad_button_changed",
-    );
-
-    // Convert it to a mutable (reference), so it can be mutated in update ticks
-    let simulation_value_ref = Rc::new(RefCell::new(simulation_value));
-
-    Ok(ScriptSimulation::new(
-        simulation_value_ref,
-        simulation_fn,
-        gamepad_axis_changed_fn,
-        gamepad_button_changed_fn,
-        external_functions,
-        constants,
-        resolved_program,
-        input_module_ref,
-    ))
-}
-
-pub fn detect_reload_tick(
-    script_messages: Msg<ScriptMessage>,
-    mut script_simulation: LoReM<ScriptSimulation>,
-    mut source_map_resource: ReM<SourceMapResource>,
-    mut err: ReM<ErrorResource>,
-) {
-    for msg in script_messages.iter_previous() {
-        match msg {
-            ScriptMessage::Reload => match boot(&mut source_map_resource) {
-                Ok(new_simulation) => *script_simulation = new_simulation,
-                Err(mangrove_error) => {
-                    show_mangrove_error(&mangrove_error, &source_map_resource.source_map);
-                    err.has_errors = true;
-
-                    //                    eprintln!("script simulation failed: {}", mangrove_error);
-                    //                    error!(error=?mangrove_error, "script simulation compile failed");
-                }
-            },
-        }
-    }
 }
 
 pub struct ScriptSimulationPlugin;
 
 impl Plugin for ScriptSimulationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(PreUpdate, detect_reload_tick);
         app.add_system(Update, simulation_tick);
         app.add_system(Update, input_tick);
 
@@ -508,7 +382,6 @@ impl Plugin for ScriptSimulationPlugin {
             script_context: ScriptSimulationContext {},
             resolved_program: Program {
                 state: ProgramState {
-                    type_id_generator: TypeIdGenerator::new(16),
                     external_function_number: 0,
                     constants_in_dependency_order: vec![],
                     associated_impls: Default::default(),
@@ -517,11 +390,11 @@ impl Plugin for ScriptSimulationPlugin {
                     },
                 },
                 modules: Modules::default(),
-                default_symbol_table: SymbolTable::default(),
+                default_symbol_table: SymbolTable::new(&[]),
             },
             input_module: Rc::new(Module {
                 expression: None,
-                namespace: Namespace::new(vec![], SymbolTable::default()),
+                symbol_table: SymbolTable::new(&[]),
             }),
         });
     }

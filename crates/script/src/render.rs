@@ -12,6 +12,7 @@ use crate::util::get_impl_func;
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_screen::WindowMessage;
 use monotonic_time_rs::Millis;
+use std::any::Any;
 use std::cell::RefCell;
 use std::fmt::{Debug, Display, Formatter};
 use std::rc::Rc;
@@ -165,14 +166,14 @@ impl RenderWrapper {
 pub struct GameAssetsWrapper {
     game_assets: *mut GameAssets<'static>,
 
-    material_struct_type: NamedStructTypeRef,
-    material_rust_type_ref: ExternalTypeRef,
+    material_struct_type: NamedStructType,
+    material_rust_type_ref: ExternalType,
 
-    fixed_atlas_struct_type_ref: NamedStructTypeRef,
-    fixed_atlas_rust_type_ref: ExternalTypeRef,
+    fixed_atlas_struct_type_ref: NamedStructType,
+    fixed_atlas_rust_type_ref: ExternalType,
 
-    font_and_material_struct_type_ref: NamedStructTypeRef,
-    font_and_material_rust_type_ref: ExternalTypeRef,
+    font_and_material_struct_type_ref: NamedStructType,
+    font_and_material_rust_type_ref: ExternalType,
 }
 
 #[derive(Debug, PartialEq)]
@@ -242,13 +243,13 @@ impl QuickSerialize for MaterialWrapper {}
 impl GameAssetsWrapper {
     pub fn new(
         game_assets: &mut GameAssets,
-        material_struct_type: NamedStructTypeRef,
-        material_rust_type_ref: ExternalTypeRef,
-        fixed_atlas_struct_type_ref: NamedStructTypeRef,
-        fixed_atlas_rust_type_ref: ExternalTypeRef,
+        material_struct_type: NamedStructType,
+        material_rust_type_ref: ExternalType,
+        fixed_atlas_struct_type_ref: NamedStructType,
+        fixed_atlas_rust_type_ref: ExternalType,
 
-        font_and_material_struct_type_ref: NamedStructTypeRef,
-        font_and_material_rust_type_ref: ExternalTypeRef,
+        font_and_material_struct_type_ref: NamedStructType,
+        font_and_material_rust_type_ref: ExternalType,
     ) -> Self {
         let ptr = game_assets as *mut GameAssets;
         Self {
@@ -352,7 +353,7 @@ pub fn register_color_struct_type(
     symbol_table: &mut SymbolTable,
     state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
-) -> Result<NamedStructTypeRef, MangroveError> {
+) -> Result<NamedStructType, MangroveError> {
     let mut defined_fields = SeqMap::new();
 
     let r_field = StructTypeField {
@@ -379,12 +380,11 @@ pub fn register_color_struct_type(
     };
     defined_fields.insert("a".to_string(), a_field)?;
 
-    let color_type_id = state.allocate_number();
     let color_type = NamedStructType {
         name: Node::default(),
+        module_path: vec!["mangrove".to_string(), "render".to_string()],
         assigned_name: "Color".to_string(),
         anon_struct_type: AnonymousStructType::new(defined_fields),
-        type_id: color_type_id,
     };
 
     let color_struct_type_ref = symbol_table.add_struct(color_type)?;
@@ -532,9 +532,9 @@ pub fn register_gfx_sprite_params(
     state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     symbol_table: &mut SymbolTable,
-    color_type: NamedStructTypeRef,
+    color_type: NamedStructType,
     math_types: &MathTypes,
-) -> Result<NamedStructTypeRef, MangroveError> {
+) -> Result<NamedStructType, MangroveError> {
     // Props
     let mut defined_fields = SeqMap::new();
     let flip_x_field = StructTypeField {
@@ -579,12 +579,11 @@ pub fn register_gfx_sprite_params(
     };
     defined_fields.insert("size".to_string(), size)?;
 
-    let sprite_params_type_id = state.allocate_number();
     let sprite_params_type = NamedStructType {
         name: Node::default(),
         assigned_name: "SpriteParams".to_string(),
         anon_struct_type: AnonymousStructType::new(defined_fields),
-        type_id: sprite_params_type_id,
+        module_path: vec!["mangrove".to_string(), "render".to_string()],
     };
     let sprite_params_struct_type_ref = symbol_table.add_struct(sprite_params_type)?;
     let sprite_params_general_type = Type::NamedStruct(sprite_params_struct_type_ref.clone());
@@ -635,9 +634,7 @@ pub fn register_gfx_struct_value_with_members(
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     symbol_table: &mut SymbolTable,
 ) -> Result<ValueRef, MangroveError> {
-    let gfx_type_id = state.allocate_number();
-    let (gfx_value, gfx_struct_type) =
-        create_empty_struct_value_util(symbol_table, "Gfx", gfx_type_id)?;
+    let (gfx_value, gfx_struct_type) = create_empty_struct_value_util(symbol_table, "Gfx")?;
     let gfx_value_mut = Rc::new(RefCell::new(gfx_value));
     let gfx_general_type = Type::NamedStruct(gfx_struct_type.clone());
 
@@ -1148,13 +1145,11 @@ pub fn register_asset_struct_value_with_members(
     state: &mut ProgramState,
     externals: &mut ExternalFunctions<ScriptRenderContext>,
     symbol_table: &mut SymbolTable,
-    material_struct_type_ref: NamedStructTypeRef,
-    fixed_grid_struct_type_ref: NamedStructTypeRef,
-    font_and_material_struct_type_ref: &NamedStructTypeRef,
+    material_struct_type_ref: NamedStructType,
+    fixed_grid_struct_type_ref: NamedStructType,
+    font_and_material_struct_type_ref: &NamedStructType,
 ) -> Result<VariableValue, MangroveError> {
-    let asset_type_id = state.allocate_number();
-    let (assets_value, assets_type) =
-        create_empty_struct_value_util(symbol_table, "Assets", asset_type_id)?;
+    let (assets_value, assets_type) = create_empty_struct_value_util(symbol_table, "Assets")?;
     let assets_value_mut = VariableValue::Reference(Rc::new(RefCell::new(assets_value)));
 
     let assets_general_type = Type::NamedStruct(assets_type.clone());
@@ -1310,7 +1305,7 @@ impl ScriptRender {
     ///
     pub fn new(
         render_value_ref: ValueRef,
-        render_struct_type_ref: &NamedStructTypeRef,
+        render_struct_type_ref: &NamedStructType,
         externals: ExternalFunctions<ScriptRenderContext>,
         constants: Constants,
         impls: AssociatedImpls,
@@ -1374,46 +1369,42 @@ pub fn create_render_module(
         SymbolTable,
         VariableValue,
         ValueRef,
-        NamedStructTypeRef,
-        ExternalTypeRef,
-        NamedStructTypeRef,
-        ExternalTypeRef,
-        NamedStructTypeRef,
-        ExternalTypeRef,
+        NamedStructType,
+        ExternalType,
+        NamedStructType,
+        ExternalType,
+        NamedStructType,
+        ExternalType,
     ),
     MangroveError,
 > {
     //    let mut mangrove_render_module = Module::new(&["mangrove".to_string(), "render".to_string()]);
-    let mut symbol_table = SymbolTable::new();
+    let mut symbol_table = SymbolTable::new(&["mangrove".to_string(), "render".to_string()]);
 
-    let material_handle_rust_type_ref = Rc::new(ExternalType {
+    let material_handle_rust_type_ref = ExternalType {
         type_name: "MaterialHandle".to_string(),
         number: 91,
-    });
+    };
 
-    let handle_type_id = resolved_program.state.allocate_number();
     let material_handle_struct_ref = symbol_table.add_generated_struct(
         "MaterialHandle",
         &[(
             "hidden",
             Type::External(material_handle_rust_type_ref.clone()),
         )],
-        handle_type_id,
     )?;
 
-    let fixed_atlas_handle_rust_type_ref = Rc::new(ExternalType {
+    let fixed_atlas_handle_rust_type_ref = ExternalType {
         type_name: "FixedAtlasHandle".to_string(),
         number: 92,
-    });
+    };
 
-    let fixed_atlas_handle_type_id = resolved_program.state.allocate_number();
     let fixed_atlas_handle_struct_ref = symbol_table.add_generated_struct(
         "FixedAtlasHandle",
         &[(
             "hidden",
             Type::External(fixed_atlas_handle_rust_type_ref.clone()),
         )],
-        fixed_atlas_handle_type_id,
     )?;
 
     let font_and_material_rust_type_ref = symbol_table.add_external_type(ExternalType {
@@ -1421,15 +1412,12 @@ pub fn create_render_module(
         number: 0,
     })?;
 
-    let font_and_material_handle = resolved_program.state.allocate_number();
-
     let font_and_material_struct_ref = symbol_table.add_generated_struct(
         "FontAndMaterialHandle",
         &[(
             "hidden",
             Type::External(font_and_material_rust_type_ref.clone()),
         )],
-        font_and_material_handle,
     )?;
 
     let assets_struct_value = register_asset_struct_value_with_members(

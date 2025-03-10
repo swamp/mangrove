@@ -51,10 +51,9 @@ impl ScriptInput {
     }
 }
 
-fn scan_struct(struct_type: &NamedStructTypeRef) -> Result<BindingsInSet, MangroveError> {
+fn scan_struct(struct_type: &NamedStructType) -> Result<BindingsInSet, MangroveError> {
     let mut bindings_in_source_order = Vec::new();
     for (index, (field_name, field_type)) in struct_type
-        .borrow()
         .anon_struct_type
         .field_name_sorted_fields
         .iter()

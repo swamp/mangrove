@@ -2,15 +2,13 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::SourceMapResource;
-use crate::script::{MangroveError, compile};
 use std::cell::RefCell;
 use std::rc::Rc;
 use swamp_script::prelude::*;
 
 pub fn get_impl_func(
     associated_impls: &AssociatedImpls,
-    struct_type_ref: &NamedStructTypeRef,
+    struct_type_ref: &NamedStructType,
     name: &str,
 ) -> InternalFunctionDefinitionRef {
     associated_impls
@@ -21,7 +19,7 @@ pub fn get_impl_func(
 
 pub fn get_impl_func_optional(
     associated_impls: &AssociatedImpls,
-    struct_type_ref: &NamedStructTypeRef,
+    struct_type_ref: &NamedStructType,
     name: &str,
 ) -> Option<InternalFunctionDefinitionRef> {
     associated_impls
@@ -111,7 +109,7 @@ impl<C: Default> Default for ScriptModule<C> {
             resolved_program: Program::default(),
             main_module: Rc::new(Module {
                 expression: None,
-                namespace: Namespace::new(vec![], SymbolTable::default()),
+                symbol_table: SymbolTable::new(&[]),
             }),
         }
     }

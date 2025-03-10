@@ -15,7 +15,7 @@ pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
             show_decorated(decorated_parse_error, source_map);
         }
         MangroveError::ExecuteError(err) => todo!(), // show_execute_error(err, source_map),
-        MangroveError::Other(_) => todo!(),
+        MangroveError::Other(description) => error!(?err, ?description, "unknown error"),
         MangroveError::SemanticError(err) => error!(?err, "semantic error"),
         MangroveError::Error(resolve_err) => error!(?resolve_err, "resolve_err"),
         MangroveError::DepLoaderError(err) => {

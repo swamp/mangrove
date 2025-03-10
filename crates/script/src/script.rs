@@ -103,21 +103,19 @@ impl From<String> for MangroveError {
 pub fn create_empty_struct_type(
     symbol_table: &mut SymbolTable,
     name: &str,
-    type_id: TypeNumber,
-) -> Result<NamedStructTypeRef, Error> {
-    Ok(symbol_table.add_generated_struct(name, &[("hidden", Type::Unit)], type_id)?)
+) -> Result<NamedStructType, Error> {
+    Ok(symbol_table.add_generated_struct(name, &[("hidden", Type::Unit)])?)
 }
 
-pub fn create_empty_struct_value(struct_type: NamedStructTypeRef) -> Value {
+pub fn create_empty_struct_value(struct_type: NamedStructType) -> Value {
     Value::NamedStruct(struct_type, [].to_vec())
 }
 
 pub fn create_empty_struct_value_util(
     symbol_table: &mut SymbolTable,
     name: &str,
-    type_id: TypeNumber,
-) -> Result<(Value, NamedStructTypeRef), Error> {
-    let struct_type = create_empty_struct_type(symbol_table, name, type_id)?;
+) -> Result<(Value, NamedStructType), Error> {
+    let struct_type = create_empty_struct_type(symbol_table, name)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
 }
 
@@ -144,7 +142,7 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
     }
 }
 
-pub fn create_default_color_value(color_struct_type_ref: NamedStructTypeRef) -> Value {
+pub fn create_default_color_value(color_struct_type_ref: NamedStructType) -> Value {
     let fields = vec![
         Value::Float(Fp::one()), // red
         Value::Float(Fp::one()), // green
@@ -164,8 +162,8 @@ pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
 }
 
 pub fn create_default_sprite_params(
-    sprite_params_struct_type_ref: NamedStructTypeRef,
-    color_type: &NamedStructTypeRef,
+    sprite_params_struct_type_ref: NamedStructType,
+    color_type: &NamedStructType,
     math_types: &MathTypes,
 ) -> Value {
     let fields = vec![
@@ -252,7 +250,7 @@ fn prepare_main_module<C>(
         id: print_id,
     };
 
-    let mut symbol_table = SymbolTable::default();
+    let mut symbol_table = SymbolTable::new(root_module_path);
 
     symbol_table.add_external_function_declaration(print_external)?;
     externals
@@ -270,7 +268,7 @@ fn prepare_main_module<C>(
         })
         .expect("should work to register");
 
-    let main_module = Module::new(root_module_path, symbol_table, None);
+    let main_module = Module::new(symbol_table, None);
 
     Ok(main_module)
 }

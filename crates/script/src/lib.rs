@@ -11,6 +11,7 @@ pub mod convert;
 pub mod err;
 pub mod flow;
 pub mod input;
+pub mod main;
 mod modules;
 pub mod render;
 mod script;
