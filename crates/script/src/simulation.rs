@@ -2,15 +2,19 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
+use crate::err::show_mangrove_error;
 use crate::main::ScriptMain;
 use crate::script::MangroveError;
 use crate::util::{get_impl_func, get_impl_func_optional};
-use crate::{ErrorResource, SourceMapResource};
+use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
 use std::rc::Rc;
-use swamp::prelude::{App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, Re, Update};
+use swamp::prelude::{
+    App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update,
+};
 use swamp_script::prelude::*;
+use tracing::info;
 
 /// # Panics
 ///
@@ -30,6 +34,7 @@ pub fn simulation_tick(
 
     let mut script_context = ScriptSimulationContext {};
 
+    info!("calling simulation tick!");
     let _ = util_execute_function(
         &script_simulation.external_functions,
         &main.constants,
@@ -66,7 +71,7 @@ pub struct ScriptSimulation {
 }
 
 impl ScriptSimulation {
-    pub fn new(
+    pub const fn new(
         simulation_value_ref: ValueRef,
         simulation_fn: InternalFunctionDefinitionRef,
         gamepad_axis_changed_fn: Option<InternalFunctionDefinitionRef>,
@@ -349,7 +354,31 @@ pub fn input_module() -> Result<(SymbolTable, EnumType, EnumType), Error> {
     Ok((symbol_table, axis_enum_type_ref, button_enum_type_ref))
 }
 
-fn boot(script_main: ScriptMain) -> Result<ScriptSimulation, MangroveError> {
+pub fn detect_reload_tick(
+    script_messages: Msg<ScriptMessage>,
+    mut script_simulation: LoReM<ScriptSimulation>,
+    script_game: LoRe<ScriptMain>,
+    mut source_map_resource: ReM<SourceMapResource>,
+    mut err: ReM<ErrorResource>,
+) {
+    for msg in script_messages.iter_previous() {
+        match msg {
+            ScriptMessage::Reload => match boot(&script_game) {
+                Ok(new_simulation) => *script_simulation = new_simulation,
+                Err(mangrove_error) => {
+                    show_mangrove_error(&mangrove_error, &source_map_resource.source_map);
+                    err.has_errors = true;
+
+                    //                    eprintln!("script simulation failed: {}", mangrove_error);
+                    //                    error!(error=?mangrove_error, "script simulation compile failed");
+                }
+            },
+        }
+    }
+}
+
+fn boot(script_main: &ScriptMain) -> Result<ScriptSimulation, MangroveError> {
+    info!("BOOT SIMULATION");
     let mut script_context = ScriptSimulationContext {};
     let empty_external_functions = ExternalFunctions::<ScriptSimulationContext>::new();
     let simulation_value = util_execute_function(
@@ -367,7 +396,7 @@ fn boot(script_main: ScriptMain) -> Result<ScriptSimulation, MangroveError> {
         ));
     };
 
-    let simulation_fn = get_impl_func(
+    let simulation_tick_fn = get_impl_func(
         &script_main.resolved_program.state.associated_impls,
         simulation_struct_type_ref,
         "tick",
@@ -390,7 +419,7 @@ fn boot(script_main: ScriptMain) -> Result<ScriptSimulation, MangroveError> {
 
     Ok(ScriptSimulation::new(
         simulation_value_ref,
-        simulation_fn,
+        simulation_tick_fn,
         gamepad_axis_changed_fn,
         gamepad_button_changed_fn,
         empty_external_functions,
@@ -402,6 +431,7 @@ pub struct ScriptSimulationPlugin;
 
 impl Plugin for ScriptSimulationPlugin {
     fn build(&self, app: &mut App) {
+        app.add_system(PreUpdate, detect_reload_tick);
         app.add_system(Update, simulation_tick);
         app.add_system(Update, input_tick);
 

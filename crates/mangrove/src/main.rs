@@ -46,8 +46,8 @@ fn main() {
     .add_plugins(ScriptPlugin)
     //  .add_plugins(ScriptInputPlugin)
     //.add_plugins(ScriptFlowPlugin)
-    .add_plugins(ScriptGamePlugin);
-    //.add_plugins(ScriptSimulationPlugin);
+    .add_plugins(ScriptGamePlugin)
+    .add_plugins(ScriptSimulationPlugin);
 
     #[cfg(feature = "time_machine")]
     {

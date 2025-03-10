@@ -1,6 +1,5 @@
 use crate::err::show_mangrove_error;
 use crate::script::MangroveError;
-use crate::simulation::{input_tick, simulation_tick};
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use std::rc::Rc;
 use swamp::prelude::{App, LoReM, LocalResource, Msg, Plugin, PreUpdate, ReM, Update};
@@ -108,7 +107,7 @@ pub fn detect_reload_tick(
                     show_mangrove_error(&mangrove_error, &source_map_resource.source_map);
                     err.has_errors = true;
 
-                    //                    eprintln!("script simulation failed: {}", mangrove_error);
+                    eprintln!("compilation failed: {}", mangrove_error);
                     //                    error!(error=?mangrove_error, "script simulation compile failed");
                 }
             },
@@ -121,8 +120,6 @@ pub struct ScriptGamePlugin;
 impl Plugin for ScriptGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_system(PreUpdate, detect_reload_tick);
-        app.add_system(Update, simulation_tick);
-        app.add_system(Update, input_tick);
 
         // HACK: Just add a completely zeroed out ScriptGame and wait for reload message.
         // TODO: Should not try to call updates with params that are not available yet.
