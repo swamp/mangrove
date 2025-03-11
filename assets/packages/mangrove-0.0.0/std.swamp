@@ -1,1 +1,2 @@
+/// Standard package. Do not modify this file!
 external fn print(output: String)
