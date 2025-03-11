@@ -1,6 +1,6 @@
 [package]
 name = "limnus-input-binding"
-version = "0.0.9"
+version = "0.0.16"
 edition = "2024"
 
 [dependencies]

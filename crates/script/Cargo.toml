@@ -1,6 +1,6 @@
 [package]
 name = "mangrove-script"
-version = "0.0.9"
+version = "0.0.16"
 edition = "2024"
 license = "MIT"
 description = "Swamp Script plugin for Mangrove"
@@ -12,7 +12,7 @@ swamp = "0.0.18"
 
 swamp-script = "0.1.1"
 #swamp-script = { path = "../../../script/crates/swamp-script", version = "0.1.0" }
-limnus-input-binding = { path = "../input-binding", version = "0.0.9" }
+limnus-input-binding = { path = "../input-binding", version = "0.0.16" }
 
 limnus-message = "0.0.17"
 limnus-gamepad = "0.0.17"
