@@ -14,7 +14,7 @@ use swamp::prelude::{
     App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update,
 };
 use swamp_script::prelude::*;
-use tracing::{debug, info};
+use tracing::debug;
 
 /// # Panics
 ///
@@ -64,7 +64,7 @@ pub struct ScriptSimulation {
     simulation_tick_fn: InternalFunctionDefinitionRef,
     gamepad_axis_changed_fn: Option<InternalFunctionDefinitionRef>,
     gamepad_button_changed_fn: Option<InternalFunctionDefinitionRef>,
-    external_functions: ExternalFunctions<ScriptSimulationContext>, // It is empty, but stored for convenience
+    external_functions: ExternalFunctions<ScriptSimulationContext>,
     script_context: ScriptSimulationContext, // It is empty, but stored for convenience
     input_module: ModuleRef,
 }
@@ -286,7 +286,7 @@ pub fn input_module() -> Result<(SymbolTable, EnumType, EnumType), Error> {
 
             resolved_variants
                 .insert(variant_name.to_string(), complete_variant)
-                .expect("works")
+                .expect("works");
         }
 
         parent.variants = resolved_variants;
@@ -360,6 +360,9 @@ pub fn detect_reload_tick(
     mut source_map_resource: ReM<SourceMapResource>,
     mut err: ReM<ErrorResource>,
 ) {
+    if err.has_errors {
+        return;
+    }
     for msg in script_messages.iter_previous() {
         match msg {
             ScriptMessage::Reload => match boot(&script_game) {
@@ -421,7 +424,7 @@ fn boot(script_main: &ScriptMain) -> Result<ScriptSimulation, MangroveError> {
     // Convert it to a mutable (reference), so it can be mutated in update ticks
     let simulation_value_ref = Rc::new(RefCell::new(simulation_value));
 
-    let input_module = input_module()?;
+    //let input_module = input_module()?;
 
     Ok(ScriptSimulation::new(
         simulation_value_ref,

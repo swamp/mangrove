@@ -3,7 +3,6 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::render::MathTypes;
-use seq_map::SeqMapError;
 use std::cell::RefCell;
 use std::fmt::{Debug, Display, Formatter};
 use std::io;
@@ -16,34 +15,14 @@ use yansi::Paint;
 
 #[derive(Debug)]
 pub enum MangroveError {
-    IoError(io::Error),
-    DecoratedParseError(DecoratedParseErr),
-    ExecuteError(RuntimeError),
+    RuntimeError(RuntimeError),
     Other(String),
-    ScriptError(ScriptError),
-    SemanticError(SemanticError),
-    Error(Error),
-    DepLoaderError(DepLoaderError),
-    SeqMapError(SeqMapError),
-    EvalLoaderError(LoaderErr),
     ScriptResolveError(ScriptResolveError),
 }
 
 impl Display for MangroveError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{self:?}")
-    }
-}
-
-impl From<io::Error> for MangroveError {
-    fn from(value: io::Error) -> Self {
-        Self::IoError(value)
-    }
-}
-
-impl From<ScriptError> for MangroveError {
-    fn from(value: ScriptError) -> Self {
-        Self::ScriptError(value)
     }
 }
 
@@ -54,37 +33,7 @@ impl From<ScriptResolveError> for MangroveError {
 }
 impl From<RuntimeError> for MangroveError {
     fn from(value: RuntimeError) -> Self {
-        Self::ExecuteError(value)
-    }
-}
-
-impl From<SeqMapError> for MangroveError {
-    fn from(value: SeqMapError) -> Self {
-        Self::SeqMapError(value)
-    }
-}
-
-impl From<SemanticError> for MangroveError {
-    fn from(value: SemanticError) -> Self {
-        Self::SemanticError(value)
-    }
-}
-
-impl From<Error> for MangroveError {
-    fn from(value: Error) -> Self {
-        Self::Error(value)
-    }
-}
-
-impl From<DepLoaderError> for MangroveError {
-    fn from(value: DepLoaderError) -> Self {
-        Self::DepLoaderError(value)
-    }
-}
-
-impl From<LoaderErr> for MangroveError {
-    fn from(value: LoaderErr) -> Self {
-        Self::EvalLoaderError(value)
+        Self::RuntimeError(value)
     }
 }
 
@@ -136,49 +85,12 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
     }
 }
 
-pub fn create_default_color_value(color_struct_type_ref: NamedStructType) -> Value {
-    let fields = vec![
-        Value::Float(Fp::one()), // red
-        Value::Float(Fp::one()), // green
-        Value::Float(Fp::one()), // blue
-        Value::Float(Fp::one()), // alpha
-    ];
-
-    Value::NamedStruct(color_struct_type_ref, value_to_value_ref(&fields))
-}
-
 pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
     fields
         .iter()
         .map(|v| Rc::new(RefCell::new(v.clone())))
         .clone()
         .collect()
-}
-
-pub fn create_default_sprite_params(
-    sprite_params_struct_type_ref: NamedStructType,
-    color_type: &NamedStructType,
-    math_types: &MathTypes,
-) -> Value {
-    let fields = vec![
-        Value::Bool(false), // flip_x
-        Value::Bool(false), // flip_y
-        Value::Int(0),      // rotation
-        create_default_color_value(color_type.clone()),
-        Value::Int(1), // scale
-        Value::Tuple(
-            // texture_position (uv)
-            math_types.pos2_tuple_type.clone(),
-            value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
-        ),
-        Value::Tuple(
-            // texture_size
-            math_types.size2_tuple_type.clone(),
-            value_to_value_ref(&[Value::Int(0), Value::Int(0)]),
-        ),
-    ];
-
-    Value::NamedStruct(sprite_params_struct_type_ref, value_to_value_ref(&fields))
 }
 
 pub fn vec3_like(v: &Value) -> Result<Vec3, ValueError> {

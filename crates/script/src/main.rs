@@ -105,10 +105,8 @@ pub fn detect_reload_tick(
             ScriptMessage::Reload => match compile(&mut source_map_resource) {
                 Ok(new_simulation) => *script_game = new_simulation,
                 Err(mangrove_error) => {
-                    show_mangrove_error(&mangrove_error, &source_map_resource.source_map);
                     err.has_errors = true;
-
-                    eprintln!("compilation failed: {mangrove_error}");
+                    show_mangrove_error(&mangrove_error, &source_map_resource.source_map);
                 }
             },
         }
