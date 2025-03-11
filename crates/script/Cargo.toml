@@ -8,10 +8,10 @@ repository = "https://github.com/swamp/mangrove"
 
 [dependencies]
 swamp = "0.0.18"
-#swamp = { path = "../../../swamp/crates/swamp", version="0.0.18" }
+#swamp = { path = "../../../swamp/crates/swamp", version = "0.0.18" }
 
-swamp-script = "0.0.20"
-#swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.19" }
+#swamp-script = "0.0.20"
+swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.19" }
 limnus-input-binding = { path = "../input-binding", version = "0.0.9" }
 
 limnus-message = "0.0.17"
@@ -23,3 +23,4 @@ seq-map = "0.0.13"
 monotonic-time-rs = "0.0.9"
 yansi = "1.0.1"
 chrono = "0.4.40"
+tiny-ver = "0.1.2"

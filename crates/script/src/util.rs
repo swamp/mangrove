@@ -2,15 +2,13 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::SourceMapResource;
-use crate::script::{MangroveError, compile};
 use std::cell::RefCell;
 use std::rc::Rc;
 use swamp_script::prelude::*;
 
 pub fn get_impl_func(
     associated_impls: &AssociatedImpls,
-    struct_type_ref: &NamedStructTypeRef,
+    struct_type_ref: &NamedStructType,
     name: &str,
 ) -> InternalFunctionDefinitionRef {
     associated_impls
@@ -21,7 +19,7 @@ pub fn get_impl_func(
 
 pub fn get_impl_func_optional(
     associated_impls: &AssociatedImpls,
-    struct_type_ref: &NamedStructTypeRef,
+    struct_type_ref: &NamedStructType,
     name: &str,
 ) -> Option<InternalFunctionDefinitionRef> {
     associated_impls
@@ -111,32 +109,13 @@ impl<C: Default> Default for ScriptModule<C> {
             resolved_program: Program::default(),
             main_module: Rc::new(Module {
                 expression: None,
-                namespace: Namespace::new(vec![], SymbolTable::default()),
+                symbol_table: SymbolTable::new(&[]),
             }),
         }
     }
 }
 
-pub fn compile_types<C>(
-    modules: Vec<&ModuleRef>,
-    root_module_path: &[String],
-    source_map: &mut SourceMapResource,
-) -> Result<ModuleRef, MangroveError> {
-    let mut resolved_program = Program::new();
-    let mut external_functions = ExternalFunctions::<C>::new();
-
-    for module in modules {
-        resolved_program.modules.add(module.clone());
-    }
-
-    compile(
-        root_module_path,
-        &mut resolved_program,
-        &mut external_functions,
-        &mut source_map.wrapper.source_map,
-    )
-}
-
+/*
 pub fn boot<C>(
     modules: Vec<&ModuleRef>,
     root_module_path: &[String],
@@ -210,3 +189,5 @@ pub fn boot<C>(
         main_module.clone(),
     ))
 }
+
+ */

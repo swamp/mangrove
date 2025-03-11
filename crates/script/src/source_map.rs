@@ -6,7 +6,7 @@ use crate::SourceMapResource;
 use seq_map::SeqMap;
 use std::path::Path;
 use swamp::prelude::{App, Plugin};
-use swamp_script::prelude::{SourceMap, SourceMapWrapper};
+use swamp_script::prelude::SourceMap;
 
 pub struct SourceMapPlugin;
 
@@ -17,9 +17,7 @@ impl Plugin for SourceMapPlugin {
         let path_buf = Path::new("scripts/").to_path_buf();
         mounts.insert("crate".to_string(), path_buf).unwrap();
         app.insert_resource(SourceMapResource {
-            wrapper: SourceMapWrapper {
-                source_map: SourceMap::new(&mounts).unwrap(),
-            },
+            source_map: SourceMap::new(&mounts).unwrap(),
         });
     }
 }

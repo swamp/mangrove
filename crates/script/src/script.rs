@@ -25,7 +25,8 @@ pub enum MangroveError {
     Error(Error),
     DepLoaderError(DepLoaderError),
     SeqMapError(SeqMapError),
-    EvalLoaderError(EvalLoaderError),
+    EvalLoaderError(LoaderErr),
+    ScriptResolveError(ScriptResolveError),
 }
 
 impl Display for MangroveError {
@@ -43,6 +44,12 @@ impl From<io::Error> for MangroveError {
 impl From<ScriptError> for MangroveError {
     fn from(value: ScriptError) -> Self {
         Self::ScriptError(value)
+    }
+}
+
+impl From<ScriptResolveError> for MangroveError {
+    fn from(value: ScriptResolveError) -> Self {
+        Self::ScriptResolveError(value)
     }
 }
 impl From<ExecuteError> for MangroveError {
@@ -75,8 +82,8 @@ impl From<DepLoaderError> for MangroveError {
     }
 }
 
-impl From<EvalLoaderError> for MangroveError {
-    fn from(value: EvalLoaderError) -> Self {
+impl From<LoaderErr> for MangroveError {
+    fn from(value: LoaderErr) -> Self {
         Self::EvalLoaderError(value)
     }
 }
@@ -96,21 +103,19 @@ impl From<String> for MangroveError {
 pub fn create_empty_struct_type(
     symbol_table: &mut SymbolTable,
     name: &str,
-    type_id: TypeNumber,
-) -> Result<NamedStructTypeRef, Error> {
-    Ok(symbol_table.add_generated_struct(name, &[("hidden", Type::Unit)], type_id)?)
+) -> Result<NamedStructType, Error> {
+    Ok(symbol_table.add_generated_struct(name, &[("hidden", Type::Unit)])?)
 }
 
-pub fn create_empty_struct_value(struct_type: NamedStructTypeRef) -> Value {
+pub fn create_empty_struct_value(struct_type: NamedStructType) -> Value {
     Value::NamedStruct(struct_type, [].to_vec())
 }
 
 pub fn create_empty_struct_value_util(
     symbol_table: &mut SymbolTable,
     name: &str,
-    type_id: TypeNumber,
-) -> Result<(Value, NamedStructTypeRef), Error> {
-    let struct_type = create_empty_struct_type(symbol_table, name, type_id)?;
+) -> Result<(Value, NamedStructType), Error> {
+    let struct_type = create_empty_struct_type(symbol_table, name)?;
     Ok((create_empty_struct_value(struct_type.clone()), struct_type))
 }
 
@@ -137,7 +142,7 @@ pub fn sprite_params(sprite_params_struct: &Value) -> Result<SpriteParams, Value
     }
 }
 
-pub fn create_default_color_value(color_struct_type_ref: NamedStructTypeRef) -> Value {
+pub fn create_default_color_value(color_struct_type_ref: NamedStructType) -> Value {
     let fields = vec![
         Value::Float(Fp::one()), // red
         Value::Float(Fp::one()), // green
@@ -157,8 +162,8 @@ pub fn value_to_value_ref(fields: &[Value]) -> Vec<ValueRef> {
 }
 
 pub fn create_default_sprite_params(
-    sprite_params_struct_type_ref: NamedStructTypeRef,
-    color_type: &NamedStructTypeRef,
+    sprite_params_struct_type_ref: NamedStructType,
+    color_type: &NamedStructType,
     math_types: &MathTypes,
 ) -> Value {
     let fields = vec![
@@ -221,33 +226,21 @@ pub fn uvec2_like(v: &Value) -> Result<UVec2, ValueError> {
     }
 }
 
-fn prepare_main_module<C>(
-    state: &mut ProgramState,
-    externals: &mut ExternalFunctions<C>,
-    root_module_path: &[String],
-) -> Result<Module, Error> {
-    let any_parameter = TypeForParameter {
-        name: String::default(),
-        resolved_type: Type::String,
-        is_mutable: false,
-        node: None,
-    };
+pub fn register_print<C>(modules: &Modules, externals: &mut ExternalFunctions<C>) {
+    let mangrove_std_symbol_table = &modules
+        .get(&["mangrove".to_string(), "std".to_string()])
+        .unwrap()
+        .symbol_table;
 
-    let print_id = state.allocate_external_function_id();
+    register_print_internal(&mangrove_std_symbol_table, externals);
+}
 
-    let print_external = ExternalFunctionDefinition {
-        name: None,
-        assigned_name: "print".to_string(),
-        signature: Signature {
-            parameters: [any_parameter].to_vec(),
-            return_type: Box::from(Type::Unit),
-        },
-        id: print_id,
-    };
+fn register_print_internal<C>(std_module: &SymbolTable, externals: &mut ExternalFunctions<C>) {
+    let print_id = std_module
+        .get_external_function_declaration("print")
+        .unwrap()
+        .id;
 
-    let mut symbol_table = SymbolTable::default();
-
-    symbol_table.add_external_function_declaration(print_external)?;
     externals
         .register_external_function(print_id, move |args: &[VariableValue], _context| {
             if let Some(value) = args.first() {
@@ -262,10 +255,6 @@ fn prepare_main_module<C>(
             }
         })
         .expect("should work to register");
-
-    let main_module = Module::new(root_module_path, symbol_table, None);
-
-    Ok(main_module)
 }
 
 #[derive(Debug)]
@@ -275,29 +264,16 @@ pub struct DecoratedParseErr {
 }
 use chrono::{DateTime, Utc};
 
-pub fn compile<C>(
+pub fn compile(
     module_path: &[String],
-    analyzed_program: &mut Program,
-    externals: &mut ExternalFunctions<C>,
     source_map: &mut SourceMap,
-) -> Result<ModuleRef, MangroveError> {
-    let std_module =
-        prepare_main_module(&mut analyzed_program.state, externals, &["std".to_string()])?;
-
-    analyzed_program
-        .auto_use_modules
-        .modules
-        .push(std_module.namespace.symbol_table);
-
-    let core_module = create_std_module();
-    analyzed_program
-        .auto_use_modules
-        .modules
-        .push(core_module.namespace.symbol_table);
-
+) -> Result<Program, MangroveError> {
     let start = Instant::now();
 
-    compile_and_analyze(module_path, analyzed_program, source_map)?;
+    //let mut root_versions = SeqMap::new();
+    //root_versions.insert("mangrove".to_string(), "0.0.0".parse().unwrap())?;
+
+    let program = compile_and_analyze(module_path, source_map)?;
 
     let end = Instant::now();
     let duration = end.duration_since(start);
@@ -311,7 +287,8 @@ pub fn compile<C>(
         "took".bright_cyan(),
         duration.blue(),
     );
-    Ok(analyzed_program.modules.get(module_path).unwrap().clone())
+
+    Ok(program)
 }
 
 /*

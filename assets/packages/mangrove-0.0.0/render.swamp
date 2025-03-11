@@ -17,7 +17,7 @@ struct Color {
 
 impl Color {
     fn new(r: Float, g: Float, b: Float, a: Float) -> Color {
-        Color { r, g, b, a }
+        Color { r:r, g:g, b:b, a:a }
     }
 
     fn default() -> Color {
@@ -40,7 +40,7 @@ struct SpriteParams {
   color: Color, /// Color tint
   scale: Int, /// Integer scaling, should rarely be used since it generally doesn't look good
   uv: Pos2, /// u,v position in texture
-  size: Size, /// the size in pixel that it should be expanded to. generally 0,0.
+  size: Size2, /// the size in pixel that it should be expanded to. generally 0,0.
 }
 
 impl SpriteParams {
@@ -85,6 +85,10 @@ impl Gfx {
 
     /// Render text with the specified tint. `Color::default()` does not change the color
     external fn text(mut self, position: Pos3, text: String, material: FontAndMaterialHandle, color: Color)
+
+    external fn set_resolution_scale(mut self, scale: Int)
+
+    external fn set_virtual_resolution(mut self, size: Size2)
 }
 
 

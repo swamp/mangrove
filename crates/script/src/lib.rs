@@ -11,6 +11,7 @@ pub mod convert;
 pub mod err;
 pub mod flow;
 pub mod input;
+pub mod main;
 mod modules;
 pub mod render;
 mod script;
@@ -20,7 +21,7 @@ pub mod simulation;
 pub mod source_map;
 mod util;
 
-use swamp_script::prelude::SourceMapWrapper;
+use swamp_script::prelude::{SourceMap, SourceMapWrapper};
 
 #[derive(Message, Debug)]
 pub enum ScriptMessage {
@@ -29,13 +30,21 @@ pub enum ScriptMessage {
 
 #[derive(Resource, Debug)]
 pub struct SourceMapResource {
-    pub wrapper: SourceMapWrapper,
+    pub source_map: SourceMap,
+}
+
+impl SourceMapResource {
+    pub fn wrapper(&self) -> SourceMapWrapper {
+        SourceMapWrapper {
+            source_map: &self.source_map,
+        }
+    }
 }
 
 impl SourceMapResource {
     #[must_use]
     pub fn base_path(&self) -> &Path {
-        self.wrapper.source_map.base_path("crate")
+        self.wrapper().source_map.base_path("crate")
     }
 }
 

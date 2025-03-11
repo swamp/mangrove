@@ -5,9 +5,7 @@
 use crate::ErrorResource;
 use crate::script::{DecoratedParseErr, MangroveError};
 use swamp::prelude::{App, Plugin};
-use swamp_script::prelude::{
-    SourceMap, show_eval_loader_error, show_execute_error, show_parse_error_internal,
-};
+use swamp_script::prelude::SourceMap;
 use tracing::error;
 
 pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
@@ -16,8 +14,8 @@ pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
         MangroveError::DecoratedParseError(decorated_parse_error) => {
             show_decorated(decorated_parse_error, source_map);
         }
-        MangroveError::ExecuteError(err) => show_execute_error(err, source_map),
-        MangroveError::Other(_) => todo!(),
+        MangroveError::ExecuteError(err) => error!(?err, "runtime error"),
+        MangroveError::Other(description) => error!(?err, ?description, "unknown error"),
         MangroveError::SemanticError(err) => error!(?err, "semantic error"),
         MangroveError::Error(resolve_err) => error!(?resolve_err, "resolve_err"),
         MangroveError::DepLoaderError(err) => {
@@ -25,12 +23,13 @@ pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
         }
         MangroveError::SeqMapError(_) => todo!(),
         MangroveError::ScriptError(_) => todo!(),
-        MangroveError::EvalLoaderError(err) => show_eval_loader_error(err, source_map),
+        MangroveError::EvalLoaderError(err) => todo!(), //show_eval_loader_error(err, source_map),
+        _ => {}
     }
 }
 
 pub fn show_decorated(err: &DecoratedParseErr, source_map: &SourceMap) {
-    show_parse_error_internal(&err.specific, &err.span, source_map);
+    todo!() //show_parse_error_internal(&err.specific, &err.span, source_map);
 }
 
 pub struct ErrorPlugin;
