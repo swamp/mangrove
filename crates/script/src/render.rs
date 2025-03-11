@@ -1749,6 +1749,7 @@ pub fn boot(
     script_main: &ScriptMain,
     resource_storage: &mut ResourceStorage,
 ) -> Result<ScriptRender, MangroveError> {
+    debug!("boot script render");
     //    let mut resolved_program = Program::new();
     let mut external_functions = ExternalFunctions::<ScriptRenderContext>::new();
     let mangrove_render_module_path = &["mangrove".to_string(), "render".into()];

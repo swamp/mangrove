@@ -912,7 +912,7 @@ checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
 
 [[package]]
 name = "eira"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "yansi",
 ]
@@ -3795,7 +3795,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-compile",
@@ -3818,7 +3818,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-analyzer"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "seq-fmt",
  "seq-map",
@@ -3834,11 +3834,11 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-ast"
-version = "0.0.19"
+version = "0.1.0"
 
 [[package]]
 name = "swamp-script-compile"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "regex",
  "seq-map",
@@ -3861,7 +3861,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-core"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "swamp-script-modules",
  "swamp-script-node",
@@ -3872,7 +3872,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-core-extra"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "fixed32",
  "seq-map",
@@ -3885,7 +3885,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-dep-loader"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "dirs",
  "seq-map",
@@ -3897,7 +3897,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-error-report"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "eira",
  "swamp-script-analyzer",
@@ -3913,7 +3913,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3929,7 +3929,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-eval-loader"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "swamp-script-analyzer",
  "swamp-script-dep-loader",
@@ -3941,7 +3941,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-modules"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "seq-fmt",
  "seq-map",
@@ -3955,11 +3955,11 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-node"
-version = "0.0.19"
+version = "0.1.0"
 
 [[package]]
 name = "swamp-script-parser"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "pest",
  "pest_derive",
@@ -3969,7 +3969,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-pretty-print"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "seq-map",
  "swamp-script-core-extra",
@@ -3982,7 +3982,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-semantic"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "fixed32",
  "seq-fmt",
@@ -3995,7 +3995,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-source-map"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "pathdiff",
  "seq-map",
@@ -4005,7 +4005,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-source-map-lookup"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "swamp-script-core-extra",
  "swamp-script-node",
@@ -4014,7 +4014,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-std"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "swamp-script-semantic",
  "swamp-script-types",
@@ -4022,7 +4022,7 @@ dependencies = [
 
 [[package]]
 name = "swamp-script-types"
-version = "0.0.19"
+version = "0.1.0"
 dependencies = [
  "seq-fmt",
  "seq-map",

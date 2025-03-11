@@ -22,5 +22,11 @@ cargo deps-order --workspace-only --exec "cargo publish" --wait 5
 ```console
 tokei crates/ --files --sort code --type rust
 ```
+
 export MTL_DEBUG_LAYER=1
 export MTL_DEVICE_WRAPPER_TYPE=1
+
+```sh
+cd ~/.swamp-dev/packages
+tar -czvhf ~/packages.tar.gz .
+```

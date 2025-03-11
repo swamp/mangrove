@@ -14,7 +14,7 @@ use swamp::prelude::{
     App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update,
 };
 use swamp_script::prelude::*;
-use tracing::info;
+use tracing::{debug, info};
 
 /// # Panics
 ///
@@ -377,7 +377,7 @@ pub fn detect_reload_tick(
 }
 
 fn boot(script_main: &ScriptMain) -> Result<ScriptSimulation, MangroveError> {
-    info!("BOOT SIMULATION");
+    debug!("boot simulation");
     let mut script_context = ScriptSimulationContext {};
 
     let mut simulation_externals = ExternalFunctions::<ScriptSimulationContext>::new();

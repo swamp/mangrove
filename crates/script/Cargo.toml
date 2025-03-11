@@ -10,8 +10,8 @@ repository = "https://github.com/swamp/mangrove"
 swamp = "0.0.18"
 #swamp = { path = "../../../swamp/crates/swamp", version = "0.0.18" }
 
-#swamp-script = "0.0.20"
-swamp-script = { path = "../../../script/crates/swamp-script", version = "0.0.19" }
+#swamp-script = "0.1.0"
+swamp-script = { path = "../../../script/crates/swamp-script", version = "0.1.0" }
 limnus-input-binding = { path = "../input-binding", version = "0.0.9" }
 
 limnus-message = "0.0.17"

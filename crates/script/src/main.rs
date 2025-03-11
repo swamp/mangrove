@@ -7,7 +7,7 @@ use swamp_script::prelude::{
     Constants, ExternalFunctions, InternalFunctionDefinition, InternalFunctionDefinitionRef,
     Program, eval_constants,
 };
-use tracing::error;
+use tracing::{debug, error};
 
 #[derive(LocalResource, Debug)]
 pub struct ScriptMain {
@@ -38,6 +38,8 @@ pub struct ScriptMainContext {}
 pub struct ScriptRender {}
 
 pub fn compile(source_map: &mut SourceMapResource) -> Result<ScriptMain, MangroveError> {
+    debug!("start compiling");
+
     let crate_main_path = &["crate".to_string(), "main".to_string()];
 
     let resolved_program = crate::script::compile(crate_main_path, &mut source_map.source_map)?;
@@ -106,17 +108,16 @@ pub fn detect_reload_tick(
                     show_mangrove_error(&mangrove_error, &source_map_resource.source_map);
                     err.has_errors = true;
 
-                    eprintln!("compilation failed: {}", mangrove_error);
-                    //                    error!(error=?mangrove_error, "script simulation compile failed");
+                    eprintln!("compilation failed: {mangrove_error}");
                 }
             },
         }
     }
 }
 
-pub struct ScriptGamePlugin;
+pub struct ScriptMainPlugin;
 
-impl Plugin for ScriptGamePlugin {
+impl Plugin for ScriptMainPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(PreUpdate, detect_reload_tick);
 
