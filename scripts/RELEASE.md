@@ -26,7 +26,12 @@ tokei crates/ --files --sort code --type rust
 export MTL_DEBUG_LAYER=1
 export MTL_DEVICE_WRAPPER_TYPE=1
 
+## Package registry
+
+make the files readonly and tar them
+
 ```sh
 cd ~/.swamp-dev/packages
+chmod a-w -R ./
 tar -czvhf ~/packages.tar.gz .
 ```
