@@ -1611,7 +1611,7 @@ impl ScriptRender {
         wgpu_render: &mut Render,
         simulation_value_ref: &Value,
         _source_map_wrapper: &SourceMapWrapper,
-    ) -> Result<(), ExecuteError> {
+    ) -> Result<(), RuntimeError> {
         let mut script_context = ScriptRenderContext {
             game_assets: None,
             render: Some(RenderWrapper::new(wgpu_render)),

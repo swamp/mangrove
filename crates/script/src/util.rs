@@ -73,7 +73,7 @@ impl<C> ScriptModule<C> {
         &mut self,
         arguments: &[Value],
         debug_source_map: Option<&dyn SourceMapLookup>,
-    ) -> Result<Value, ExecuteError> {
+    ) -> Result<Value, RuntimeError> {
         util_execute_member_function_mut(
             &self.external_functions,
             &self.constants,

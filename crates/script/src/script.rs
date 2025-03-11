@@ -18,7 +18,7 @@ use yansi::Paint;
 pub enum MangroveError {
     IoError(io::Error),
     DecoratedParseError(DecoratedParseErr),
-    ExecuteError(ExecuteError),
+    ExecuteError(RuntimeError),
     Other(String),
     ScriptError(ScriptError),
     SemanticError(SemanticError),
@@ -52,8 +52,8 @@ impl From<ScriptResolveError> for MangroveError {
         Self::ScriptResolveError(value)
     }
 }
-impl From<ExecuteError> for MangroveError {
-    fn from(value: ExecuteError) -> Self {
+impl From<RuntimeError> for MangroveError {
+    fn from(value: RuntimeError) -> Self {
         Self::ExecuteError(value)
     }
 }
@@ -85,12 +85,6 @@ impl From<DepLoaderError> for MangroveError {
 impl From<LoaderErr> for MangroveError {
     fn from(value: LoaderErr) -> Self {
         Self::EvalLoaderError(value)
-    }
-}
-
-impl From<DecoratedParseErr> for MangroveError {
-    fn from(value: DecoratedParseErr) -> Self {
-        Self::DecoratedParseError(value)
     }
 }
 

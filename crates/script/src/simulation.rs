@@ -107,7 +107,7 @@ impl ScriptSimulation {
         script_main: &ScriptMain,
         fn_def: &InternalFunctionDefinitionRef,
         arguments: &[Value],
-    ) -> Result<(), ExecuteError> {
+    ) -> Result<(), RuntimeError> {
         let mut complete_arguments = Vec::new();
         complete_arguments.push(VariableValue::Reference(self.simulation_value_ref.clone())); // push simulation self first
         for arg in arguments {

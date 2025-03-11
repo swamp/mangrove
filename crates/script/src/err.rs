@@ -4,32 +4,41 @@
  */
 use crate::ErrorResource;
 use crate::script::{DecoratedParseErr, MangroveError};
+use std::env::current_dir;
+use std::path::Path;
 use swamp::prelude::{App, Plugin};
-use swamp_script::prelude::SourceMap;
+use swamp_script::prelude::{
+    DepLoaderError, SourceMap, show_analyzer_error, show_dependency_error, show_parse_error,
+    show_runtime_error, show_script_resolve_error, show_semantic_error,
+};
 use tracing::error;
 
 pub fn show_mangrove_error(err: &MangroveError, source_map: &SourceMap) {
+    let current_path = &*current_dir().unwrap();
     match err {
-        MangroveError::IoError(err) => error!(?err, "io error"),
         MangroveError::DecoratedParseError(decorated_parse_error) => {
-            show_decorated(decorated_parse_error, source_map);
+            show_parse_error(
+                &decorated_parse_error.specific,
+                &decorated_parse_error.span,
+                source_map,
+                current_path,
+            );
         }
-        MangroveError::ExecuteError(err) => error!(?err, "runtime error"),
+        MangroveError::ExecuteError(err) => show_runtime_error(err, source_map, current_path),
         MangroveError::Other(description) => error!(?err, ?description, "unknown error"),
-        MangroveError::SemanticError(err) => error!(?err, "semantic error"),
-        MangroveError::Error(resolve_err) => error!(?resolve_err, "resolve_err"),
-        MangroveError::DepLoaderError(err) => {
-            error!(?err, "deploader");
+        MangroveError::SemanticError(err) => show_semantic_error(err, source_map, current_path),
+        MangroveError::Error(resolve_err) => {
+            show_analyzer_error(resolve_err, source_map, current_path)
         }
-        MangroveError::SeqMapError(_) => todo!(),
+        MangroveError::DepLoaderError(err) => match err {
+            DepLoaderError::DependencyError(err) => {
+                show_dependency_error(err, source_map, current_path)
+            }
+        },
         MangroveError::ScriptError(_) => todo!(),
         MangroveError::EvalLoaderError(err) => todo!(), //show_eval_loader_error(err, source_map),
         _ => {}
     }
-}
-
-pub fn show_decorated(err: &DecoratedParseErr, source_map: &SourceMap) {
-    todo!() //show_parse_error_internal(&err.specific, &err.span, source_map);
 }
 
 pub struct ErrorPlugin;

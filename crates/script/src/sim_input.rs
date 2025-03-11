@@ -63,7 +63,7 @@ impl ScriptInput {
         &mut self,
         logic: Value,
         debug_source_map: Option<&dyn SourceMapLookup>,
-    ) -> Result<(), ExecuteError> {
+    ) -> Result<(), RuntimeError> {
         let _ = self
             .script_updater
             .update(&[logic.clone()], debug_source_map);
