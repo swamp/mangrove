@@ -3,8 +3,8 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::err::show_mangrove_error;
-use crate::main::ScriptMain;
 use crate::script::{MangroveError, register_print};
+use crate::script_main::ScriptMain;
 use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};

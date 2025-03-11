@@ -3,11 +3,11 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::err::show_mangrove_error;
-use crate::main::ScriptMain;
 use crate::script::{
     MangroveError, color_like, create_empty_struct_value, register_print, sprite_params,
     uvec2_like, vec3_like,
 };
+use crate::script_main::ScriptMain;
 use crate::simulation::ScriptSimulation;
 use crate::util::get_impl_func;
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
