@@ -1927,7 +1927,7 @@ dependencies = [
 
 [[package]]
 name = "limnus-input"
-version = "0.0.9"
+version = "0.0.16"
 dependencies = [
  "limnus-app",
  "limnus-message",
@@ -1937,7 +1937,7 @@ dependencies = [
 
 [[package]]
 name = "limnus-input-binding"
-version = "0.0.9"
+version = "0.0.16"
 dependencies = [
  "limnus-app",
  "limnus-default-stages",
@@ -2059,7 +2059,7 @@ dependencies = [
 
 [[package]]
 name = "limnus-steam-input"
-version = "0.0.9"
+version = "0.0.16"
 dependencies = [
  "limnus-app",
  "limnus-default-stages",
@@ -2076,7 +2076,7 @@ dependencies = [
 
 [[package]]
 name = "limnus-steamworks"
-version = "0.0.9"
+version = "0.0.16"
 dependencies = [
  "limnus-app",
  "limnus-default-stages",
@@ -2236,7 +2236,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-engine"
-version = "0.0.9"
+version = "0.0.16"
 dependencies = [
  "limnus-steam-input",
  "limnus-steamworks",
@@ -2247,7 +2247,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-save-detector"
-version = "0.0.9"
+version = "0.0.16"
 dependencies = [
  "limnus-message",
  "mangrove-script",
@@ -2258,7 +2258,7 @@ dependencies = [
 
 [[package]]
 name = "mangrove-script"
-version = "0.0.9"
+version = "0.0.16"
 dependencies = [
  "chrono",
  "limnus-gamepad",
