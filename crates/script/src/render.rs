@@ -13,6 +13,7 @@ use crate::util::get_impl_func;
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use monotonic_time_rs::Millis;
 use std::cell::RefCell;
+use std::env::current_dir;
 use std::fmt::{Debug, Display, Formatter};
 use std::rc::Rc;
 use swamp::prelude::{
@@ -864,7 +865,6 @@ pub fn update_screen_resolution_tick(
 ) {
     if script.display_settings.scale != 0 {
         let new_size = wgpu_render.virtual_surface_size() * script.display_settings.scale;
-        debug!(?new_size, "resizing");
         window_settings.requested_surface_size = new_size;
     }
 }
@@ -877,7 +877,7 @@ pub fn render_tick(
     simulation: LoRe<ScriptSimulation>,
     mut wgpu_render: ReM<Render>,
 
-    error: Re<ErrorResource>,
+    mut error: ReM<ErrorResource>,
     source_map: Re<SourceMapResource>,
 ) {
     if error.has_errors {
@@ -890,7 +890,11 @@ pub fn render_tick(
             &simulation.immutable_simulation_value(),
             &source_map.wrapper(),
         )
-        .expect("script.render() crashed");
+        .inspect_err(|runtime_err| {
+            error.has_errors = true;
+            let current_path = &*current_dir().unwrap();
+            show_runtime_error(runtime_err, &source_map.source_map, &current_path)
+        });
 }
 
 pub fn detect_reload_tick(

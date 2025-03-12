@@ -9,6 +9,7 @@ use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
 use limnus_gamepad::{Axis, AxisValueType, Button, ButtonValueType, GamePadId, GamepadMessage};
 use std::cell::RefCell;
+use std::env::current_dir;
 use std::rc::Rc;
 use swamp::prelude::{
     App, Fp, LoRe, LoReM, LocalResource, Msg, Plugin, PreUpdate, Re, ReM, Update,
@@ -22,7 +23,7 @@ pub fn simulation_tick(
     mut main: LoReM<ScriptMain>,
     mut script_simulation: LoReM<ScriptSimulation>,
     source_map: Re<SourceMapResource>,
-    error: Re<ErrorResource>,
+    mut error: ReM<ErrorResource>,
 ) {
     let lookup: &dyn SourceMapLookup = &source_map.wrapper();
     if error.has_errors {
@@ -42,7 +43,11 @@ pub fn simulation_tick(
         &mut script_context,
         Some(lookup),
     )
-    .unwrap();
+    .inspect_err(|runtime_err| {
+        error.has_errors = true;
+        let current_path = &*current_dir().unwrap();
+        show_runtime_error(runtime_err, &source_map.source_map, &current_path)
+    });
 }
 
 pub fn input_tick(
