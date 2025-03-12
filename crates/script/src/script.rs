@@ -2,10 +2,8 @@
  * Copyright (c) Peter Bjorklund. All rights reserved. https://github.com/swamp/mangrove
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
-use crate::render::MathTypes;
 use std::cell::RefCell;
 use std::fmt::{Debug, Display, Formatter};
-use std::io;
 use std::rc::Rc;
 use std::time::Instant;
 use swamp::prelude::{Color, Rotation, SpriteParams, UVec2, Vec2, Vec3};
