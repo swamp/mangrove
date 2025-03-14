@@ -457,7 +457,7 @@ impl Plugin for ScriptSimulationPlugin {
                 body: Expression {
                     ty: Type::Int,
                     node: Default::default(),
-                    kind: ExpressionKind::Break,
+                    kind: ExpressionKind::Block(vec![]),
                 },
                 name: LocalIdentifier(Node::default()),
                 assigned_name: "".to_string(),

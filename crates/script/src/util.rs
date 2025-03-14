@@ -94,7 +94,7 @@ impl<C: Default> Default for ScriptModule<C> {
                 body: Expression {
                     ty: Type::Int,
                     node: Node::default(),
-                    kind: ExpressionKind::Break,
+                    kind: ExpressionKind::Block(vec![]),
                 },
                 name: LocalIdentifier(Node::default()),
                 assigned_name: "".to_string(),

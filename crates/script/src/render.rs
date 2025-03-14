@@ -938,7 +938,7 @@ impl Plugin for ScriptRenderPlugin {
                 body: Expression {
                     ty: Type::Int,
                     node: Node::default(),
-                    kind: ExpressionKind::Break,
+                    kind: ExpressionKind::Block(vec![]),
                 },
                 name: LocalIdentifier(Node::default()),
                 assigned_name: String::new(),
