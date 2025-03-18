@@ -102,13 +102,16 @@ impl<C: Default> Default for ScriptModule<C> {
                     parameters: vec![],
                     return_type: Box::new(Type::Int),
                 },
+                variable_scopes: FunctionScopeState::new(Type::Unit),
+                function_scope_state: Vec::default(),
+                program_unique_id: 0,
             }),
             external_functions: ExternalFunctions::<C>::new(),
             constants: Constants::default(),
             script_context: Default::default(),
             resolved_program: Program::default(),
             main_module: Rc::new(Module {
-                expression: None,
+                main_expression: None,
                 symbol_table: SymbolTable::new(&[]),
             }),
         }

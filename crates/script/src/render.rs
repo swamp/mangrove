@@ -96,8 +96,8 @@ impl RenderWrapper {
         &self,
         pos: Vec3,
         size: UVec2,
-        corner_size: UVec2,
-        texture_window_size: UVec2,
+        corner_size_in_texture: UVec2,
+        window_size_in_texture: UVec2,
         material: &MaterialRef,
         atlas_offset: UVec2,
         color: Color,
@@ -108,7 +108,7 @@ impl RenderWrapper {
             render = &mut *self.render;
         }
 
-        render.draw_nine_slice(pos, size, corner_size, size, material, atlas_offset, color);
+        render.draw_nine_slice(pos, size, corner_size_in_texture, window_size_in_texture, material, atlas_offset, color);
     }
 
     pub fn sprite_atlas_frame(&mut self, position: Vec3, frame: u16, atlas: &impl FrameLookup) {
@@ -482,17 +482,18 @@ pub fn register_gfx_members(
             let params = convert_to_values(mem_val).unwrap();
             //let _self_value = &params[0]; // the Gfx struct is empty by design.
             let position = vec3_like(&params[1])?;
-            let complete_size = uvec2_like(&params[2])?;
-            let corner_size = uvec2_like(&params[3])?;
-            let material_ref = params[4].downcast_hidden_rust::<MaterialWrapper>().unwrap();
-            let atlas_offset = uvec2_like(&params[5])?;
-            let color = color_like(&params[6])?;
+            let window_size_on_screen = uvec2_like(&params[2])?;
+            let corner_size_in_texture = uvec2_like(&params[3])?;
+            let window_size_in_texture = uvec2_like(&params[4])?;
+            let material_ref = params[5].downcast_hidden_rust::<MaterialWrapper>().unwrap();
+            let atlas_offset = uvec2_like(&params[6])?;
+            let color = color_like(&params[7])?;
 
             context.render.as_mut().unwrap().push_nine_slice(
                 position,
-                complete_size,
-                corner_size,
-                complete_size,
+                window_size_on_screen,
+                corner_size_in_texture,
+                window_size_in_texture,
                 &material_ref.borrow().0,
                 atlas_offset,
                 color,
@@ -946,6 +947,9 @@ impl Plugin for ScriptRenderPlugin {
                     parameters: vec![],
                     return_type: Box::from(Type::Unit),
                 },
+                variable_scopes: FunctionScopeState::new(Type::Unit),
+                function_scope_state: Vec::default(),
+                program_unique_id: 0,
             }),
             externals: ExternalFunctions::new(),
             display_settings: DisplaySettings::new(),

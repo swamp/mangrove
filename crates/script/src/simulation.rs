@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::err::show_mangrove_error;
-use crate::script::{MangroveError, register_print};
+use crate::script::{register_print, MangroveError};
 use crate::script_main::ScriptMain;
 use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
@@ -173,7 +173,7 @@ impl ScriptSimulation {
                 .clone();
 
             if let EnumVariantType::Nothing(simple) = variant {
-                Value::EnumVariantSimple(simple.clone())
+                Value::EnumVariantSimple(axis_enum, simple.clone())
             } else {
                 panic!("variant axis problem");
             }
@@ -235,7 +235,7 @@ impl ScriptSimulation {
                 .clone();
 
             if let EnumVariantType::Nothing(simple) = variant {
-                Value::EnumVariantSimple(simple.clone())
+                Value::EnumVariantSimple(button_enum, simple.clone())
             } else {
                 panic!("variant axis problem");
             }
@@ -465,13 +465,16 @@ impl Plugin for ScriptSimulationPlugin {
                     parameters: vec![],
                     return_type: Box::from(Type::Int),
                 },
+                variable_scopes: FunctionScopeState::new(Type::Unit),
+                function_scope_state: Vec::default(),
+                program_unique_id: 0,
             }),
             gamepad_axis_changed_fn: None,
             gamepad_button_changed_fn: None,
             external_functions: ExternalFunctions::new(),
             script_context: ScriptSimulationContext {},
             input_module: Rc::new(Module {
-                expression: None,
+                main_expression: None,
                 symbol_table: SymbolTable::new(&[]),
             }),
         });
