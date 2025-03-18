@@ -80,8 +80,8 @@ impl Gfx {
     external fn quad(mut self, position: Pos3, size: Size2, color: Color)
 
     /// Nine slice or nine patch rendering. https://en.wikipedia.org/wiki/9-slice_scaling
-    external fn nine_slice(mut self, position: Pos3, total_size: Size2, corner_size: Size2,
-         texture_window_size: Size2, material: MaterialHandle, texture_position: UPos2, color: Color)
+    external fn nine_slice(mut self, position: Pos3, window_size: Size2, corner_size_in_texture: Size2, window_size_in_texture: Size2,
+         material: MaterialHandle, offset_in_texture: UPos2, color: Color)
 
     /// Render text with the specified tint. `Color::default()` does not change the color
     external fn text(mut self, position: Pos3, text: String, material: FontAndMaterialHandle, color: Color)
@@ -102,4 +102,3 @@ impl Assets {
 
     external fn bm_font(mut self, name: AssetName) -> FontAndMaterialHandle
 }
-
