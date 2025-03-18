@@ -108,7 +108,15 @@ impl RenderWrapper {
             render = &mut *self.render;
         }
 
-        render.draw_nine_slice(pos, size, corner_size_in_texture, window_size_in_texture, material, atlas_offset, color);
+        render.draw_nine_slice(
+            pos,
+            size,
+            corner_size_in_texture,
+            window_size_in_texture,
+            material,
+            atlas_offset,
+            color,
+        );
     }
 
     pub fn sprite_atlas_frame(&mut self, position: Vec3, frame: u16, atlas: &impl FrameLookup) {

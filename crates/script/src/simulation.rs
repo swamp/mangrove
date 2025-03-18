@@ -3,7 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::err::show_mangrove_error;
-use crate::script::{register_print, MangroveError};
+use crate::script::{MangroveError, register_print};
 use crate::script_main::ScriptMain;
 use crate::util::{get_impl_func, get_impl_func_optional};
 use crate::{ErrorResource, ScriptMessage, SourceMapResource};
@@ -272,6 +272,7 @@ pub fn input_module() -> Result<(SymbolTable, EnumType, EnumType), Error> {
             assigned_name: "Axis".to_string(),
             module_path: Vec::default(),
             variants: SeqMap::default(),
+            instantiated_type_parameters: vec![],
         };
 
         let variant_names = ["LeftStickX", "LeftStickY", "RightStickX", "RightStickY"];
@@ -309,6 +310,7 @@ pub fn input_module() -> Result<(SymbolTable, EnumType, EnumType), Error> {
             assigned_name: "Button".to_string(),
             module_path: Vec::default(),
             variants: Default::default(),
+            instantiated_type_parameters: vec![],
         };
 
         let button_names = [
