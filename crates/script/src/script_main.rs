@@ -15,6 +15,7 @@ pub struct ScriptMain {
     pub resolved_program: Program,
     pub simulation_new_fn: InternalFunctionDefinitionRef,
     pub render_new_fn: InternalFunctionDefinitionRef,
+    pub input_new_fn: InternalFunctionDefinitionRef,
 }
 
 impl Default for ScriptMain {
@@ -28,6 +29,7 @@ impl Default for ScriptMain {
             render_new_fn: InternalFunctionDefinitionRef::from(
                 InternalFunctionDefinition::default(),
             ),
+            input_new_fn: InternalFunctionDefinitionRef::from(InternalFunctionDefinition::default()),
         }
     }
 }
@@ -54,7 +56,7 @@ pub fn compile(source_map: &mut SourceMapResource) -> Result<ScriptMain, Mangrov
             Rc::clone(function_ref)
         } else {
             error!(?main_module.symbol_table, "empty? main module");
-            return Err(MangroveError::Other("no main function".to_string()));
+            return Err(MangroveError::Other("no simulation function".to_string()));
         }
     };
 
@@ -68,7 +70,21 @@ pub fn compile(source_map: &mut SourceMapResource) -> Result<ScriptMain, Mangrov
             Rc::clone(function_ref)
         } else {
             error!(?main_module.symbol_table, "empty? main module");
-            return Err(MangroveError::Other("no main function".to_string()));
+            return Err(MangroveError::Other("no render function".to_string()));
+        }
+    };
+
+    let input_new_fn = {
+        let main_module = resolved_program
+            .modules
+            .get(crate_main_path)
+            .expect("could not find main module");
+
+        if let Some(function_ref) = main_module.symbol_table.get_internal_function("input") {
+            Rc::clone(function_ref)
+        } else {
+            error!(?main_module.symbol_table, "empty? main module");
+            return Err(MangroveError::Other("no input function".to_string()));
         }
     };
 
@@ -89,6 +105,7 @@ pub fn compile(source_map: &mut SourceMapResource) -> Result<ScriptMain, Mangrov
         resolved_program,
         simulation_new_fn,
         render_new_fn,
+        input_new_fn,
     };
 
     Ok(script_game)

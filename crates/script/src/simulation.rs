@@ -3,6 +3,7 @@
  * Licensed under the MIT License. See LICENSE in the project root for license information.
  */
 use crate::err::show_mangrove_error;
+use crate::input::ScriptInput;
 use crate::script::{MangroveError, register_print};
 use crate::script_main::ScriptMain;
 use crate::util::{get_impl_func, get_impl_func_optional};
@@ -50,7 +51,23 @@ pub fn simulation_tick(
     });
 }
 
-pub fn input_tick(
+pub fn mouse_input_tick(
+    mut script: LoReM<ScriptSimulation>,
+    script_main: LoRe<ScriptMain>,
+    script_input: LoRe<ScriptInput>,
+) {
+    if let Some(found_fn) = &script.input_changed_fn.clone() {
+        script
+            .execute(
+                &script_main,
+                found_fn,
+                &[script_input.input_value.borrow().clone()],
+            )
+            .unwrap();
+    }
+}
+
+pub fn gamepad_input_tick(
     mut script: LoReM<ScriptSimulation>,
     main: LoRe<ScriptMain>,
     gamepad_messages: Msg<GamepadMessage>,
@@ -69,6 +86,7 @@ pub struct ScriptSimulation {
     simulation_tick_fn: InternalFunctionDefinitionRef,
     gamepad_axis_changed_fn: Option<InternalFunctionDefinitionRef>,
     gamepad_button_changed_fn: Option<InternalFunctionDefinitionRef>,
+    input_changed_fn: Option<InternalFunctionDefinitionRef>,
     external_functions: ExternalFunctions<ScriptSimulationContext>,
     script_context: ScriptSimulationContext, // It is empty, but stored for convenience
     input_module: ModuleRef,
@@ -80,6 +98,7 @@ impl ScriptSimulation {
         simulation_fn: InternalFunctionDefinitionRef,
         gamepad_axis_changed_fn: Option<InternalFunctionDefinitionRef>,
         gamepad_button_changed_fn: Option<InternalFunctionDefinitionRef>,
+        input_changed_fn: Option<InternalFunctionDefinitionRef>,
         external_functions: ExternalFunctions<ScriptSimulationContext>,
         input_module: ModuleRef,
     ) -> Self {
@@ -88,6 +107,7 @@ impl ScriptSimulation {
             simulation_tick_fn: simulation_fn,
             gamepad_axis_changed_fn,
             gamepad_button_changed_fn,
+            input_changed_fn,
             external_functions,
             script_context: ScriptSimulationContext {},
             input_module,
@@ -428,6 +448,12 @@ fn boot(script_main: &ScriptMain) -> Result<ScriptSimulation, MangroveError> {
         "gamepad_button_changed",
     );
 
+    let input_changed_fn = get_impl_func_optional(
+        &script_main.resolved_program.state.associated_impls,
+        simulation_struct_type_ref,
+        "input_changed",
+    );
+
     // Convert it to a mutable (reference), so it can be mutated in update ticks
     let simulation_value_ref = Rc::new(RefCell::new(simulation_value));
 
@@ -438,6 +464,7 @@ fn boot(script_main: &ScriptMain) -> Result<ScriptSimulation, MangroveError> {
         simulation_tick_fn,
         gamepad_axis_changed_fn,
         gamepad_button_changed_fn,
+        input_changed_fn,
         simulation_externals,
         ModuleRef::new(Module::new(SymbolTable::new(&[]), None)),
     ))
@@ -449,7 +476,8 @@ impl Plugin for ScriptSimulationPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(PreUpdate, detect_reload_tick);
         app.add_system(Update, simulation_tick);
-        app.add_system(Update, input_tick);
+        app.add_system(Update, gamepad_input_tick);
+        app.add_system(Update, mouse_input_tick);
 
         // HACK: Just add a completely zeroed out ScriptSimulation and wait for reload message.
         // TODO: Should not try to call updates with params that are not available yet.
@@ -473,6 +501,7 @@ impl Plugin for ScriptSimulationPlugin {
             }),
             gamepad_axis_changed_fn: None,
             gamepad_button_changed_fn: None,
+            input_changed_fn: None,
             external_functions: ExternalFunctions::new(),
             script_context: ScriptSimulationContext {},
             input_module: Rc::new(Module {

@@ -25,16 +25,16 @@ pub fn input_tick(
 }
 
 #[derive(Debug)]
-pub struct ScriptInputContext {}
+pub struct ScriptSimInputContext {}
 
 #[derive(LocalResource, Debug)]
 pub struct ScriptInput {
-    pub script_updater: ScriptModule<ScriptInputContext>,
+    pub script_updater: ScriptModule<ScriptSimInputContext>,
     pub converted_simulation_value: Value,
 }
 
 impl ScriptInput {
-    pub fn new(script_module: ScriptModule<ScriptInputContext>) -> Self {
+    pub fn new(script_module: ScriptModule<ScriptSimInputContext>) -> Self {
         Self {
             script_updater: script_module,
             converted_simulation_value: Value::Unit,
